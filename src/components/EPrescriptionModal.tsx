@@ -22,7 +22,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
   mode = 'view',
   onPrescriptionSaved,
   doctorName = 'Dr. Ananya Mishra',
-  patientName = 'Rina Das',
+  patientName = 'Keshab Rout',
   patientId = 'RHB-OD-KLH-0941',
   onCheckStock
 }) => {

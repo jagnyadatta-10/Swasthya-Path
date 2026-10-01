@@ -240,7 +240,7 @@ export const EmergencyHelpModal: React.FC<EmergencyHelpModalProps> = ({ isOpen, 
             {generatedSummary && (
               <div>
                 <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', color: '#1e293b', marginBottom: '10px' }}>
-                  <div><strong>Patient:</strong> Rina Das (RHB-OD-KLH-0941) • Age: 24 • Female • B+</div>
+                  <div><strong>Patient:</strong> Keshab Rout (RHB-OD-KLH-0941) • Age: 26 • Male • B+</div>
                   <div><strong>Acute Emergency Issue:</strong> {selectedIssue}</div>
                   <div><strong>Location:</strong> Kalahandi District, Odisha (Bhawanipatna Block)</div>
                   <div><strong>Known Allergies:</strong> No known drug allergies</div>

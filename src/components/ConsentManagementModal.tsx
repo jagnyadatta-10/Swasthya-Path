@@ -18,7 +18,7 @@ export const ConsentManagementModal: React.FC<ConsentManagementModalProps> = ({
 }) => {
   const [consents, setConsents] = useState<ConsentItem[]>(storage.getConsents());
   const [abhaId, setAbhaId] = useState('98-2143-8765-1094');
-  const [abhaAddress, setAbhaAddress] = useState('rinadas@abdm');
+  const [abhaAddress, setAbhaAddress] = useState('keshabrout@abdm');
   const [notice, setNotice] = useState('');
 
   if (!isOpen) return null;

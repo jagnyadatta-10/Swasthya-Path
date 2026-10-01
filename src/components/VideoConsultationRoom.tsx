@@ -72,7 +72,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
       id: 'msg-1',
       sender: 'doctor',
       senderName: doctor.name,
-      text: 'Namaskar Rina ji, I can see your intake information. How are you feeling today?',
+      text: 'Namaskar Keshab ji, I can see your intake information. How are you feeling today?',
       timestamp: 'Just now'
     }
   ]);
@@ -1377,7 +1377,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => alert(`Reviewing Rina Das previous health records from Kalahandi repository:\n\n1. 28/09/2026: Headache & seasonal chills\n2. 15/09/2026: Rx Paracetamol 500mg\n3. 02/09/2026: Routine BP 118/76 mmHg`)}
+                  onClick={() => alert(`Reviewing Keshab Rout previous health records from Kalahandi repository:\n\n1. 28/09/2026: Headache & seasonal chills\n2. 15/09/2026: Rx Paracetamol 500mg\n3. 02/09/2026: Routine BP 118/76 mmHg`)}
                   style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', border: 0, fontSize: '12px' }}
                 >
                   <FileText size={14} />

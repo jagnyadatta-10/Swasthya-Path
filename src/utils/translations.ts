@@ -97,7 +97,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     missedConsultationsLabel: 'Missed Follow-ups Reduced',
     
     // Patient-First UI
-    greetingRina: 'Good morning, Rina 👋',
+    greetingPatient: 'Good morning, Keshab 👋',
     howAreYouFeeling: 'How are you feeling today?',
     checkMySymptoms: 'Check My Symptoms',
     talkToDoctor: 'Talk to a Doctor',
@@ -252,7 +252,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     missedConsultationsLabel: 'ଅବହେଳିତ ରୋଗୀଙ୍କ ସଂଖ୍ୟା ହ୍ରାସ',
     
     // Patient-First UI
-    greetingRina: 'ଶୁଭ ସକାଳ, ରୀନା 👋',
+    greetingPatient: 'ଶୁଭ ସକାଳ, କେଶବ 👋',
     howAreYouFeeling: 'ଆଜି ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି?',
     checkMySymptoms: 'ମୋର ଲକ୍ଷଣ ଯାଞ୍ଚ କରନ୍ତୁ',
     talkToDoctor: 'ଡାକ୍ତରଙ୍କ ସହ କଥା ହୁଅନ୍ତୁ',
@@ -407,8 +407,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     missedConsultationsLabel: 'अनदेखे परामर्शों में कमी',
     
     // Patient-First UI
-    greetingRina: 'नमस्ते, रीना 👋',
-    howAreYouFeeling: 'आज आप कैसा महसूस कर रही हैं?',
+    greetingPatient: 'नमस्ते, केशव 👋',
+    howAreYouFeeling: 'आज आप कैसा महसूस कर रहे हैं?',
     checkMySymptoms: 'मेरे लक्षण जांचें',
     talkToDoctor: 'डॉक्टर से बात करें',
     myAppointment: 'मेरी अपॉइंटमेंट',

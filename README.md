@@ -25,7 +25,7 @@ The prototype features **three dedicated portals** with a one-click **[Use Demo 
 
 | Role | Name | Email | Mobile Number | Password | Location |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **👤 Patient** | Rina Das | `patient@swasthyapath.demo` | `+91 90000 10001` | `Demo@123` | Kalahandi, Odisha (Age 24) |
+| **👤 Patient** | Keshab Rout | `patient@swasthyapath.demo` | `+91 90000 10001` | `Demo@123` | Kalahandi, Odisha (Age 26) |
 | **🩺 Doctor** | Dr. Ananya Mishra | `doctor@swasthyapath.demo` | `+91 90000 10002` | `Demo@123` | DHH Bhawanipatna, Kalahandi |
 | **💊 Pharmacy** | Maa Laxmi Pharmacy | `pharmacy@swasthyapath.demo` | `+91 90000 10003` | `Demo@123` | Bhawanipatna Town, Kalahandi |
 
@@ -60,7 +60,7 @@ npm run preview
 | Step | Action | What to Observe / Explain |
 | :---: | :--- | :--- |
 | **1** | Open `http://localhost:5174/` | Notice the **"Who are you?"** login screen with 3 clear role options: Patient, Doctor, Pharmacy. |
-| **2** | Login as **Patient** (`Rina Das`) | Click **Use Demo Account** and press **Login as Patient**. Notice top bar: *Welcome, Rina Das • Kalahandi, Odisha*, *Connection: GOOD*, *Low-Bandwidth Mode: ON*. |
+| **2** | Login as **Patient** (`Keshab Rout`) | Click **Use Demo Account** and press **Login as Patient**. Notice top bar: *Welcome, Keshab Rout • Kalahandi, Odisha*, *Connection: GOOD*, *Low-Bandwidth Mode: ON*. |
 | **3** | Explore Improved Dashboard | Notice the 4 clear functional groups: **1. Care Now**, **2. My Health**, **3. Local Services**, **4. Support**. |
 | **4** | Click **AI Health Assistant** | Notice pre-filled: `Fever and body weakness for two days`. Leave warning signs as `No warning signs`. Click **Check Care Pathway** ➔ Output: **Suggested Pathway: Clinician Consultation** (highlight: *no medical diagnosis is given; clinicians decide*). Click **Save to Offline Health Records**. |
 | **5** | Click **Find Doctor** & **Start Consultation** | Click *Start Consultation* on Dr. Ananya Mishra. Pre-call diagnostic check screen opens (`✓ Microphone`, `✓ Camera`, `✓ Connection`). Click **Join Consultation**. |
@@ -69,7 +69,7 @@ npm run preview
 | **8** | Demonstrate **Offline Loss & Resume** | Click **OFFLINE**. The live call pauses cleanly with message: *"Connection lost. Live consultation paused. Reconnect to continue consultation."* (No fake live call offline). Click **GOOD** ➔ call resumes seamlessly! |
 | **9** | End Consultation & Review Summary | Click **End Consultation** ➔ confirm end. Post-call summary screen displays: *Consultation Completed*, duration, doctor's clinical notes, and next step selector (*Routine monitoring / Follow-up / Physical PHC / Emergency*). Click **Return to Dashboard**. |
 | **10** | Check **Pharmacy Availability** | Go to *Pharmacy Availability*. Select block: `Bhawanipatna`. Search: `Paracetamol`. Observe stock status: `AVAILABLE`, distance (1.2 km), address, and travel avoidance note. Switch to `Offline` in simulator to observe stale cache notice (*Last synced: Today, 10:32 AM*). |
-| **11** | Switch to **Doctor Portal** | Use bottom-right simulator to switch to **Doctor**. Open **Triage Queue**. Observe Rina Das's routine review card (*"AI-assisted summary — doctor must verify"*) and Demo Patient 02's **🚨 URGENT FLAG** for acute shortness of breath & chest pain. Click *Open Urgent Case* to show emergency escalation. |
+| **11** | Switch to **Doctor Portal** | Use bottom-right simulator to switch to **Doctor**. Open **Triage Queue**. Observe Keshab Rout's routine review card (*"AI-assisted summary — doctor must verify"*) and Demo Patient 02's **🚨 URGENT FLAG** for acute shortness of breath & chest pain. Click *Open Urgent Case* to show emergency escalation. |
 | **12** | Switch to **Pharmacy Portal** | Use bottom-right simulator to switch to **Pharmacy**. View dashboard (*12 listed, 9 available, 3 low/verify*). Change `Amoxicillin 500mg` status to `AVAILABLE`. Notice feedback: *"Stock updated successfully."* Switch back to Patient to see the change reflected live! |
 
 ---

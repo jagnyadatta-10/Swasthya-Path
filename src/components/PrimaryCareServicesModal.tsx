@@ -48,7 +48,7 @@ export const PrimaryCareServicesModal: React.FC<PrimaryCareServicesModalProps> =
       body: `Demo notification: Mental well-being teleconsultation request logged for ${mentalFeeling}.`,
       type: 'doctor'
     });
-    storage.addAuditLog(`Tele-MANAS request logged for ${mentalFeeling}`, 'Rina Das');
+    storage.addAuditLog(`Tele-MANAS request logged for ${mentalFeeling}`, 'Keshab Rout');
     setTimeout(() => {
       setMentalSubmitted(false);
       onClose();

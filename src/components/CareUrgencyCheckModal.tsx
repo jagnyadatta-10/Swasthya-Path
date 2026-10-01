@@ -69,7 +69,7 @@ export const CareUrgencyCheckModal: React.FC<CareUrgencyCheckModalProps> = ({
     // If high-risk red flag selected -> EMERGENCY CATEGORY (Red)
     if (warningSign !== 'no' || (selectedSymptom === 'Breathing problem' && severity === 'Severe')) {
       setResultCategory('emergency');
-      storage.addAuditLog(`Care Urgency Check: Triggered EMERGENCY for ${currentConcern}`, 'Rina Das');
+      storage.addAuditLog(`Care Urgency Check: Triggered EMERGENCY for ${currentConcern}`, 'Keshab Rout');
       return;
     }
 
@@ -78,9 +78,9 @@ export const CareUrgencyCheckModal: React.FC<CareUrgencyCheckModalProps> = ({
       setResultCategory('intermediate');
       storage.addToTriageQueue({
         patientId: 'RHB-OD-KLH-0941',
-        patientName: 'Rina Das',
-        age: 24,
-        gender: 'Female',
+        patientName: 'Keshab Rout',
+        age: 26,
+        gender: 'Male',
         village: 'Kalahandi',
         symptoms: `${currentConcern} (${trend}, ${severity} severity)`,
         duration,
@@ -88,7 +88,7 @@ export const CareUrgencyCheckModal: React.FC<CareUrgencyCheckModalProps> = ({
         urgency: 'moderate',
         aiSummary: `Priority Review: Patient reported ${currentConcern} for ${duration} with ${severity.toLowerCase()} severity. Clinical review recommended.`
       });
-      storage.addAuditLog(`Care Urgency Check: Evaluated as INTERMEDIATE for ${currentConcern}`, 'Rina Das');
+      storage.addAuditLog(`Care Urgency Check: Evaluated as INTERMEDIATE for ${currentConcern}`, 'Keshab Rout');
       return;
     }
 
@@ -104,7 +104,7 @@ export const CareUrgencyCheckModal: React.FC<CareUrgencyCheckModalProps> = ({
       urgency: 'routine',
       synced: true
     });
-    storage.addAuditLog(`Care Urgency Check: Evaluated as ROUTINE for ${currentConcern}`, 'Rina Das');
+    storage.addAuditLog(`Care Urgency Check: Evaluated as ROUTINE for ${currentConcern}`, 'Keshab Rout');
   };
 
   const handleReset = () => {

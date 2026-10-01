@@ -273,7 +273,7 @@ export const storage = {
       body: `Demo notification: Your consultation token is ${token.tokenNumber} with ${doctorName}. Estimated wait: ${token.estimatedWaitMin} mins.`,
       type: 'queue'
     });
-    this.addAuditLog(`Patient joined queue for ${doctorName} (Token ${token.tokenNumber})`, 'Rina Das');
+    this.addAuditLog(`Patient joined queue for ${doctorName} (Token ${token.tokenNumber})`, 'Keshab Rout');
     return token;
   },
 
@@ -347,7 +347,7 @@ export const storage = {
       prescriptionNumber: rx.prescriptionNumber || `RX-KLH-2026-0${Math.floor(Math.random() * 800 + 100)}`,
       date: rx.date || new Date().toLocaleDateString('en-GB'),
       patientId: rx.patientId || 'RHB-OD-KLH-0941',
-      patientName: rx.patientName || 'Rina Das',
+      patientName: rx.patientName || 'Keshab Rout',
       doctorName: rx.doctorName || 'Dr. Ananya Mishra',
       doctorHospital: rx.doctorHospital || 'DHH Bhawanipatna Telehealth Unit',
       diagnosisSummary: rx.diagnosisSummary || 'Clinical tele-consultation evaluation complete.',
@@ -522,7 +522,7 @@ export const storage = {
     if (idx !== -1) {
       list[idx].status = list[idx].status === 'Granted' ? 'Revoked' : 'Granted';
       localStorage.setItem(KEYS.CONSENTS, JSON.stringify(list));
-      this.addAuditLog(`Consent status changed for ${list[idx].party} to ${list[idx].status}`, 'Rina Das');
+      this.addAuditLog(`Consent status changed for ${list[idx].party} to ${list[idx].status}`, 'Keshab Rout');
     }
     return list;
   },

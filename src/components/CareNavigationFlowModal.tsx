@@ -271,7 +271,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>RURAL CITIZEN</div>
-                <strong style={{ fontSize: '15px', color: '#0f172a' }}>PATIENT (Rina Das)</strong>
+                <strong style={{ fontSize: '15px', color: '#0f172a' }}>PATIENT (Keshab Rout)</strong>
               </div>
             </div>
 

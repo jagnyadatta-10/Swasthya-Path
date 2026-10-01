@@ -16,7 +16,7 @@ export const SpecialistRequestModal: React.FC<SpecialistRequestModalProps> = ({
   isOpen,
   onClose,
   referringDoctor = 'Dr. Ananya Mishra',
-  patientName = 'Rina Das',
+  patientName = 'Keshab Rout',
   patientId = 'RHB-OD-KLH-0941',
   onRequestSubmitted
 }) => {

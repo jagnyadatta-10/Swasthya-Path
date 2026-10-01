@@ -24,17 +24,17 @@ import {
 
 export const DEMO_USERS: Record<string, DemoUser> = {
   patient: {
-    name: 'Rina Das',
+    name: 'Keshab Rout',
     email: 'patient@swasthyapath.demo',
     mobile: '+91 90000 10001',
     role: 'patient',
     portalTitle: 'Patient Portal',
     badge: 'Rural Citizen • Kalahandi, Odisha',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
     location: 'Kalahandi, Odisha',
     patientId: 'RHB-OD-KLH-0941',
-    age: 24,
-    gender: 'Female',
+    age: 26,
+    gender: 'Male',
     bloodGroup: 'B+',
     abhaId: '98-2143-8765-1094',
     allergies: 'No known drug allergies',
@@ -118,7 +118,7 @@ export const INITIAL_PRESCRIPTIONS: FullPrescription[] = [
     id: 'rx-001',
     prescriptionNumber: 'RX-KLH-2026-0881',
     patientId: 'RHB-OD-KLH-0941',
-    patientName: 'Rina Das',
+    patientName: 'Keshab Rout',
     doctorName: 'Dr. Ananya Mishra',
     doctorHospital: 'DHH Bhawanipatna Telehealth Unit',
     date: '28/09/2026',
@@ -411,9 +411,9 @@ export const INITIAL_TRIAGE_QUEUE: TriageQueueItem[] = [
   {
     id: 'triage-01',
     patientId: 'RHB-OD-KLH-0941',
-    patientName: 'Rina Das',
-    age: 24,
-    gender: 'Female',
+    patientName: 'Keshab Rout',
+    age: 26,
+    gender: 'Male',
     village: 'Kalahandi, Odisha',
     symptoms: 'Fever and body weakness for two days',
     duration: '2 days',
@@ -463,7 +463,7 @@ export const INITIAL_APPOINTMENTS: AppointmentItem[] = [
   {
     id: 'apt-01',
     time: '4:30 PM',
-    patientName: 'Rina Das (RHB-OD-KLH-0941)',
+    patientName: 'Keshab Rout (RHB-OD-KLH-0941)',
     type: 'Video Consultation',
     status: 'Scheduled',
     channel: 'Video Consultation',
@@ -493,7 +493,7 @@ export const INITIAL_REQUESTS: PharmacyRequest[] = [
   {
     id: 'req-01',
     patientId: 'RHB-OD-KLH-0941',
-    patientName: 'Rina Das',
+    patientName: 'Keshab Rout',
     village: 'Bhawanipatna, Kalahandi',
     medicines: 'Paracetamol 500mg (1 strip), ORS Sachets (2 pkts)',
     status: 'Pending',
@@ -547,7 +547,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
 ];
 
 export const INITIAL_AUDIT_LOG: AuditLogEntry[] = [
-  { id: 'aud-1', time: '10:32 AM', action: 'Patient joined consultation queue (Token A-024)', actor: 'Rina Das (Patient)' },
+  { id: 'aud-1', time: '10:32 AM', action: 'Patient joined consultation queue (Token A-024)', actor: 'Keshab Rout (Patient)' },
   { id: 'aud-2', time: '10:40 AM', action: 'Clinician accessed pre-intake structured summary', actor: 'Dr. Ananya Mishra' },
   { id: 'aud-3', time: '10:43 AM', action: 'Encrypted Telehealth video consultation session started', actor: 'System Bridge' },
   { id: 'aud-4', time: '10:56 AM', action: 'E-Prescription RX-KLH-2026-0881 digitally generated', actor: 'Dr. Ananya Mishra' },
@@ -563,7 +563,7 @@ export const INITIAL_SPECIALIST_REQUESTS: SpecialistRequest[] = [
     urgency: 'Routine',
     status: 'Requested',
     patientId: 'RHB-OD-KLH-0941',
-    patientName: 'Rina Das',
+    patientName: 'Keshab Rout',
     timestamp: 'Today, 10:45 AM'
   }
 ];
@@ -679,7 +679,7 @@ export const INITIAL_CARE_PLANS: CarePlan[] = [
   {
     id: 'cp-01',
     patientId: 'RHB-OD-KLH-0941',
-    patientName: 'Rina Das',
+    patientName: 'Keshab Rout',
     doctorName: 'Dr. Ananya Mishra',
     diagnosis: 'Acute febrile viral episode with asthenia',
     followUpDate: 'in 3 days (03 Oct 2026)',

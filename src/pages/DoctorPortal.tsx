@@ -140,17 +140,17 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   };
 
   const mockPatient: DemoUser = {
-    name: selectedQueueItem ? selectedQueueItem.patientName : 'Rina Das',
+    name: selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout',
     email: 'patient@swasthyapath.demo',
     mobile: '+91 90000 10001',
     role: 'patient',
     portalTitle: 'Patient Portal',
     badge: 'Rural Citizen • Kalahandi',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
     location: 'Kalahandi, Odisha',
     patientId: selectedQueueItem?.patientId || 'RHB-OD-KLH-0941',
-    age: selectedQueueItem?.age || 24,
-    gender: 'Female',
+    age: selectedQueueItem?.age || 26,
+    gender: selectedQueueItem?.gender || 'Male',
     bloodGroup: 'B+',
     allergies: 'No known drug allergies'
   };
@@ -469,14 +469,14 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <h2 style={{ margin: 0, fontSize: '20px' }}>
-                    {selectedQueueItem ? selectedQueueItem.patientName : 'Rina Das'}
+                    {selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
                   </h2>
                   <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
                     {selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
                   </span>
                 </div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                  Age: {selectedQueueItem?.age || 24} yrs • Female • Location: Kalahandi, Odisha
+                  Age: {selectedQueueItem?.age || 26} yrs • {selectedQueueItem?.gender || 'Male'} • Location: Kalahandi, Odisha
                 </div>
               </div>
 
@@ -890,7 +890,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           <div className="data-list">
             <div className="data-item">
               <div>
-                <strong>Rina Das (RHB-OD-KLH-0941) — Teleconsultation Session</strong>
+                <strong>Keshab Rout (RHB-OD-KLH-0941) — Teleconsultation Session</strong>
                 <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
                   Duration: 12 min 34 sec • Completed today • DHH Bhawanipatna
                 </div>
@@ -946,7 +946,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         prescription={activeRxForView}
         mode={rxModalMode}
         doctorName={user.name}
-        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Rina Das'}
+        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
         onPrescriptionSaved={(newRx) => {
           setPrescriptions(storage.getPrescriptions());
@@ -959,7 +959,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={isSpecialistModalOpen}
         onClose={() => setIsSpecialistModalOpen(false)}
         referringDoctor={user.name}
-        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Rina Das'}
+        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
         onRequestSubmitted={(req) => {
           setSpecialistRequests(storage.getSpecialistRequests());
@@ -971,7 +971,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={isCarePlanModalOpen}
         onClose={() => setIsCarePlanModalOpen(false)}
         doctorName={user.name}
-        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Rina Das'}
+        patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
         onSaved={(plan) => {
           alert(`Care plan saved! Follow-up scheduled for ${plan.followUpDate} (${plan.followUpMode}).`);

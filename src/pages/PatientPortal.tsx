@@ -361,7 +361,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ margin: 0, fontSize: '22px', color: '#0f172a' }}>
-                {getTranslation(lang, 'greetingRina')}
+                {getTranslation(lang, 'greetingPatient')}
               </h2>
               <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>
                 ID: {patientId}
@@ -714,7 +714,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             }}
           >
             <div style={{ fontSize: '15px', color: '#93c5fd', fontWeight: 600 }}>
-              {getTranslation(lang, 'greetingRina')}
+              {getTranslation(lang, 'greetingPatient')}
             </div>
             <h1 style={{ color: '#ffffff', fontSize: '26px', margin: '6px 0 16px' }}>
               {getTranslation(lang, 'howAreYouFeeling')}
@@ -1250,7 +1250,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     Swasthya Sathi
                   </div>
                   <div style={{ fontSize: '14px', color: '#14532d', fontWeight: 600 }}>
-                    {lang === 'ଓଡ଼ିଆ' ? 'ନମସ୍କାର ରୀନା! ଆଜି ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି? ଆପଣଙ୍କ ଲକ୍ଷଣ ଚୟନ କରନ୍ତୁ କିମ୍ବା କହିବାକୁ ମାଇକ୍ ବଟନ୍ ଦବାନ୍ତୁ:' : lang === 'हिन्दी' ? 'नमस्ते रीना! आज आप कैसा महसूस कर रही हैं? कृपया अपने लक्षण चुनें या बोलने के लिए माइक दबाएं:' : 'Namaste Rina! How are you feeling today? Tap what you are experiencing below, or use voice:'}
+                    {lang === 'ଓଡ଼ିଆ' ? 'ନମସ୍କାର କେଶବ! ଆଜି ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି? ଆପଣଙ୍କ ଲକ୍ଷଣ ଚୟନ କରନ୍ତୁ କିମ୍ବା କହିବାକୁ ମାଇକ୍ ବଟନ୍ ଦବାନ୍ତୁ:' : lang === 'हिन्दी' ? 'नमस्ते केशव! आज आप कैसा महसूस कर रहे हैं? कृपया अपने लक्षण चुनें या बोलने के लिए माइक दबाएं:' : 'Namaste Keshab! How are you feeling today? Tap what you are experiencing below, or use voice:'}
                   </div>
                 </div>
               </div>

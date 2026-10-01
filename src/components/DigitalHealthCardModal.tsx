@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { CreditCard, X, QrCode, Shield, Download, Check, AlertCircle, Heart, Phone, MapPin, Calendar, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, X, QrCode, Shield, Download, Check, FileText } from 'lucide-react';
 import { DemoUser, Language } from '../types';
 
 interface DigitalHealthCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: DemoUser;
-  lang?: Language;
   onViewFullRecord?: () => void;
+  lang?: Language;
 }
 
 const CARD_I18N: Record<Language, {
@@ -18,17 +18,20 @@ const CARD_I18N: Record<Language, {
   patientNameLabel: string;
   patientIdLabel: string;
   ageGenderLabel: string;
+  years: string;
+  male: string;
+  female: string;
   bloodGroupLabel: string;
   abhaIdLabel: string;
-  scanForOpd: string;
+  scanOpd: string;
   locationLabel: string;
   allergiesLabel: string;
+  noAllergies: string;
   emergencyContactLabel: string;
-  consentNotice: string;
-  downloadBtn: string;
-  downloadedNotice: string;
-  viewEhrBtn: string;
-  noneAllergies: string;
+  privacyNotice: string;
+  btnDownload: string;
+  btnDownloaded: string;
+  btnViewRecord: string;
 }> = {
   English: {
     modalTitle: 'Kalahandi Rural Digital Health Card',
@@ -38,57 +41,66 @@ const CARD_I18N: Record<Language, {
     patientNameLabel: 'Patient Full Name',
     patientIdLabel: 'Patient ID:',
     ageGenderLabel: 'Age / Gender:',
+    years: 'yrs',
+    male: 'Male',
+    female: 'Female',
     bloodGroupLabel: 'Blood Group:',
     abhaIdLabel: 'ABHA ID:',
-    scanForOpd: 'SCAN FOR OPD',
+    scanOpd: 'SCAN FOR OPD',
     locationLabel: 'Location:',
     allergiesLabel: 'Allergies:',
+    noAllergies: 'No known drug allergies',
     emergencyContactLabel: 'Emergency Contact:',
-    consentNotice: '“Your information is used to support your healthcare journey.” Consent is verified before each teleconsultation.',
-    downloadBtn: 'Download Offline Card',
-    downloadedNotice: 'Card Downloaded (PDF)',
-    viewEhrBtn: 'View Full Health Record',
-    noneAllergies: 'No known drug allergies'
+    privacyNotice: '“Your information is used to support your healthcare journey.” Consent is verified before each teleconsultation.',
+    btnDownload: 'Download Offline Card',
+    btnDownloaded: 'Card Downloaded (PDF)',
+    btnViewRecord: 'View Full Health Record'
   },
   'ଓଡ଼ିଆ': {
     modalTitle: 'କଳାହାଣ୍ଡି ଗ୍ରାମୀଣ ଡିଜିଟାଲ୍ ସ୍ୱାସ୍ଥ୍ୟ କାର୍ଡ',
-    modalSub: 'ସ୍ୱଳ୍ପ ଇଣ୍ଟରନେଟ୍ ଟେଲି-ହେଲ୍ଥ ଏବଂ ରୋଗୀ ପରିଚୟ ପତ୍ର',
-    govtHeader: 'ଓଡ଼ିଶା ସରକାର • କଳାହାଣ୍ଡି ଜିଲ୍ଲା ଟେଲି-ହେଲ୍ଥ ମିଶନ',
-    cardName: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ସ୍ମାର୍ଟ ହେଲ୍ଥ କାର୍ଡ',
+    modalSub: 'ସ୍ୱଳ୍ପ ଇଣ୍ଟରନେଟ୍ ଟେଲି-ହେଲ୍ଥ ଏବଂ ଚିକିତ୍ସା ପରିଚୟ ପତ୍ର',
+    govtHeader: 'ଓଡ଼ିଶା ସରକାର • କଳାହାଣ୍ଡି ଜିଲ୍ଲା ଟେଲି-ହେଲ୍ଥ',
+    cardName: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ସ୍ମାର୍ଟ ସ୍ୱାସ୍ଥ୍ୟ ID',
     patientNameLabel: 'ରୋଗୀଙ୍କ ସମ୍ପୂର୍ଣ୍ଣ ନାମ',
-    patientIdLabel: 'ରୋଗୀ ଆଇଡି:',
+    patientIdLabel: 'ରୋଗୀ ID:',
     ageGenderLabel: 'ବୟସ / ଲିଙ୍ଗ:',
+    years: 'ବର୍ଷ',
+    male: 'ପୁରୁଷ',
+    female: 'ମହିଳା',
     bloodGroupLabel: 'ରକ୍ତ ବର୍ଗ:',
-    abhaIdLabel: 'ଆଭା (ABHA) ଆଇଡି:',
-    scanForOpd: 'OPD ପାଇଁ ସ୍କାନ କରନ୍ତୁ',
-    locationLabel: 'ଠିକଣା / ବ୍ଲକ:',
-    allergiesLabel: 'ଔଷଧ ଆଲର୍ଜି:',
+    abhaIdLabel: 'ଆଭା (ABHA) ID:',
+    scanOpd: 'OPD ସ୍କାନ୍ କରନ୍ତୁ',
+    locationLabel: 'ଠିକଣା:',
+    allergiesLabel: 'ଏଲର୍ଜି:',
+    noAllergies: 'କୌଣସି ଜଣାଶୁଣା ଏଲର୍ଜି ନାହିଁ',
     emergencyContactLabel: 'ଜରୁରୀକାଳୀନ ଯୋଗାଯୋଗ:',
-    consentNotice: '“ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ତଥ୍ୟ କେବଳ ଚିକିତ୍ସା ପାଇଁ ବ୍ୟବହୃତ ହୁଏ।” ପ୍ରତ୍ୟେକ ପରାମର୍ଶ ପୂର୍ବରୁ ସମ୍ମତି ଯାଞ୍ଚ କରାଯାଏ।',
-    downloadBtn: 'ଅଫଲାଇନ୍ କାର୍ଡ ଡାଉନଲୋଡ୍',
-    downloadedNotice: 'କାର୍ଡ ଡାଉନଲୋଡ୍ ହେଲା (PDF)',
-    viewEhrBtn: 'ସମ୍ପୂର୍ଣ୍ଣ ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଦେଖନ୍ତୁ',
-    noneAllergies: 'କୌଣସି ଜଣାଶୁଣା ଆଲର୍ଜି ନାହିଁ'
+    privacyNotice: '“ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ ତଥ୍ୟ କେବଳ ଚିକିତ୍ସା ସେବା ପାଇଁ ବ୍ୟବହୃତ ହୁଏ।” ପ୍ରତ୍ୟେକ ପରାମର୍ଶ ପୂର୍ବରୁ ସହମତି ଯାଞ୍ଚ କରାଯାଏ।',
+    btnDownload: 'ଅଫଲାଇନ୍ କାର୍ଡ ଡାଉନଲୋଡ୍ କରନ୍ତୁ',
+    btnDownloaded: 'କାର୍ଡ ଡାଉନଲୋଡ୍ ହୋଇଗଲା (PDF)',
+    btnViewRecord: 'ସମ୍ପୂର୍ଣ୍ଣ ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଦେଖନ୍ତୁ'
   },
   'हिन्दी': {
     modalTitle: 'कालाहांडी ग्रामीण डिजिटल स्वास्थ्य कार्ड',
-    modalSub: 'कम इंटरनेट टेली-हेल्थ और रोगी पहचान पत्र',
-    govtHeader: 'ओडिशा सरकार • कालाहांडी जिला टेली-हेल्थ मिशन',
-    cardName: 'स्वास्थ्य पथ स्मार्ट हेल्थ कार्ड',
+    modalSub: 'कम इंटरनेट टेलीहेल्थ एवं चिकित्सा पहचान पत्र',
+    govtHeader: 'ओडिशा सरकार • कालाहांडी जिला टेलीहेल्थ',
+    cardName: 'स्वास्थ्य पथ स्मार्ट हेल्थ ID',
     patientNameLabel: 'रोगी का पूरा नाम',
-    patientIdLabel: 'रोगी आईडी:',
-    ageGenderLabel: 'आयु / लिंग:',
+    patientIdLabel: 'रोगी ID:',
+    ageGenderLabel: 'उम्र / लिंग:',
+    years: 'वर्ष',
+    male: 'पुरुष',
+    female: 'महिला',
     bloodGroupLabel: 'रक्त समूह:',
-    abhaIdLabel: 'आभा (ABHA) आईडी:',
-    scanForOpd: 'OPD हेतु स्कैन करें',
-    locationLabel: 'स्थान / ब्लॉक:',
-    allergiesLabel: 'दवा एलर्जी:',
+    abhaIdLabel: 'आभा (ABHA) ID:',
+    scanOpd: 'OPD स्कैन करें',
+    locationLabel: 'स्थान:',
+    allergiesLabel: 'एलर्जी:',
+    noAllergies: 'कोई ज्ञात दवा एलर्जी नहीं',
     emergencyContactLabel: 'आपातकालीन संपर्क:',
-    consentNotice: '“आपकी जानकारी केवल आपकी स्वास्थ्य सेवा हेतु उपयोग की जाती है।” प्रत्येक परामर्श से पहले सहमति ली जाती है।',
-    downloadBtn: 'ऑफलाइन कार्ड डाउनलोड करें',
-    downloadedNotice: 'कार्ड डाउनलोड हो गया (PDF)',
-    viewEhrBtn: 'पूरा स्वास्थ्य रिकॉर्ड देखें',
-    noneAllergies: 'कोई ज्ञात एलर्जी नहीं'
+    privacyNotice: '“आपकी जानकारी केवल आपकी स्वास्थ्य सेवा के लिए उपयोग की जाती है।” प्रत्येक परामर्श से पहले सहमति ली जाती है।',
+    btnDownload: 'ऑफ़लाइन कार्ड डाउनलोड करें',
+    btnDownloaded: 'कार्ड डाउनलोड हो गया (PDF)',
+    btnViewRecord: 'संपूर्ण स्वास्थ्य रिकॉर्ड देखें'
   }
 };
 
@@ -96,13 +108,13 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
   isOpen,
   onClose,
   user,
-  lang = 'English',
-  onViewFullRecord
+  onViewFullRecord,
+  lang = 'English'
 }) => {
   const [activeLang, setActiveLang] = useState<Language>(lang);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (lang) setActiveLang(lang);
   }, [lang]);
 
@@ -111,19 +123,12 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
   const t = CARD_I18N[activeLang] || CARD_I18N.English;
 
   const patientId = user.patientId || 'RHB-OD-KLH-0941';
-  const abhaId = user.abhaId || '98-2143-8765-1094';
+  const abhaId = user.abhaId || '91-8472-9102-4821';
   const bloodGroup = user.bloodGroup || 'B+';
-  const allergies = user.allergies || t.noneAllergies;
-  const emergencyContact = user.emergencyContact || '+91 94371 88990 (Family)';
-  const location = user.location || 'Kalahandi, Odisha';
-  const age = user.age || 26;
-  const gender = user.gender || 'Male';
-
-  const genderDisplay = activeLang === 'ଓଡ଼ିଆ'
-    ? (gender === 'Male' ? 'ପୁରୁଷ' : 'ମହିଳା')
-    : activeLang === 'हिन्दी'
-    ? (gender === 'Male' ? 'पुरुष' : 'महिला')
-    : gender;
+  const allergies = user.allergies || t.noAllergies;
+  const emergencyContact = user.emergencyContact || '+91 94370 12345 (Family)';
+  const location = user.location || (activeLang === 'ଓଡ଼ିଆ' ? 'କଳାହାଣ୍ଡି, ଓଡ଼ିଶା' : activeLang === 'हिन्दी' ? 'कालाहांडी, ओडिशा' : 'Kalahandi, Odisha');
+  const genderText = user.gender === 'Female' ? t.female : t.male;
 
   const handleDownload = () => {
     setDownloadSuccess(true);
@@ -132,23 +137,21 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
-      <div className="modal-dialog" style={{ maxWidth: '620px', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
+      <div className="modal-dialog" style={{ maxWidth: '580px', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
         {/* Modal Header */}
         <div style={{
           background: 'linear-gradient(135deg, #071c42 0%, #0c3672 100%)',
           color: '#ffffff',
-          padding: '14px 20px',
+          padding: '16px 20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          flexWrap: 'wrap',
-          gap: '10px'
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '8px',
               background: 'rgba(25, 211, 255, 0.2)',
               display: 'flex',
@@ -169,13 +172,13 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Language Switcher */}
+            {/* Interactive Language Selector */}
             <div style={{
               display: 'flex',
               background: 'rgba(255, 255, 255, 0.15)',
               borderRadius: '20px',
               padding: '2px',
-              border: '1px solid rgba(255, 255, 255, 0.25)'
+              border: '1px solid rgba(255, 255, 255, 0.2)'
             }}>
               {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
                 <button
@@ -187,7 +190,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
                     color: activeLang === l ? '#071c42' : '#ffffff',
                     border: 'none',
                     borderRadius: '16px',
-                    padding: '3px 9px',
+                    padding: '3px 8px',
                     fontSize: '11px',
                     fontWeight: activeLang === l ? 800 : 500,
                     cursor: 'pointer'
@@ -265,14 +268,14 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
                   {user.name}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '12px' }}>
                   <div>
                     <span style={{ color: '#94a3b8' }}>{t.patientIdLabel} </span>
                     <strong style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '13px' }}>{patientId}</strong>
                   </div>
                   <div>
                     <span style={{ color: '#94a3b8' }}>{t.ageGenderLabel} </span>
-                    <strong style={{ color: '#ffffff' }}>{age} {activeLang === 'ଓଡ଼ିଆ' ? 'ବର୍ଷ' : activeLang === 'हिन्दी' ? 'वर्ष' : 'yrs'} • {genderDisplay}</strong>
+                    <strong style={{ color: '#ffffff' }}>{user.age || 26} {t.years} • {genderText}</strong>
                   </div>
                   <div>
                     <span style={{ color: '#94a3b8' }}>{t.bloodGroupLabel} </span>
@@ -285,7 +288,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
                 </div>
               </div>
 
-              {/* QR Code Box */}
+              {/* QR Code Demo Box */}
               <div style={{
                 background: '#ffffff',
                 padding: '8px',
@@ -295,9 +298,9 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
                 alignItems: 'center',
                 boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
               }}>
-                <QrCode size={64} color="#0a1f44" />
+                <QrCode size={68} color="#0a1f44" />
                 <span style={{ fontSize: '9px', fontWeight: 800, color: '#0a1f44', marginTop: '4px' }}>
-                  {t.scanForOpd}
+                  {t.scanOpd}
                 </span>
               </div>
             </div>
@@ -307,7 +310,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
               borderTop: '1px solid rgba(255, 255, 255, 0.15)',
               paddingTop: '12px',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '10px',
               fontSize: '11px'
             }}>
@@ -339,9 +342,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
             fontSize: '12px'
           }}>
             <Shield size={16} style={{ flexShrink: 0 }} />
-            <span>
-              {t.consentNotice}
-            </span>
+            <span>{t.privacyNotice}</span>
           </div>
 
           {/* Actions */}
@@ -353,7 +354,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               {downloadSuccess ? <Check size={16} color="#059669" /> : <Download size={16} />}
-              <span>{downloadSuccess ? t.downloadedNotice : t.downloadBtn}</span>
+              <span>{downloadSuccess ? t.btnDownloaded : t.btnDownload}</span>
             </button>
 
             {onViewFullRecord && (
@@ -367,7 +368,7 @@ export const DigitalHealthCardModal: React.FC<DigitalHealthCardModalProps> = ({
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
               >
                 <FileText size={16} />
-                <span>{t.viewEhrBtn}</span>
+                <span>{t.btnViewRecord}</span>
               </button>
             )}
           </div>

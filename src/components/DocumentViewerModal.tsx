@@ -1,26 +1,155 @@
-import React, { useState } from 'react';
-import { FileText, X, Eye, ZoomIn, ZoomOut, RotateCw, AlertTriangle, ShieldCheck, Download, Upload, Check } from 'lucide-react';
-import { DiagnosticDocument } from '../types';
+import React, { useState, useEffect } from 'react';
+import { FileText, X, ZoomIn, ZoomOut, RotateCw, AlertTriangle, Download } from 'lucide-react';
+import { DiagnosticDocument, Language } from '../types';
 
 interface DocumentViewerModalProps {
   isOpen: boolean;
   onClose: () => void;
   document: DiagnosticDocument | null;
   onUploadNew?: (doc: Omit<DiagnosticDocument, 'id'>) => void;
+  lang?: Language;
 }
+
+const DOC_I18N: Record<Language, {
+  categoryLabel: string;
+  dateLabel: string;
+  disclaimer: string;
+  zoomIn: string;
+  zoomOut: string;
+  rotate: string;
+  dicomInvert: string;
+  zoom: string;
+  rotation: string;
+  chestLabel: string;
+  expLabel: string;
+  hospitalLabel: string;
+  pathologyWing: string;
+  reportName: string;
+  clinicalImpression: string;
+  normalImpression: string;
+  thParameter: string;
+  thResult: string;
+  thRefRange: string;
+  haemoglobin: string;
+  leukocyte: string;
+  platelet: string;
+  malariaSmear: string;
+  negative: string;
+  validatedBy: string;
+  verifiedTriage: string;
+  btnDownload: string;
+  btnClose: string;
+}> = {
+  English: {
+    categoryLabel: 'Category:',
+    dateLabel: 'Date:',
+    disclaimer: 'Diagnostic image viewer — clinician review required. (Demo evaluation preview)',
+    zoomIn: 'Zoom +',
+    zoomOut: 'Zoom -',
+    rotate: 'Rotate',
+    dicomInvert: 'DICOM Invert',
+    zoom: 'Zoom:',
+    rotation: 'Rotation:',
+    chestLabel: 'PA CHEST ERECT',
+    expLabel: 'EXP: NORMAL',
+    hospitalLabel: 'DHH BHAWANIPATNA',
+    pathologyWing: 'Diagnostic Pathology & Investigation Wing',
+    reportName: 'Report Name:',
+    clinicalImpression: 'Clinical Impression:',
+    normalImpression: 'Normal study parameters within biological reference interval.',
+    thParameter: 'Parameter',
+    thResult: 'Result',
+    thRefRange: 'Reference Range',
+    haemoglobin: 'Haemoglobin (Hb)',
+    leukocyte: 'Total Leukocyte Count',
+    platelet: 'Platelet Count',
+    malariaSmear: 'Malaria Smear (MP)',
+    negative: 'NEGATIVE',
+    validatedBy: 'Validated by: DHH Kalahandi Pathologist Lab',
+    verifiedTriage: 'Verified for Tele-Triage',
+    btnDownload: 'Download',
+    btnClose: 'Close Viewer'
+  },
+  'ଓଡ଼ିଆ': {
+    categoryLabel: 'ବିଭାଗ:',
+    dateLabel: 'ତାରିଖ:',
+    disclaimer: 'ଡାଇଗ୍ନୋଷ୍ଟିକ୍ ଇମେଜ୍ ଭ୍ୟୁଅର୍ — ଡାକ୍ତରଙ୍କ ସମୀକ୍ଷା ଆବଶ୍ୟକ। (ଡେମୋ ମୂଲ୍ୟାଙ୍କନ)',
+    zoomIn: 'ଜୁମ୍ +',
+    zoomOut: 'ଜୁମ୍ -',
+    rotate: 'ଘୂରାନ୍ତୁ',
+    dicomInvert: 'DICOM ବିପରୀତ',
+    zoom: 'ଜୁମ୍:',
+    rotation: 'ଘୂର୍ଣ୍ଣନ:',
+    chestLabel: 'ଛାତି ଏକ୍ସ-ରେ (PA)',
+    expLabel: 'ଫଳାଫଳ: ସ୍ୱାଭାବିକ',
+    hospitalLabel: 'ଜିଲ୍ଲା ମୁଖ୍ୟ ଚିକିତ୍ସାଳୟ ଭବାନୀପାଟଣା',
+    pathologyWing: 'ରୋଗ ନିରୂପଣ ଓ ତଦନ୍ତ ପାଥୋଲୋଜି ବିଭାଗ',
+    reportName: 'ରିପୋର୍ଟ ନାମ:',
+    clinicalImpression: 'କ୍ଲିନିକାଲ୍ ମତାମତ:',
+    normalImpression: 'ନିର୍ଦ୍ଧାରିତ ମାନଦଣ୍ଡ ମଧ୍ୟରେ ସ୍ୱାଭାବିକ ଫଳାଫଳ।',
+    thParameter: 'ପରୀକ୍ଷା ନାମ',
+    thResult: 'ଫଳାଫଳ',
+    thRefRange: 'ସ୍ୱାଭାବିକ ସୀମା',
+    haemoglobin: 'ହିମୋଗ୍ଲୋବିନ୍ (Hb)',
+    leukocyte: 'ଶ୍ୱେତ ରକ୍ତକଣିକା (TLC)',
+    platelet: 'ପ୍ଲେଟଲେଟ୍ ସଂଖ୍ୟା',
+    malariaSmear: 'ମ୍ୟାଲେରିଆ ପରୀକ୍ଷା (MP)',
+    negative: 'ନେଗେଟିଭ୍ (ମୁକ୍ତ)',
+    validatedBy: 'ପ୍ରମାଣିତ: DHH କଳାହାଣ୍ଡି ପାଥୋଲୋଜି ଲାବ୍',
+    verifiedTriage: 'ଟେଲି-ଟ୍ରାଇଏଜ୍ ପାଇଁ ଯାଞ୍ଚ ହୋଇଛି',
+    btnDownload: 'ଡାଉନଲୋଡ୍',
+    btnClose: 'ବନ୍ଦ କରନ୍ତୁ'
+  },
+  'हिन्दी': {
+    categoryLabel: 'श्रेणी:',
+    dateLabel: 'तारीख:',
+    disclaimer: 'डायग्नोस्टिक इमेज व्यूअर — चिकित्सक समीक्षा आवश्यक। (डेमो मूल्यांकन)',
+    zoomIn: 'ज़ूम +',
+    zoomOut: 'ज़ूम -',
+    rotate: 'घुमाएं',
+    dicomInvert: 'DICOM कंट्रास्ट',
+    zoom: 'ज़ूम:',
+    rotation: 'घूर्णन:',
+    chestLabel: 'सीने का एक्स-रे (PA)',
+    expLabel: 'परिणाम: सामान्य',
+    hospitalLabel: 'DHH भवानीपटना',
+    pathologyWing: 'रोग निदान एवं पैथोलॉजी प्रभाग',
+    reportName: 'रिपोर्ट का नाम:',
+    clinicalImpression: 'चिकित्सकीय निष्कर्ष:',
+    normalImpression: 'सामान्य जैविक संदर्भ सीमा के भीतर सामान्य पैरामीटर।',
+    thParameter: 'पैरामीटर',
+    thResult: 'परिणाम',
+    thRefRange: 'सामान्य संदर्भ सीमा',
+    haemoglobin: 'हीमोग्लोबिन (Hb)',
+    leukocyte: 'कुल ल्यूकोसाइट गणना (TLC)',
+    platelet: 'प्लेटलेट काउंट',
+    malariaSmear: 'मलेरिया स्मीयर (MP)',
+    negative: 'नेगेटिव (सामान्य)',
+    validatedBy: 'सत्यापित: DHH कालाहांडी पैथोलॉजिस्ट लैब',
+    verifiedTriage: 'टेली-ट्राएज हेतु सत्यापित',
+    btnDownload: 'डाउनलोड',
+    btnClose: 'व्यूअर बंद करें'
+  }
+};
 
 export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   isOpen,
   onClose,
   document,
-  onUploadNew
+  lang = 'English'
 }) => {
+  const [activeLang, setActiveLang] = useState<Language>(lang);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [invertContrast, setInvertContrast] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [uploadSuccess, setUploadSuccess] = useState('');
+
+  useEffect(() => {
+    if (lang) setActiveLang(lang);
+  }, [lang]);
 
   if (!isOpen || !document) return null;
+
+  const t = DOC_I18N[activeLang] || DOC_I18N.English;
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.5));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.75));
@@ -60,18 +189,50 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 {document.title}
               </h3>
               <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
-                Category: <strong>{document.category}</strong> • Date: {document.date} • {document.provider}
+                {t.categoryLabel} <strong>{document.category}</strong> • {t.dateLabel} {document.date} • {document.provider}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="btn"
-            style={{ background: 'transparent', color: '#cbd5e1', border: 'none', padding: '6px', cursor: 'pointer' }}
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Interactive Language Selector */}
+            <div style={{
+              display: 'flex',
+              background: 'rgba(255, 255, 255, 0.15)',
+              borderRadius: '20px',
+              padding: '2px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setActiveLang(l)}
+                  style={{
+                    background: activeLang === l ? '#38bdf8' : 'transparent',
+                    color: activeLang === l ? '#071c42' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: activeLang === l ? 800 : 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="btn"
+              style={{ background: 'transparent', color: '#cbd5e1', border: 'none', padding: '6px', cursor: 'pointer' }}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Mandatory Clinical Disclaimer Banner */}
@@ -87,7 +248,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
           fontWeight: 700
         }}>
           <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-          <span>Diagnostic image viewer — clinician review required. (Demo evaluation preview)</span>
+          <span>{t.disclaimer}</span>
         </div>
 
         {/* Content Viewer Screen */}
@@ -111,7 +272,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 onClick={handleZoomIn}
                 style={{ padding: '4px 10px', fontSize: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none' }}
               >
-                <ZoomIn size={14} /> Zoom +
+                <ZoomIn size={14} /> {t.zoomIn}
               </button>
               <button
                 type="button"
@@ -119,7 +280,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 onClick={handleZoomOut}
                 style={{ padding: '4px 10px', fontSize: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none' }}
               >
-                <ZoomOut size={14} /> Zoom -
+                <ZoomOut size={14} /> {t.zoomOut}
               </button>
               <button
                 type="button"
@@ -127,7 +288,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 onClick={handleRotate}
                 style={{ padding: '4px 10px', fontSize: '12px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none' }}
               >
-                <RotateCw size={14} /> Rotate
+                <RotateCw size={14} /> {t.rotate}
               </button>
               {isRadiology && (
                 <button
@@ -142,13 +303,13 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                     border: 'none'
                   }}
                 >
-                  DICOM Invert
+                  {t.dicomInvert}
                 </button>
               )}
             </div>
 
             <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-              Zoom: {Math.round(zoomLevel * 100)}% | Rotation: {rotation}°
+              {t.zoom} {Math.round(zoomLevel * 100)}% | {t.rotation} {rotation}°
             </span>
           </div>
 
@@ -174,7 +335,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                   textAlign: 'center'
                 }}
               >
-                {/* Clean simulated high-contrast Chest X-Ray Canvas */}
+                {/* Simulated Chest X-Ray Canvas */}
                 <div style={{
                   width: '280px',
                   height: '340px',
@@ -188,7 +349,6 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                   justifyContent: 'center',
                   boxShadow: 'inset 0 0 40px rgba(255,255,255,0.05)'
                 }}>
-                  {/* Simulated Rib Cage & Cardiac Silhouette */}
                   <div style={{
                     width: '180px',
                     height: '220px',
@@ -212,10 +372,10 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                     <div style={{ position: 'absolute', right: '16px', top: '30px', width: '48px', height: '110px', borderRadius: '40%', border: '1px dashed rgba(255,255,255,0.2)' }} />
                   </div>
                   <div style={{ position: 'absolute', top: '10px', left: '12px', fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>
-                    PA CHEST ERECT<br />EXP: NORMAL
+                    {t.chestLabel}<br />{t.expLabel}
                   </div>
                   <div style={{ position: 'absolute', bottom: '10px', right: '12px', fontSize: '10px', color: '#38bdf8', fontFamily: 'monospace' }}>
-                    DHH BHAWANIPATNA
+                    {t.hospitalLabel}
                   </div>
                 </div>
               </div>
@@ -237,54 +397,54 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '8px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
                   <div>
                     <strong style={{ fontSize: '15px', color: '#0369a1' }}>{document.provider}</strong>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Diagnostic Pathology & Investigation Wing</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>{t.pathologyWing}</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748b' }}>
-                    Date: <strong>{document.date}</strong>
+                    {t.dateLabel} <strong>{document.date}</strong>
                   </div>
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '12px' }}>
-                  <strong>Report Name:</strong> {document.title}
+                  <strong>{t.reportName}</strong> {document.title}
                   <div style={{ color: '#475569', marginTop: '4px' }}>
-                    <strong>Clinical Impression:</strong> {document.notes || 'Normal study parameters within biological reference interval.'}
+                    <strong>{t.clinicalImpression}</strong> {document.notes || t.normalImpression}
                   </div>
                 </div>
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>Parameter</th>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>Result</th>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>Reference Range</th>
+                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
+                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
+                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>Haemoglobin (Hb)</td>
+                      <td style={{ padding: '6px' }}>{t.haemoglobin}</td>
                       <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>12.8 g/dL</td>
                       <td style={{ padding: '6px', color: '#64748b' }}>12.0 – 15.5 g/dL</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>Total Leukocyte Count</td>
+                      <td style={{ padding: '6px' }}>{t.leukocyte}</td>
                       <td style={{ padding: '6px', fontWeight: 700, color: '#0284c7' }}>7,400 /cumm</td>
                       <td style={{ padding: '6px', color: '#64748b' }}>4,000 – 11,000 /cumm</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>Platelet Count</td>
+                      <td style={{ padding: '6px' }}>{t.platelet}</td>
                       <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>2.4 Lakhs/cumm</td>
                       <td style={{ padding: '6px', color: '#64748b' }}>1.5 – 4.0 Lakhs/cumm</td>
                     </tr>
                     <tr>
-                      <td style={{ padding: '6px' }}>Malaria Smear (MP)</td>
-                      <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>NEGATIVE</td>
+                      <td style={{ padding: '6px' }}>{t.malariaSmear}</td>
+                      <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>{t.negative}</td>
                       <td style={{ padding: '6px', color: '#64748b' }}>Negative</td>
                     </tr>
                   </tbody>
                 </table>
 
                 <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
-                  Validated by: <em>DHH Kalahandi Pathologist Lab</em>
+                  {t.validatedBy}
                 </div>
               </div>
             )}
@@ -302,7 +462,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
           gap: '10px'
         }}>
           <div style={{ fontSize: '12px', color: '#64748b' }}>
-            ID: <span style={{ fontFamily: 'monospace' }}>{document.id}</span> • Verified for Tele-Triage
+            ID: <span style={{ fontFamily: 'monospace' }}>{document.id}</span> • {t.verifiedTriage}
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -311,14 +471,14 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
               className="btn btn-secondary"
               onClick={() => alert(`Downloading ${document.title} in offline PDF format...`)}
             >
-              <Download size={14} /> Download
+              <Download size={14} /> {t.btnDownload}
             </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={onClose}
             >
-              Close Viewer
+              {t.btnClose}
             </button>
           </div>
         </div>

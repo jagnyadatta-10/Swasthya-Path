@@ -2018,16 +2018,18 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 <div key={rx.id} style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
-                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>Prescription ({rx.prescriptionNumber})</strong>
+                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? `ଇ-ପ୍ରେସକ୍ରିପସନ୍ (${rx.prescriptionNumber})` : lang === 'हिन्दी' ? `ई-प्रिस्क्रिप्शन (${rx.prescriptionNumber})` : `Prescription (${rx.prescriptionNumber})`}
+                    </strong>
                     <div style={{ fontSize: '12px', color: '#475569' }}>{rx.diagnosisSummary}</div>
                   </div>
                   <button
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => setViewingPrescription(rx)}
-                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                    style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
                   >
-                    Open Rx
+                    {lang === 'ଓଡ଼ିଆ' ? 'ପ୍ରେସକ୍ରିପସନ୍ ଖୋଲନ୍ତୁ' : lang === 'हिन्दी' ? 'पर्चा खोलें' : 'Open Rx'}
                   </button>
                 </div>
               ))}
@@ -2043,9 +2045,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => setViewingDocument(doc)}
-                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                    style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
                   >
-                    View Report
+                    {lang === 'ଓଡ଼ିଆ' ? 'ରିପୋର୍ଟ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'रिपोर्ट देखें' : 'View Report'}
                   </button>
                 </div>
               ))}
@@ -2064,7 +2066,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
               {getTranslation(lang, 'whichMedicineCheck')}
             </h2>
             <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '14px' }}>
-              Check if medicines are available locally before traveling to town.
+              {lang === 'ଓଡ଼ିଆ' ? 'ସହରକୁ ଯିବା ପୂର୍ବରୁ ସ୍ଥାନୀୟ ଔଷଧ ଦୋକାନରେ ଉପଲବ୍ଧତା ଯାଞ୍ଚ କରନ୍ତୁ।' : lang === 'हिन्दी' ? 'शहर जाने से पहले स्थानीय मेडिकल स्टोर में दवाओं की उपलब्धता जांचें।' : 'Check if medicines are available locally before traveling to town.'}
             </p>
 
             {/* Direct Match for Prompt Flow: Doctor Consult -> Care Advice & Medicine -> Find Medicine -> Pharmacy Availability (Store A, Store B, Store C) */}
@@ -2082,9 +2084,11 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Store size={20} style={{ color: '#19d3ff' }} />
                   <div>
-                    <strong style={{ fontSize: '15px' }}>Pharmacy Availability: Paracetamol 500mg</strong>
+                    <strong style={{ fontSize: '15px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ଔଷଧ ଉପଲବ୍ଧତା: ପାରାସିଟାମୋଲ୍ ୫୦୦ମିଗ୍ରା' : lang === 'हिन्दी' ? 'दवा उपलब्धता: पैरासिटामोल 500mg' : 'Pharmacy Availability: Paracetamol 500mg'}
+                    </strong>
                     <div style={{ fontSize: '11px', color: '#93c5fd' }}>
-                      Real-time inventory comparison across Kalahandi chemists • Eliminates unnecessary 20km travel
+                      {lang === 'ଓଡ଼ିଆ' ? 'କଳାହାଣ୍ଡିର ଔଷଧ ଦୋକାନଗୁଡ଼ିକରେ ଲାଇଭ୍ ଷ୍ଟକ୍ ତୁଳନା • ଅଦରକାରୀ ୨୦ କିମି ଯାତ୍ରା ବନ୍ଦ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'कालाहांडी के मेडिकल स्टोरों में लाइव स्टॉक तुलना • अनावश्यक 20 किमी यात्रा से बचें' : 'Real-time inventory comparison across Kalahandi chemists • Eliminates unnecessary 20km travel'}
                     </div>
                   </div>
                 </div>
@@ -2102,7 +2106,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  🧭 Care Flow
+                  🧭 {lang === 'ଓଡ଼ିଆ' ? 'ଚିକିତ୍ସା ପ୍ରବାହ' : lang === 'हिन्दी' ? 'केयर फ्लो' : 'Care Flow'}
                 </button>
               </div>
 
@@ -2111,48 +2115,54 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 {/* Store A */}
                 <div style={{ background: '#ffffff', color: '#0f172a', padding: '12px', borderRadius: '12px', border: '2px solid #86efac' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '13px' }}>Store A</strong>
+                    <strong style={{ fontSize: '13px' }}>{lang === 'ଓଡ଼ିଆ' ? 'ଦୋକାନ A' : lang === 'हिन्दी' ? 'स्टोर A' : 'Store A'}</strong>
                     <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
-                      🟢 AVAILABLE
+                      {lang === 'ଓଡ଼ିଆ' ? '🟢 ଉପଲବ୍ଧ' : lang === 'हिन्दी' ? '🟢 उपलब्ध' : '🟢 AVAILABLE'}
                     </span>
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600 }}>Maa Manikeswari Jan Aushadhi</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Bhawanipatna • 1.2 km away</div>
-                  <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700, marginTop: '6px' }}>240 in stock • ₹18 / strip</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Bhawanipatna • 1.2 {lang === 'ଓଡ଼ିଆ' ? 'କିମି ଦୂର' : lang === 'हिन्दी' ? 'किमी दूर' : 'km away'}</div>
+                  <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700, marginTop: '6px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? '୨୪୦ ଷ୍ଟକ୍ ଅଛି • ₹୧୮ / ପ୍ୟାକେଟ୍' : lang === 'हिन्दी' ? '240 स्टॉक में • ₹18 / पत्ता' : '240 in stock • ₹18 / strip'}
+                  </div>
                   <a href="tel:+919437012345" style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', color: '#0284c7', textDecoration: 'none', fontWeight: 700 }}>
-                    📞 Call Chemist
+                    {lang === 'ଓଡ଼ିଆ' ? '📞 ଔଷଧ ଦୋକାନକୁ କଲ୍' : lang === 'हिन्दी' ? '📞 मेडिकल को कॉल' : '📞 Call Chemist'}
                   </a>
                 </div>
 
                 {/* Store B */}
                 <div style={{ background: '#ffffff', color: '#0f172a', padding: '12px', borderRadius: '12px', border: '2px solid #fde047' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '13px' }}>Store B</strong>
+                    <strong style={{ fontSize: '13px' }}>{lang === 'ଓଡ଼ିଆ' ? 'ଦୋକାନ B' : lang === 'हिन्दी' ? 'स्टोर B' : 'Store B'}</strong>
                     <span style={{ background: '#fffbeb', color: '#92400e', border: '1px solid #fef08a', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
-                      🟠 LIMITED
+                      {lang === 'ଓଡ଼ିଆ' ? '🟠 ସୀମିତ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? '🟠 सीमित स्टॉक' : '🟠 LIMITED'}
                     </span>
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600 }}>Junagarh Gramin Pharmacy</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Junagarh Market • 18.5 km away</div>
-                  <div style={{ fontSize: '11px', color: '#b45309', fontWeight: 700, marginTop: '6px' }}>8 in stock • ₹18 / strip</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Junagarh Market • 18.5 {lang === 'ଓଡ଼ିଆ' ? 'କିମି ଦୂର' : lang === 'हिन्दी' ? 'किमी दूर' : 'km away'}</div>
+                  <div style={{ fontSize: '11px', color: '#b45309', fontWeight: 700, marginTop: '6px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? '୮ ଷ୍ଟକ୍ ଅଛି • ₹୧୮ / ପ୍ୟାକେଟ୍' : lang === 'हिन्दी' ? '8 स्टॉक में • ₹18 / पत्ता' : '8 in stock • ₹18 / strip'}
+                  </div>
                   <a href="tel:+919437267890" style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', color: '#0284c7', textDecoration: 'none', fontWeight: 700 }}>
-                    📞 Reserve Strip
+                    {lang === 'ଓଡ଼ିଆ' ? '📞 ପ୍ୟାକେଟ୍ ସଂରକ୍ଷଣ କରନ୍ତୁ' : lang === 'हिन्दी' ? '📞 पत्ता रिज़र्व करें' : '📞 Reserve Strip'}
                   </a>
                 </div>
 
                 {/* Store C */}
                 <div style={{ background: '#ffffff', color: '#0f172a', padding: '12px', borderRadius: '12px', border: '2px solid #fca5a5' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '13px' }}>Store C</strong>
+                    <strong style={{ fontSize: '13px' }}>{lang === 'ଓଡ଼ିଆ' ? 'ଦୋକାନ C' : lang === 'हिन्दी' ? 'स्टोर C' : 'Store C'}</strong>
                     <span style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
-                      🔴 OUT OF STOCK
+                      {lang === 'ଓଡ଼ିଆ' ? '🔴 ଷ୍ଟକ୍ ଶେଷ' : lang === 'हिन्दी' ? '🔴 अनुपलब्ध' : '🔴 OUT OF STOCK'}
                     </span>
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600 }}>Chhoriagarh Village Chemist</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Village Chowk • 0.5 km away</div>
-                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 700, marginTop: '6px' }}>0 in stock • Restock expected tomorrow</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Village Chowk • 0.5 {lang === 'ଓଡ଼ିଆ' ? 'କିମି ଦୂର' : lang === 'हिन्दी' ? 'किमी दूर' : 'km away'}</div>
+                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 700, marginTop: '6px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? '୦ ଷ୍ଟକ୍ • ଆସନ୍ତାକାଲି ଆସିବ' : lang === 'हिन्दी' ? '0 स्टॉक • कल रीस्टॉक की संभावना' : '0 in stock • Restock expected tomorrow'}
+                  </div>
                   <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
-                    Do not travel without calling
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଫୋନ୍ ନକରି ଯାଆନ୍ତୁ ନାହିଁ' : lang === 'हिन्दी' ? 'बिना कॉल किए न जाएं' : 'Do not travel without calling'}
                   </span>
                 </div>
               </div>
@@ -2178,7 +2188,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
 
             {/* Warning Note (Section 16) */}
             <div style={{ background: '#fffbeb', border: '1px solid #fef08a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px' }}>
-              ⚠️ <strong>Notice:</strong> {getTranslation(lang, 'stockChangeWarning')}
+              ⚠️ <strong>{lang === 'ଓଡ଼ିଆ' ? 'ସୂଚନା:' : lang === 'हिन्दी' ? 'सूचना:' : 'Notice:'}</strong> {getTranslation(lang, 'stockChangeWarning')}
             </div>
 
             {/* Medicine Cards */}
@@ -2201,10 +2211,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   <div>
                     <strong style={{ fontSize: '16px', color: '#0f172a' }}>{med.name}</strong>
                     <div style={{ fontSize: '12px', color: '#0284c7', marginTop: '2px' }}>
-                      {med.pharmacyName} • {med.block} ({med.distanceKm} km away)
+                      {med.pharmacyName} • {med.block} ({med.distanceKm} {lang === 'ଓଡ଼ିଆ' ? 'କିମି ଦୂର' : lang === 'हिन्दी' ? 'किमी दूर' : 'km away'})
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                      Price: {med.unitPrice} • Last updated: {med.lastUpdated}
+                      {lang === 'ଓଡ଼ିଆ' ? `ମୂଲ୍ୟ: ${med.unitPrice} • ଶେଷ ଅପଡେଟ୍: ${med.lastUpdated}` : lang === 'हिन्दी' ? `कीमत: ${med.unitPrice} • अंतिम अपडेट: ${med.lastUpdated}` : `Price: ${med.unitPrice} • Last updated: ${med.lastUpdated}`}
                     </div>
                   </div>
 
@@ -2218,7 +2228,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                       fontSize: '11px',
                       fontWeight: 800
                     }}>
-                      {med.status === 'AVAILABLE' ? '🟢 AVAILABLE' : med.status === 'LIMITED STOCK' ? '🟠 LIMITED' : '🔴 OUT OF STOCK'}
+                      {med.status === 'AVAILABLE' ? (lang === 'ଓଡ଼ିଆ' ? '🟢 ଉପଲବ୍ଧ' : lang === 'हिन्दी' ? '🟢 उपलब्ध' : '🟢 AVAILABLE') : med.status === 'LIMITED STOCK' ? (lang === 'ଓଡ଼ିଆ' ? '🟠 ସୀମିତ' : lang === 'हिन्दी' ? '🟠 सीमित' : '🟠 LIMITED') : (lang === 'ଓଡ଼ିଆ' ? '🔴 ଷ୍ଟକ୍ ଶେଷ' : lang === 'हिन्दी' ? '🔴 अनुपलब्ध' : '🔴 OUT OF STOCK')}
                     </span>
 
                     <a
@@ -2234,7 +2244,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                         fontWeight: 600
                       }}
                     >
-                      📞 Call Chemist
+                      {lang === 'ଓଡ଼ିଆ' ? '📞 କଲ୍ କରନ୍ତୁ' : lang === 'हिन्दी' ? '📞 कॉल करें' : '📞 Call Chemist'}
                     </a>
                   </div>
                 </div>
@@ -2252,36 +2262,46 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           {/* Simple Profile Card (Section 17) */}
           <div className="card" style={{ padding: '20px', borderRadius: '16px' }}>
             <h2 style={{ margin: '0 0 14px', fontSize: '20px', color: '#0f172a' }}>
-              My Profile
+              {lang === 'ଓଡ଼ିଆ' ? 'ମୋର ପ୍ରୋଫାଇଲ୍' : lang === 'हिन्दी' ? 'मेरी प्रोफ़ाइल' : 'My Profile'}
             </h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '16px' }}>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Full Name:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ସମ୍ପୂର୍ଣ୍ଣ ନାମ:' : lang === 'हिन्दी' ? 'पूरा नाम:' : 'Full Name:'}
+                </span>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{user.name}</div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Patient ID:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ID:' : lang === 'हिन्दी' ? 'रोगी ID:' : 'Patient ID:'}
+                </span>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>{patientId}</div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Mobile Number:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ମୋବାଇଲ୍ ନମ୍ବର:' : lang === 'हिन्दी' ? 'मोबाइल नंबर:' : 'Mobile Number:'}
+                </span>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{user.mobile}</div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Location:</span>
-                <div style={{ fontSize: '14px', color: '#0f172a' }}>Village Chhoriagarh, Kalahandi</div>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ଠିକଣା:' : lang === 'हिन्दी' ? 'स्थान:' : 'Location:'}
+                </span>
+                <div style={{ fontSize: '14px', color: '#0f172a' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମ: ଛୋରିଆଗଡ଼, କଳାହାଣ୍ଡି' : lang === 'हिन्दी' ? 'ग्राम: छोरियागढ़, कालाहांडी' : 'Village Chhoriagarh, Kalahandi'}
+                </div>
               </div>
             </div>
 
             <div style={{ background: '#ffffff', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
               <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
-                ❤️ Health Information:
+                ❤️ {lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ସୂଚନା:' : lang === 'हिन्दी' ? 'स्वास्थ्य जानकारी:' : 'Health Information:'}
               </div>
               <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-                • Blood Group: <strong>B+</strong><br />
-                • Allergies: <strong>No known drug allergies</strong><br />
-                • Emergency Contact: <strong>Sunita Das (+91 94370 12345)</strong>
+                • {lang === 'ଓଡ଼ିଆ' ? 'ରକ୍ତ ବର୍ଗ:' : lang === 'हिन्दी' ? 'रक्त समूह:' : 'Blood Group:'} <strong>B+</strong><br />
+                • {lang === 'ଓଡ଼ିଆ' ? 'ଏଲର୍ଜି:' : lang === 'हिन्दी' ? 'एलर्जी:' : 'Allergies:'} <strong>{lang === 'ଓଡ଼ିଆ' ? 'କୌଣସି ଜଣାଶୁଣା ଏଲର୍ଜି ନାହିଁ' : lang === 'हिन्दी' ? 'कोई ज्ञात दवा एलर्जी नहीं' : 'No known drug allergies'}</strong><br />
+                • {lang === 'ଓଡ଼ିଆ' ? 'ଜରୁରୀକାଳୀନ ଯୋଗାଯୋଗ:' : lang === 'हिन्दी' ? 'आपातकालीन संपर्क:' : 'Emergency Contact:'} <strong>Family (+91 94370 12345)</strong>
               </div>
             </div>
 
@@ -2291,28 +2311,28 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 className="btn btn-secondary"
                 onClick={() => setIsHealthCardOpen(true)}
               >
-                <CreditCard size={15} /> Digital Health Card
+                <CreditCard size={15} /> {lang === 'ଓଡ଼ିଆ' ? 'ଡିଜିଟାଲ୍ ସ୍ୱାସ୍ଥ୍ୟ କାର୍ଡ' : lang === 'हिन्दी' ? 'डिजिटल स्वास्थ्य कार्ड' : 'Digital Health Card'}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setIsConsentManagerOpen(true)}
               >
-                <ShieldCheck size={15} /> My Data & Consent
+                <ShieldCheck size={15} /> {lang === 'ଓଡ଼ିଆ' ? 'ତଥ୍ୟ ଓ ସହମତି' : lang === 'हिन्दी' ? 'डेटा और सहमति' : 'My Data & Consent'}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setIsFacilityDirectoryOpen(true)}
               >
-                <MapPin size={15} /> Find Health Facility
+                <MapPin size={15} /> {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତରଖାନା ଖୋଜନ୍ତୁ' : lang === 'हिन्दी' ? 'अस्पताल खोजें' : 'Find Health Facility'}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setIsPrimaryCareOpen(true)}
               >
-                <HeartPulse size={15} /> Ayushman Arogya Services
+                <HeartPulse size={15} /> {lang === 'ଓଡ଼ିଆ' ? 'ଆୟୁଷ୍ମାନ ଆରୋଗ୍ୟ ସେବା' : lang === 'हिन्दी' ? 'आयुष्मान आरोग्य सेवाएं' : 'Ayushman Arogya Services'}
               </button>
             </div>
           </div>
@@ -2578,8 +2598,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         isOpen={isHealthCardOpen}
         onClose={() => setIsHealthCardOpen(false)}
         user={user}
-        lang={lang}
         onViewFullRecord={() => setActiveTab('records')}
+        lang={lang}
       />
 
       {/* Diagnostic Document Viewer (Prompt Section 15) */}
@@ -2587,6 +2607,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         isOpen={!!viewingDocument}
         onClose={() => setViewingDocument(null)}
         document={viewingDocument}
+        lang={lang}
       />
 
       {/* E-Prescription Viewer (Prompt Section 15) */}
@@ -2595,9 +2616,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         onClose={() => setViewingPrescription(null)}
         prescription={viewingPrescription}
         mode="view"
-        lang={lang}
         patientName={user.name}
         patientId={patientId}
+        lang={lang}
         onCheckStock={(medName) => {
           setActiveTab('medicines');
           setMedicineSearch(medName);
@@ -2661,7 +2682,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             {bookingStep === 1 && (
               <div>
                 <h3 style={{ margin: '0 0 12px', fontSize: '18px', color: '#0f172a' }}>
-                  Choose Doctor:
+                  {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର ବାଛନ୍ତୁ:' : lang === 'हिन्दी' ? 'डॉक्टर चुनें:' : 'Choose Doctor:'}
                 </h3>
                 <div style={{ display: 'grid', gap: '10px', maxHeight: '340px', overflowY: 'auto', marginBottom: '16px' }}>
                   {allDoctors.map((doc) => (
@@ -2685,10 +2706,12 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                       <div>
                         <strong style={{ fontSize: '15px', color: '#0f172a' }}>{doc.name}</strong>
                         <div style={{ fontSize: '12px', color: '#0284c7' }}>{doc.specialty}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Languages: {doc.languages.join(', ')}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          {lang === 'ଓଡ଼ିଆ' ? 'ଭାଷା:' : lang === 'हिन्दी' ? 'भाषा:' : 'Languages:'} {doc.languages.join(', ')}
+                        </div>
                       </div>
                       <button type="button" className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 12px' }}>
-                        Select ➔
+                        {lang === 'ଓଡ଼ିଆ' ? 'ବାଛନ୍ତୁ ➔' : lang === 'हिन्दी' ? 'चुनें ➔' : 'Select ➔'}
                       </button>
                     </div>
                   ))}
@@ -2700,21 +2723,23 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             {bookingStep === 2 && (
               <div>
                 <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '12px', marginBottom: '14px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>Selected Doctor:</span>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ମନୋନୀତ ଡାକ୍ତର:' : lang === 'हिन्दी' ? 'चयनित डॉक्टर:' : 'Selected Doctor:'}
+                  </span>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{bookingDoctor.name}</div>
                   <div style={{ fontSize: '12px', color: '#0284c7' }}>{bookingDoctor.specialty} • {bookingDoctor.hospital}</div>
                 </div>
 
                 <h3 style={{ margin: '0 0 12px', fontSize: '17px', color: '#0f172a' }}>
-                  Choose Consultation Time:
+                  {lang === 'ଓଡ଼ିଆ' ? 'ପରାମର୍ଶ ସମୟ ବାଛନ୍ତୁ:' : lang === 'हिन्दी' ? 'परामर्श का समय चुनें:' : 'Choose Consultation Time:'}
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
                   {[
-                    'Today • 10:30 AM',
-                    'Today • 11:30 AM',
-                    'Today • 02:00 PM',
-                    'Tomorrow • 09:30 AM'
+                    lang === 'ଓଡ଼ିଆ' ? 'ଆଜି • ୧୦:୩୦ AM' : lang === 'हिन्दी' ? 'आज • 10:30 AM' : 'Today • 10:30 AM',
+                    lang === 'ଓଡ଼ିଆ' ? 'ଆଜି • ୧୧:୩୦ AM' : lang === 'हिन्दी' ? 'आज • 11:30 AM' : 'Today • 11:30 AM',
+                    lang === 'ଓଡ଼ିଆ' ? 'ଆଜି • ୦୨:୦୦ PM' : lang === 'हिन्दी' ? 'आज • 02:00 PM' : 'Today • 02:00 PM',
+                    lang === 'ଓଡ଼ିଆ' ? 'ଆସନ୍ତାକାଲି • ୦୯:୩୦ AM' : lang === 'हिन्दी' ? 'कल • 09:30 AM' : 'Tomorrow • 09:30 AM'
                   ].map((slot) => (
                     <button
                       key={slot}
@@ -2742,7 +2767,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     className="btn btn-secondary"
                     onClick={() => setBookingStep(1)}
                   >
-                    Change Doctor
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର ବଦଳାନ୍ତୁ' : lang === 'हिन्दी' ? 'डॉक्टर बदलें' : 'Change Doctor'}
                   </button>
                   <button
                     type="button"
@@ -2750,7 +2775,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     onClick={() => setBookingStep(3)}
                     style={{ fontWeight: 800 }}
                   >
-                    Next: Confirm ➔
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଆଗକୁ: ନିଶ୍ଚିତ କରନ୍ତୁ ➔' : lang === 'हिन्दी' ? 'आगे: पुष्टि करें ➔' : 'Next: Confirm ➔'}
                   </button>
                 </div>
               </div>
@@ -2766,20 +2791,30 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', border: '1.5px solid #e2e8f0', marginBottom: '20px' }}>
                   <div style={{ display: 'grid', gap: '10px', fontSize: '14px' }}>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>Doctor:</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର:' : lang === 'हिन्दी' ? 'डॉक्टर:' : 'Doctor:'}
+                      </span>
                       <strong style={{ display: 'block', color: '#0f172a' }}>{bookingDoctor.name} ({bookingDoctor.specialty})</strong>
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>Hospital:</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତରଖାନା:' : lang === 'हिन्दी' ? 'अस्पताल:' : 'Hospital:'}
+                      </span>
                       <div style={{ color: '#475569' }}>{bookingDoctor.hospital}</div>
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>Scheduled Time:</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ନିର୍ଦ୍ଧାରିତ ସମୟ:' : lang === 'हिन्दी' ? 'निर्धारित समय:' : 'Scheduled Time:'}
+                      </span>
                       <strong style={{ display: 'block', color: '#0284c7' }}>{bookingSlot}</strong>
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>Consultation Fee:</span>
-                      <div style={{ color: '#166534', fontWeight: 700 }}>Free (Odisha Rural Telehealth)</div>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ପରାମର୍ଶ ଫି:' : lang === 'हिन्दी' ? 'परामर्श शुल्क:' : 'Consultation Fee:'}
+                      </span>
+                      <div style={{ color: '#166534', fontWeight: 700 }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ମାଗଣା (ଓଡ଼ିଶା ଗ୍ରାମୀଣ ଟେଲି-ହେଲ୍ଥ)' : lang === 'हिन्दी' ? 'मुफ्त (ओडिशा ग्रामीण टेलीहेल्थ)' : 'Free (Odisha Rural Telehealth)'}
+                      </div>
                     </div>
                   </div>
                 </div>

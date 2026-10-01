@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Compass,
@@ -33,6 +33,128 @@ interface CareNavigationFlowModalProps {
   currentActiveStage?: 'patient' | 'chatbot' | 'low' | 'moderate' | 'emergency' | 'doctor' | 'advice' | 'medicine' | 'pharmacy';
 }
 
+const FLOW_I18N: Record<Language, {
+  sourceOfTruth: string;
+  subPathway: string;
+  modalTitle: string;
+  quickJumpTitle: string;
+  btn1Low: string;
+  btn2Mod: string;
+  btn3Emg: string;
+  btn4Pharm: string;
+  aiRuralBridge: string;
+  patientTitle: string;
+  patientSub: string;
+  howFeeling: string;
+  howFeelingSub: string;
+  chatbotTitle: string;
+  safetyScreening: string;
+  ruleFilter: string;
+  lowUrgency: string;
+  routineCare: string;
+  lowCareDesc: string;
+  btnViewLow: string;
+  modUrgency: string;
+  doctorConsult: string;
+  modCareDesc: string;
+  btnConnectDoc: string;
+  emgUrgency: string;
+  physicalCare: string;
+  emgCareDesc: string;
+  btnCall108: string;
+}> = {
+  English: {
+    sourceOfTruth: 'SOURCE OF TRUTH',
+    subPathway: 'Kalahandi Rural Care Pathway',
+    modalTitle: 'SWASTHYA PATH • Care Navigation Flow',
+    quickJumpTitle: 'Evaluator Quick Jump: Test any branch of the flow:',
+    btn1Low: '🟢 1. Low Urgency',
+    btn2Mod: '🟠 2. Moderate (Doctor)',
+    btn3Emg: '🔴 3. Emergency (108)',
+    btn4Pharm: '💊 4. Stores A, B, C',
+    aiRuralBridge: 'AI RURAL TELEHEALTH BRIDGE',
+    patientTitle: 'PATIENT (Keshab Rout)',
+    patientSub: 'RURAL CITIZEN',
+    howFeeling: '💬 “How are you feeling?”',
+    howFeelingSub: 'Voice intake or 1-tap touch • Odia / Hindi / English',
+    chatbotTitle: 'AI CHATBOT (Swasthya Sathi)',
+    safetyScreening: 'Safety Screening Active',
+    ruleFilter: 'Rule-based red-flag filter • AI assists intake, NEVER diagnoses',
+    lowUrgency: '🟢 LOW URGENCY',
+    routineCare: 'Monitor / Routine Care',
+    lowCareDesc: 'Hydration, rest, home care guidance. Revisit if fever persists > 48 hours.',
+    btnViewLow: 'View Low Urgency Care ➔',
+    modUrgency: '🟠 MODERATE URGENCY',
+    doctorConsult: 'Doctor Consultation',
+    modCareDesc: 'Persistent symptoms. Structured summary passed to teleconsultation queue.',
+    btnConnectDoc: 'Connect to Doctor ➔',
+    emgUrgency: '🔴 EMERGENCY',
+    physicalCare: 'Immediate Physical Care',
+    emgCareDesc: 'Red flag detected (dyspnea, chest pain, stroke sign). Do not wait for online consult.',
+    btnCall108: 'Call 108 Ambulance'
+  },
+  'ଓଡ଼ିଆ': {
+    sourceOfTruth: 'ନିର୍ଭୁଲ୍ ଚିକିତ୍ସା ନିୟମାବଳୀ',
+    subPathway: 'କଳାହାଣ୍ଡି ଗ୍ରାମୀଣ ସ୍ୱାସ୍ଥ୍ୟ ପ୍ରବାହ',
+    modalTitle: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ • ଚିକିତ୍ସା ମାର୍ଗଦର୍ଶନ ପ୍ରବାହ',
+    quickJumpTitle: 'ମୂଲ୍ୟାଙ୍କନକାରୀ ଶୀଘ୍ର ପରୀକ୍ଷା: ଯେକୌଣସି ଶାଖା ଦେଖନ୍ତୁ:',
+    btn1Low: '🟢 ୧. ସାଧାରଣ (ମନିଟର)',
+    btn2Mod: '🟠 ୨. ମଧ୍ୟମ (ଡାକ୍ତର)',
+    btn3Emg: '🔴 ୩. ଜରୁରୀକାଳୀନ (୧୦୮)',
+    btn4Pharm: '💊 ୪. ଔଷଧ ଦୋକାନ A, B, C',
+    aiRuralBridge: 'ଏଆଇ ଗ୍ରାମୀଣ ଟେଲି-ହେଲ୍ଥ ସେତୁ',
+    patientTitle: 'ରୋଗୀ (କେଶବ ରାଉତ)',
+    patientSub: 'ଗ୍ରାମୀଣ ନାଗରିକ',
+    howFeeling: '💬 “ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି?”',
+    howFeelingSub: 'ଭଏସ୍ ବା ଏକ-ଟ୍ୟାପ୍ ଛୁଇଁବା • ଓଡ଼ିଆ / ହିନ୍ଦୀ / ଇଂରାଜୀ',
+    chatbotTitle: 'ଏଆଇ ସ୍ୱାସ୍ଥ୍ୟ ସାଥୀ (ଚାଟବଟ୍)',
+    safetyScreening: 'ସୁରକ୍ଷା ଯାଞ୍ଚ ସକ୍ରିୟ',
+    ruleFilter: 'ନିୟମ-ଆଧାରିତ ରେଡ୍-ଫ୍ଲାଗ୍ ଫିଲ୍ଟର • ଏଆଇ ସହାୟକ, ଚିକିତ୍ସକ ନୁହେଁ',
+    lowUrgency: '🟢 ସାଧାରଣ ଜରୁରୀ (LOW)',
+    routineCare: 'ଘରୋଇ ଯତ୍ନ / ନିରୀକ୍ଷଣ',
+    lowCareDesc: 'ପ୍ରଚୁର ପାଣି ପିଇବା, ବିଶ୍ରାମ। ୪୮ ଘଣ୍ଟାରୁ ଅଧିକ ଜ୍ୱର ରହିଲେ ପୁନର୍ବାର ସମ୍ପର୍କ କରନ୍ତୁ।',
+    btnViewLow: 'ସାଧାରଣ ଯତ୍ନ ଦେଖନ୍ତୁ ➔',
+    modUrgency: '🟠 ମଧ୍ୟମ ଜରୁରୀ (MODERATE)',
+    doctorConsult: 'ଡାକ୍ତରଙ୍କ ସହିତ ପରାମର୍ଶ',
+    modCareDesc: 'ଲଗାତାର ଲକ୍ଷଣ। ଟେଲିକନସଲ୍ଟେସନ୍ କତାରକୁ ସାରାଂଶ ପଠାଗଲା।',
+    btnConnectDoc: 'ଡାକ୍ତରଙ୍କ ସହିତ ଯୋଡ଼ି ହୁଅନ୍ତୁ ➔',
+    emgUrgency: '🔴 ଜରୁରୀକାଳୀନ (EMERGENCY)',
+    physicalCare: 'ତୁରନ୍ତ ଡାକ୍ତରଖାନା ଯାଆନ୍ତୁ',
+    emgCareDesc: 'ବିପଦ ସଙ୍କେତ ଚିହ୍ନଟ (ଶ୍ୱାସକଷ୍ଟ, ଛାତି ଯନ୍ତ୍ରଣା)। ଅନଲାଇନ୍ ଅପେକ୍ଷା କରନ୍ତୁ ନାହିଁ।',
+    btnCall108: '୧୦୮ ଆମ୍ବୁଲାନ୍ସ ଡାକନ୍ତୁ'
+  },
+  'हिन्दी': {
+    sourceOfTruth: 'सटीक देखभाल नियमावली',
+    subPathway: 'कालाहांडी ग्रामीण स्वास्थ्य पथ',
+    modalTitle: 'स्वास्थ्य पथ • देखभाल मार्गदर्शन प्रवाह',
+    quickJumpTitle: 'मूल्यांकनकर्ता त्वरित परीक्षण: किसी भी शाखा का परीक्षण करें:',
+    btn1Low: '🟢 1. कम आपात (निगरानी)',
+    btn2Mod: '🟠 2. मध्यम (डॉक्टर)',
+    btn3Emg: '🔴 3. आपातकालीन (108)',
+    btn4Pharm: '💊 4. स्टोर A, B, C',
+    aiRuralBridge: 'एआई ग्रामीण टेलीहेल्थ सेतु',
+    patientTitle: 'रोगी (केशब राउत)',
+    patientSub: 'ग्रामीण नागरिक',
+    howFeeling: '💬 “आप कैसा महसूस कर रहे हैं?”',
+    howFeelingSub: 'आवाज़ द्वारा या 1-टैप स्पर्श • ओड़िया / हिन्दी / अंग्रेज़ी',
+    chatbotTitle: 'एआई चैटबॉट (स्वास्थ्य साथी)',
+    safetyScreening: 'सुरक्षा जांच सक्रिय',
+    ruleFilter: 'नियम-आधारित रेड-फ्लैग फ़िल्टर • एआई केवल सहायक है, निदानकर्ता नहीं',
+    lowUrgency: '🟢 कम आपात (LOW URGENCY)',
+    routineCare: 'निगरानी / सामान्य देखभाल',
+    lowCareDesc: 'हाइड्रेशन, आराम, घरेलू देखभाल। यदि बुखार 48 घंटे से अधिक रहे तो पुनः संपर्क करें।',
+    btnViewLow: 'सामान्य देखभाल देखें ➔',
+    modUrgency: '🟠 मध्यम आपात (MODERATE URGENCY)',
+    doctorConsult: 'डॉक्टर से परामर्श',
+    modCareDesc: 'निरंतर लक्षण। टेलीपरामर्श कतार में संरचित सारांश प्रेषित।',
+    btnConnectDoc: 'डॉक्टर से जुड़ें ➔',
+    emgUrgency: '🔴 आपातकालीन (EMERGENCY)',
+    physicalCare: 'तत्काल प्रत्यक्ष अस्पताल देखभाल',
+    emgCareDesc: 'खतरे का संकेत मिला (सांस फूलना, सीने में दर्द)। ऑनलाइन प्रतीक्षा न करें।',
+    btnCall108: '108 एम्बुलेंस को कॉल करें'
+  }
+};
+
 export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = ({
   isOpen,
   onClose,
@@ -40,9 +162,16 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
   lang = 'English',
   currentActiveStage = 'chatbot'
 }) => {
+  const [activeLang, setActiveLang] = useState<Language>(lang);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (lang) setActiveLang(lang);
+  }, [lang]);
+
   if (!isOpen) return null;
+
+  const t = FLOW_I18N[activeLang] || FLOW_I18N.English;
 
   const handleNodeAction = (pathway: 'low' | 'moderate' | 'emergency' | 'doctor' | 'pharmacy') => {
     if (onSelectPath) {
@@ -109,37 +238,68 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
                     letterSpacing: '0.05em'
                   }}
                 >
-                  SOURCE OF TRUTH
+                  {t.sourceOfTruth}
                 </span>
-                <span style={{ color: '#94a3b8', fontSize: '12px' }}>Kalahandi Rural Care Pathway</span>
+                <span style={{ color: '#94a3b8', fontSize: '12px' }}>{t.subPathway}</span>
               </div>
               <h2 id="care-flow-title" style={{ margin: '4px 0 0', fontSize: '20px', color: '#ffffff' }}>
-                SWASTHYA PATH • Care Navigation Flow
+                {t.modalTitle}
               </h2>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn"
-            onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              borderRadius: '50%',
-              width: '36px',
-              height: '36px',
-              padding: 0,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Interactive Language Selector */}
+            <div style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-            aria-label="Close care flow diagram"
-          >
-            <X size={18} />
-          </button>
+              background: 'rgba(255, 255, 255, 0.15)',
+              borderRadius: '20px',
+              padding: '2px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setActiveLang(l)}
+                  style={{
+                    background: activeLang === l ? '#38bdf8' : 'transparent',
+                    color: activeLang === l ? '#071c42' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: activeLang === l ? 800 : 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={onClose}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              aria-label="Close care flow diagram"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Quick Simulator Bar for Evaluators */}
@@ -156,7 +316,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
           }}
         >
           <div style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
-            🚀 <strong>Evaluator Quick Jump:</strong> Test any branch of the flow:
+            🚀 <strong>{t.quickJumpTitle}</strong>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
@@ -173,7 +333,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
                 cursor: 'pointer'
               }}
             >
-              🟢 1. Low Urgency
+              {t.btn1Low}
             </button>
             <button
               type="button"
@@ -189,7 +349,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
                 cursor: 'pointer'
               }}
             >
-              🟠 2. Moderate (Doctor)
+              {t.btn2Mod}
             </button>
             <button
               type="button"
@@ -205,7 +365,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
                 cursor: 'pointer'
               }}
             >
-              🔴 3. Emergency (108)
+              {t.btn3Emg}
             </button>
             <button
               type="button"
@@ -221,7 +381,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
                 cursor: 'pointer'
               }}
             >
-              💊 4. Stores A, B, C
+              {t.btn4Pharm}
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PhoneCall, X, Phone, ShieldAlert, MapPin, Share2, FileText, Check, AlertOctagon } from 'lucide-react';
 import { Language } from '../types';
 import { storage } from '../utils/storage';
@@ -90,7 +90,9 @@ const HELP_I18N: Record<Language, {
   patientLabel: string;
   acuteIssueLabel: string;
   locationLabel: string;
+  locationVal: string;
   allergiesLabel: string;
+  allergiesVal: string;
   triagePriorityLabel: string;
   triagePriorityVal: string;
   footerNote: string;
@@ -119,7 +121,9 @@ const HELP_I18N: Record<Language, {
     patientLabel: 'Patient:',
     acuteIssueLabel: 'Acute Emergency Issue:',
     locationLabel: 'Location:',
+    locationVal: 'Kalahandi District, Odisha (Bhawanipatna Block)',
     allergiesLabel: 'Known Allergies:',
+    allergiesVal: 'No known drug allergies',
     triagePriorityLabel: 'Triage Priority:',
     triagePriorityVal: 'RED / IMMEDIATE PHYSICAL INTERVENTION',
     footerNote: 'Swasthya Path Emergency Guardian • Configured 108/104 Routing',
@@ -148,7 +152,9 @@ const HELP_I18N: Record<Language, {
     patientLabel: 'ରୋଗୀଙ୍କ ନାମ:',
     acuteIssueLabel: 'ଜରୁରୀ ସମସ୍ୟା:',
     locationLabel: 'ସ୍ଥାନ:',
+    locationVal: 'କଳାହାଣ୍ଡି ଜିଲ୍ଲା, ଓଡ଼ିଶା (ଭବାନୀପାଟଣା ବ୍ଲକ)',
     allergiesLabel: 'ଜଣାଶୁଣା ଆଲର୍ଜି:',
+    allergiesVal: 'କୌଣସି ଜଣାଶୁଣା ଆଲର୍ଜି ନାହିଁ',
     triagePriorityLabel: 'ଟ୍ରିଆଜ୍ ପ୍ରାଥମିକତା:',
     triagePriorityVal: 'ଲାଲ୍ (RED) / ତୁରନ୍ତ ଡାକ୍ତରଖାନା ନିଅନ୍ତୁ',
     footerNote: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଜରୁରୀକାଳୀନ ସୁରକ୍ଷା • ୧୦୮/୧୦୪ ସିଧାସଳଖ ସଂଯୋଗ',
@@ -177,7 +183,9 @@ const HELP_I18N: Record<Language, {
     patientLabel: 'रोगी का नाम:',
     acuteIssueLabel: 'गंभीर समस्या:',
     locationLabel: 'स्थान:',
+    locationVal: 'कालाहांडी जिला, ओडिशा (भवानीपटना ब्लॉक)',
     allergiesLabel: 'ज्ञात एलर्जी:',
+    allergiesVal: 'कोई ज्ञात एलर्जी नहीं',
     triagePriorityLabel: 'ट्राइएज प्राथमिकता:',
     triagePriorityVal: 'लाल (RED) / तुरंत अस्पताल ले जाएं',
     footerNote: 'स्वास्थ्य पथ आपातकालीन सुरक्षा • 108/104 सीधा संपर्क',
@@ -195,7 +203,7 @@ export const EmergencyHelpModal: React.FC<EmergencyHelpModalProps> = ({
   const [generatedSummary, setGeneratedSummary] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (lang) setActiveLang(lang);
   }, [lang]);
 
@@ -465,8 +473,8 @@ export const EmergencyHelpModal: React.FC<EmergencyHelpModalProps> = ({
                 <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', color: '#1e293b', marginBottom: '12px', lineHeight: 1.5 }}>
                   <div><strong>{t.patientLabel}</strong> Keshab Rout (RHB-OD-KLH-0941) • {activeLang === 'ଓଡ଼ିଆ' ? '୨୬ ବର୍ଷ • ପୁରୁଷ' : activeLang === 'हिन्दी' ? '२६ वर्ष • पुरुष' : 'Age: 26 • Male'} • B+</div>
                   <div><strong>{t.acuteIssueLabel}</strong> {currentIssueText}</div>
-                  <div><strong>{t.locationLabel}</strong> {activeLang === 'ଓଡ଼ିଆ' ? 'କଳାହାଣ୍ଡି ଜିଲ୍ଲା, ଓଡ଼ିଶା (ଭବାନୀପାଟଣା ବ୍ଲକ)' : activeLang === 'हिन्दी' ? 'कालाहांडी जिला, ओडिशा (भवानीपटना ब्लॉक)' : 'Kalahandi District, Odisha (Bhawanipatna Block)'}</div>
-                  <div><strong>{t.allergiesLabel}</strong> {activeLang === 'ଓଡ଼ିଆ' ? 'କୌଣସି ଜଣାଶୁଣା ଆଲର୍ଜି ନାହିଁ' : activeLang === 'हिन्दी' ? 'कोई ज्ञात एलर्जी नहीं' : 'No known drug allergies'}</div>
+                  <div><strong>{t.locationLabel}</strong> {t.locationVal}</div>
+                  <div><strong>{t.allergiesLabel}</strong> {t.allergiesVal}</div>
                   <div style={{ color: '#b91c1c', marginTop: '6px' }}><strong>{t.triagePriorityLabel}</strong> {t.triagePriorityVal}</div>
                 </div>
 

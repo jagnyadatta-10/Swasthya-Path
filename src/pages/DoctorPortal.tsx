@@ -937,6 +937,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={!!viewingDocument}
         onClose={() => setViewingDocument(null)}
         document={viewingDocument}
+        lang={lang}
       />
 
       {/* E-Prescription Modal */}
@@ -945,10 +946,10 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         onClose={() => setIsRxModalOpen(false)}
         prescription={activeRxForView}
         mode={rxModalMode}
-        lang="English"
         doctorName={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
+        lang={lang}
         onPrescriptionSaved={(newRx) => {
           setPrescriptions(storage.getPrescriptions());
           alert(`E-Prescription ${newRx.prescriptionNumber} generated & shared with patient!`);
@@ -962,6 +963,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         referringDoctor={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
+        lang={lang}
         onRequestSubmitted={(req) => {
           setSpecialistRequests(storage.getSpecialistRequests());
         }}
@@ -972,9 +974,9 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={isCarePlanModalOpen}
         onClose={() => setIsCarePlanModalOpen(false)}
         doctorName={user.name}
-        lang="English"
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
+        lang={lang}
         onSaved={(plan) => {
           alert(`Care plan saved! Follow-up scheduled for ${plan.followUpDate} (${plan.followUpMode}).`);
         }}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pill, X, Download, Share2, Check, AlertCircle, Printer, FileText, CheckCircle2, ShieldCheck, MapPin, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Pill, X, Download, Share2, Check, AlertCircle, Printer, FileText, CheckCircle2, ShieldCheck, MapPin } from 'lucide-react';
 import { FullPrescription, PrescriptionMedicine, MedicineItem, Language } from '../types';
 import { storage } from '../utils/storage';
 
@@ -12,189 +12,214 @@ interface EPrescriptionModalProps {
   doctorName?: string;
   patientName?: string;
   patientId?: string;
-  lang?: Language;
   onCheckStock?: (medName: string) => void;
+  lang?: Language;
 }
 
 const RX_I18N: Record<Language, {
-  headerTitleView: string;
-  headerTitleCreate: string;
-  subHeader: string;
-  govtHeader: string;
-  consultingClinician: string;
+  modalTitle: string;
+  modalSub: string;
+  headerGovt: string;
+  hospital: string;
+  clinician: string;
+  dept: string;
+  date: string;
   patient: string;
   patientId: string;
   ageSex: string;
+  ageSexVal: string;
   district: string;
-  clinicalImpression: string;
+  districtVal: string;
+  assessment: string;
+  diagText: string;
   rxHeader: string;
-  tableNum: string;
-  tableMed: string;
-  tableDosage: string;
-  tableDuration: string;
-  tableInstructions: string;
-  localStockTitle: string;
-  localStockNote: string;
-  findMedStoreTitle: string;
-  findMedStoreSub: string;
-  checkPharmacyBtn: string;
-  adviceTitle: string;
-  followUpTitle: string;
-  signatureText: string;
+  thNum: string;
+  thMedicine: string;
+  thDosage: string;
+  thDuration: string;
+  thInstructions: string;
+  med1Name: string;
+  med1Dosage: string;
+  med1Freq: string;
+  med1Duration: string;
+  med1Inst: string;
+  med2Name: string;
+  med2Dosage: string;
+  med2Freq: string;
+  med2Duration: string;
+  med2Inst: string;
+  localAvailabilityTitle: string;
+  localAvailabilitySub: string;
+  storeCardTitle: string;
+  storeCardSub: string;
+  storeCardBtn: string;
+  adviceLabel: string;
+  adviceText: string;
+  followUpLabel: string;
+  followUpText: string;
+  digitalSig: string;
   eSignedAt: string;
   disclaimer: string;
-  printPdf: string;
-  sharePatient: string;
-  closeBtn: string;
-  saveBtn: string;
-  savedNotice: string;
+  btnPrint: string;
+  btnShare: string;
+  btnSave: string;
+  btnSaved: string;
+  btnClose: string;
   sharedSuccess: string;
 }> = {
   English: {
-    headerTitleView: 'E-Prescription',
-    headerTitleCreate: 'Authorizing Clinician E-Prescription',
-    subHeader: 'Swasthya Path Telehealth Initiative • Odisha MoHFW Workflow',
-    govtHeader: 'GOVERNMENT OF ODISHA • DISTRICT HEALTH SOCIETY KALAHANDI',
-    consultingClinician: 'Consulting Clinician',
-    patient: 'Patient',
-    patientId: 'Patient ID',
-    ageSex: 'Age / Gender',
-    district: 'District',
-    clinicalImpression: 'Clinical Assessment & Provisional Diagnosis',
+    modalTitle: 'E-Prescription',
+    modalSub: 'Swasthya Path Telehealth Initiative • Odisha MoHFW Workflow',
+    headerGovt: 'GOVERNMENT OF ODISHA • DISTRICT HEALTH SOCIETY KALAHANDI',
+    hospital: 'District Headquarters Hospital (DHH) Bhawanipatna Telehealth Unit',
+    clinician: 'Consulting Clinician:',
+    dept: '(General Medicine)',
+    date: 'Date:',
+    patient: 'Patient:',
+    patientId: 'Patient ID:',
+    ageSex: 'Age/Sex:',
+    ageSexVal: '26 Y / M',
+    district: 'District:',
+    districtVal: 'Kalahandi',
+    assessment: 'Clinical Impression & Assessment',
+    diagText: 'Acute viral febrile episode with mild asthenia. No red-flag respiratory or hemorrhagic distress noted.',
     rxHeader: 'Prescribed Medicines (Fictional Demo Formulation)',
-    tableNum: '#',
-    tableMed: 'Medicine & Strength',
-    tableDosage: 'Dosage & Frequency',
-    tableDuration: 'Duration',
-    tableInstructions: 'Patient Instructions',
-    localStockTitle: 'LOCAL MEDICINE AVAILABILITY (Kalahandi Jan Aushadhi)',
-    localStockNote: '* Availability depends on pharmacy stock updates.',
-    findMedStoreTitle: 'Find Medicine at Local Stores',
-    findMedStoreSub: 'Check live availability in Store A (Jan Aushadhi), Store B (Junagarh), and Store C (Chhoriagarh).',
-    checkPharmacyBtn: 'Check Pharmacy Availability ➔',
-    adviceTitle: 'Advice & General Measures',
-    followUpTitle: 'Follow-up Schedule',
-    signatureText: 'Digitally Authorized by',
+    thNum: '#',
+    thMedicine: 'Medicine & Strength',
+    thDosage: 'Dosage & Timing',
+    thDuration: 'Duration',
+    thInstructions: 'Instructions',
+    med1Name: 'Tab Paracetamol (Jan Aushadhi)',
+    med1Dosage: '1 tablet',
+    med1Freq: 'SOS (When needed for fever > 100°F)',
+    med1Duration: '3 days',
+    med1Inst: 'Take after meals with warm water. Maximum 3 tablets in 24 hours.',
+    med2Name: 'Oral Rehydration Salts (ORS) Sachet',
+    med2Dosage: '1 sachet in 1 Litre water',
+    med2Freq: 'Throughout the day',
+    med2Duration: '3 days',
+    med2Inst: 'Sip frequently to maintain hydration and electrolytes.',
+    localAvailabilityTitle: 'LOCAL MEDICINE AVAILABILITY (Kalahandi Pharmacies)',
+    localAvailabilitySub: '* Availability depends on pharmacy updates.',
+    storeCardTitle: 'Find Medicine at Local Stores',
+    storeCardSub: 'Check live availability in Store A (Jan Aushadhi), Store B (Junagarh), and Store C (Chhoriagarh).',
+    storeCardBtn: 'Check Pharmacy Availability ➔',
+    adviceLabel: 'Advice / General Measures:',
+    adviceText: 'Maintain oral fluids and rest. Avoid self-medication with NSAIDs.',
+    followUpLabel: 'Follow-up Schedule:',
+    followUpText: 'Follow-up teleconsultation in 3 days if fever does not subside or if warning signs develop.',
+    digitalSig: 'Digitally Authorized by Dr. Ananya Mishra (Reg No: OD-MED-8492)',
     eSignedAt: 'e-Signed at',
-    disclaimer: 'Official Telehealth E-Prescription issued via Swasthya Path Kalahandi platform. Verified on ABDM / eSanjeevani Telehealth Gateway.',
-    printPdf: 'Print / PDF',
-    sharePatient: 'Share with Patient',
-    closeBtn: 'Close',
-    saveBtn: 'Save & Authorize Prescription',
-    savedNotice: 'Prescription Saved!',
+    disclaimer: 'Demo Telehealth E-Prescription issued via Swasthya Path Kalahandi platform. Fictional prototype formulation for demonstration only.',
+    btnPrint: 'Print / PDF',
+    btnShare: 'Share with Patient',
+    btnSave: 'Save Prescription',
+    btnSaved: 'Prescription Saved!',
+    btnClose: 'Close',
     sharedSuccess: 'Shared to patient records & SMS notification simulated!'
   },
   'ଓଡ଼ିଆ': {
-    headerTitleView: 'ଇ-ପ୍ରେସକ୍ରିପସନ୍ (ଡାକ୍ତରୀ ଚିଠା)',
-    headerTitleCreate: 'ଅନୁମୋଦିତ ଡାକ୍ତରୀ ଇ-ପ୍ରେସକ୍ରିପସନ୍',
-    subHeader: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଟେଲି-ହେଲ୍ଥ ପଦକ୍ଷେପ • ଓଡ଼ିଶା ସ୍ୱାସ୍ଥ୍ୟ ଓ ପରିବାର କଲ୍ୟାଣ ବିଭାଗ',
-    govtHeader: 'ଓଡ଼ିଶା ସରକାର • ଜିଲ୍ଲା ସ୍ୱାସ୍ଥ୍ୟ ସମିତି, କଳାହାଣ୍ଡି',
-    consultingClinician: 'ପରାମର୍ଶଦାତା ଡାକ୍ତର',
-    patient: 'ରୋଗୀଙ୍କ ନାମ',
-    patientId: 'ରୋଗୀ ଆଇଡି',
-    ageSex: 'ବୟସ / ଲିଙ୍ଗ',
-    district: 'ଜିଲ୍ଲା',
-    clinicalImpression: 'ଡାକ୍ତରୀ ଆକଳନ ଓ ସମ୍ଭାବ୍ୟ ରୋଗ ନିର୍ଣ୍ଣୟ',
-    rxHeader: 'ଡାକ୍ତରଙ୍କ ଦ୍ୱାରା ଲେଖାଯାଇଥିବା ଔଷଧ (Rx)',
-    tableNum: 'କ୍ରମିକ',
-    tableMed: 'ଔଷଧ ନାମ ଓ ଶକ୍ତି',
-    tableDosage: 'ଖାଇବା ମାତ୍ରା ଓ ସମୟ',
-    tableDuration: 'ଦିନ ସଂଖ୍ୟା',
-    tableInstructions: 'ରୋଗୀଙ୍କ ପାଇଁ ନିୟମ',
-    localStockTitle: 'ସ୍ଥାନୀୟ ଔଷଧ ଷ୍ଟକ୍ ଉପଲବ୍ଧତା (କଳାହାଣ୍ଡି ଜନ ଔଷଧି କେନ୍ଦ୍ର)',
-    localStockNote: '* ଷ୍ଟକ୍ ସ୍ଥିତି ଫାର୍ମାସୀର ସଦ୍ୟତମ ତଥ୍ୟ ଉପରେ ନିର୍ଭରଶୀଳ।',
-    findMedStoreTitle: 'ନିକଟସ୍ଥ ଦୋକାନରୁ ଔଷଧ ଖୋଜନ୍ତୁ',
-    findMedStoreSub: 'ଦୋକାନ A (ଜନ ଔଷଧି), ଦୋକାନ B (ଜୁନାଗଡ଼) ଏବଂ ଦୋକାନ C ରେ ଔଷଧ ଅଛି କି ନାହିଁ ଦେଖନ୍ତୁ।',
-    checkPharmacyBtn: 'ଔଷଧ ଉପଲବ୍ଧତା ଯାଞ୍ଚ କରନ୍ତୁ ➔',
-    adviceTitle: 'ଉପଦେଶ ଓ ସାଧାରଣ ଯତ୍ନ',
-    followUpTitle: 'ପରବର୍ତ୍ତୀ ଡାକ୍ତରୀ ପରାମର୍ଶ ତାରିଖ',
-    signatureText: 'ଡିଜିଟାଲ୍ ସ୍ୱାକ୍ଷର ଦ୍ୱାରା ପ୍ରମାଣିତ:',
-    eSignedAt: 'ଡିଜିଟାଲ୍ ସ୍ୱାକ୍ଷରିତ ତାରିଖ',
-    disclaimer: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ କଳାହାଣ୍ଡି ଟେଲି-ମେଡିସିନ ପୋର୍ଟାଲ ଦ୍ୱାରା ପ୍ରଦତ୍ତ ଅଫିସିଆଲ ଡାକ୍ତରୀ ଚିଠା। ABDM ଏବଂ ଇ-ସଞ୍ଜୀବନୀ ମାନଦଣ୍ଡ ଅନୁଯାୟୀ ଯାଞ୍ଚ ହୋଇଛି।',
-    printPdf: 'ପ୍ରିଣ୍ଟ / PDF ଡାଉନଲୋଡ୍',
-    sharePatient: 'ରୋଗୀଙ୍କ ସହ ସେୟାର କରନ୍ତୁ',
-    closeBtn: 'ବନ୍ଦ କରନ୍ତୁ',
-    saveBtn: 'ପ୍ରେସକ୍ରିପସନ୍ ସାଇତନ୍ତୁ',
-    savedNotice: 'ପ୍ରେସକ୍ରିପସନ୍ ସଫଳତାର ସହ ସାଇତାଗଲା!',
-    sharedSuccess: 'ରୋଗୀଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଓ ମୋବାଇଲ SMS କୁ ପଠାଗଲା!'
+    modalTitle: 'ଇ-ପ୍ରେସକ୍ରିପସନ୍',
+    modalSub: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଟେଲି-ହେଲ୍ଥ • ଓଡ଼ିଶା ସ୍ୱାସ୍ଥ୍ୟ ଓ ପରିବାର କଲ୍ୟାଣ ବିଭାଗ',
+    headerGovt: 'ଓଡ଼ିଶା ସରକାର • ଜିଲ୍ଲା ସ୍ୱାସ୍ଥ୍ୟ ସମିତି କଳାହାଣ୍ଡି',
+    hospital: 'ଜିଲ୍ଲା ମୁଖ୍ୟ ଚିକିତ୍ସାଳୟ (DHH) ଭବାନୀପାଟଣା ଟେଲି-ହେଲ୍ଥ ୟୁନିଟ୍',
+    clinician: 'ପରାମର୍ଶଦାତା ଡାକ୍ତର:',
+    dept: '(ସାଧାରଣ ଚିକିତ୍ସା ବିଭାଗ)',
+    date: 'ତାରିଖ:',
+    patient: 'ରୋଗୀ:',
+    patientId: 'ରୋଗୀ ID:',
+    ageSex: 'ବୟସ/ଲିଙ୍ଗ:',
+    ageSexVal: '୨୬ ବର୍ଷ / ପୁରୁଷ',
+    district: 'ଜିଲ୍ଲା:',
+    districtVal: 'କଳାହାଣ୍ଡି',
+    assessment: 'କ୍ଲିନିକାଲ୍ ତଦନ୍ତ ଓ ସାରାଂଶ',
+    diagText: 'ମୃଦୁ ଦୁର୍ବଳତା ସହିତ ଭୂତାଣୁଜନିତ ଜ୍ୱର। କୌଣସି ଜରୁରୀକାଳୀନ ଶ୍ୱାସକ୍ରିୟା ବା ରକ୍ତସ୍ରାବ ସଙ୍କେତ ନାହିଁ।',
+    rxHeader: 'ନିର୍ଦ୍ଦେଶିତ ଔଷଧ ତାଲିକା (ସ୍ୱାସ୍ଥ୍ୟ ପଥ ପ୍ରୋଟୋଟାଇପ୍)',
+    thNum: '#',
+    thMedicine: 'ଔଷଧ ଓ ଶକ୍ତି',
+    thDosage: 'ମାତ୍ରା ଓ ସମୟ',
+    thDuration: 'ଅବଧି',
+    thInstructions: 'ବିଶେଷ ନିର୍ଦ୍ଦେଶ',
+    med1Name: 'ଟାବଲେଟ୍ ପାରାସିଟାମୋଲ୍ (ଜନ ଔଷଧି)',
+    med1Dosage: '୧ ଟାବଲେଟ୍',
+    med1Freq: 'ଜ୍ୱର > ୧୦୦°F ହେଲେ (SOS)',
+    med1Duration: '୩ ଦିନ',
+    med1Inst: 'ଖାଇବା ପରେ ଉଷୁମ ପାଣି ସହିତ ନିଅନ୍ତୁ। ୨୪ ଘଣ୍ଟାରେ ସର୍ବାଧିକ ୩ ଟି।',
+    med2Name: 'ଓଆରଏସ୍ (ORS) ସାଚେଟ୍ (WHO ଫର୍ମୁଲା)',
+    med2Dosage: '୧ ସାଚେଟ୍ ୧ ଲିଟର ପାଣିରେ',
+    med2Freq: 'ଦିନସାରା ପିଅନ୍ତୁ',
+    med2Duration: '୩ ଦିନ',
+    med2Inst: 'ଶରୀରରେ ଜଳୀୟ ଅଂଶ ବଜାୟ ରଖିବା ପାଇଁ ଟିକେ ଟିକେ ପିଅନ୍ତୁ।',
+    localAvailabilityTitle: 'ସ୍ଥାନୀୟ ଔଷଧ ଉପଲବ୍ଧତା (କଳାହାଣ୍ଡି ଜନ ଔଷଧି କେନ୍ଦ୍ର)',
+    localAvailabilitySub: '* ଔଷଧ ଦୋକାନର ତାଜା ତଥ୍ୟ ଉପରେ ଆଧାରିତ।',
+    storeCardTitle: 'ସ୍ଥାନୀୟ ଦୋକାନରେ ଔଷଧ ଖୋଜନ୍ତୁ',
+    storeCardSub: 'ଷ୍ଟୋର୍ A (ଜନ ଔଷଧି), ଷ୍ଟୋର୍ B (ଜୁନାଗଡ଼), ଏବଂ ଷ୍ଟୋର୍ C ରେ ଲାଇଭ୍ ଷ୍ଟକ୍ ଦେଖନ୍ତୁ।',
+    storeCardBtn: 'ଔଷଧ ଉପଲବ୍ଧତା ଯାଞ୍ଚ କରନ୍ତୁ ➔',
+    adviceLabel: 'ଡାକ୍ତରଙ୍କ ପରାମର୍ଶ / ସାଧାରଣ ଯତ୍ନ:',
+    adviceText: 'ପ୍ରଚୁର ପାଣି ପିଅନ୍ତୁ ଏବଂ ବିଶ୍ରାମ ନିଅନ୍ତୁ। ବିନା ପରାମର୍ଶରେ ଅନ୍ୟ ଔଷଧ ଖାଆନ୍ତୁ ନାହିଁ।',
+    followUpLabel: 'ପରବର୍ତ୍ତୀ ଯାଞ୍ଚ ସମୟ:',
+    followUpText: '୩ ଦିନ ପରେ ପୁନର୍ବାର ଟେଲି-ପରାମର୍ଶ ନିଅନ୍ତୁ ଯଦି ଜ୍ୱର ନ କମେ।',
+    digitalSig: 'ଡାକ୍ତର ଅନନ୍ୟା ମିଶ୍ରଙ୍କ ଦ୍ୱାରା ଡିଜିଟାଲ୍ ସ୍ୱାକ୍ଷରିତ (Reg: OD-MED-8492)',
+    eSignedAt: 'ଇ-ସ୍ୱାକ୍ଷର ସମୟ:',
+    disclaimer: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ କଳାହାଣ୍ଡି ପ୍ଲାଟଫର୍ମ ଦ୍ୱାରା ଜାରି କରାଯାଇଥିବା ଟେଲି-ହେଲ୍ଥ ଇ-ପ୍ରେସକ୍ରିପସନ୍। ପ୍ରୋଟୋଟାଇପ୍ ଉଦ୍ଦେଶ୍ୟ ପାଇଁ।',
+    btnPrint: 'ପ୍ରିଣ୍ଟ / PDF',
+    btnShare: 'ରୋଗୀଙ୍କୁ ପଠାନ୍ତୁ',
+    btnSave: 'ପ୍ରେସକ୍ରିପସନ୍ ସଂରକ୍ଷଣ କରନ୍ତୁ',
+    btnSaved: 'ସଂରକ୍ଷିତ ହେଲା!',
+    btnClose: 'ବନ୍ଦ କରନ୍ତୁ',
+    sharedSuccess: 'ରୋଗୀଙ୍କ ରେକର୍ଡ ଓ SMS କୁ ସଫଳତାର ସହ ପଠାଗଲା!'
   },
   'हिन्दी': {
-    headerTitleView: 'ई-प्रिस्क्रिप्शन (दवा पर्ची)',
-    headerTitleCreate: 'अधिकृत चिकित्सीय ई-प्रिस्क्रिप्शन',
-    subHeader: 'स्वास्थ्य पथ टेली-हेल्थ पहल • ओडिशा स्वास्थ्य विभाग कार्यप्रणाली',
-    govtHeader: 'ओडिशा सरकार • जिला स्वास्थ्य समिति, कालाहांडी',
-    consultingClinician: 'परामर्शदाता डॉक्टर',
-    patient: 'रोगी का नाम',
-    patientId: 'रोगी आईडी',
-    ageSex: 'आयु / लिंग',
-    district: 'जिला',
-    clinicalImpression: 'चिकित्सीय मूल्यांकन एवं संभावित निदान',
-    rxHeader: 'निर्धारित दवाइयां (Rx)',
-    tableNum: 'क्र.',
-    tableMed: 'दवा का नाम और मात्रा',
-    tableDosage: 'खुराक और समय',
-    tableDuration: 'अवधि',
-    tableInstructions: 'रोगी के लिए निर्देश',
-    localStockTitle: 'स्थानीय दवा उपलब्धता (कालाहांडी जन औषधि केंद्र)',
-    localStockNote: '* दवा की उपलब्धता फार्मेसी के ताजा अपडेट पर निर्भर है।',
-    findMedStoreTitle: 'नजदीकी मेडिकल स्टोर में दवा खोजें',
-    findMedStoreSub: 'दुकान A (जन औषधि), दुकान B (जूनागढ़) और दुकान C में लाइव स्टॉक देखें।',
-    checkPharmacyBtn: 'दवा की उपलब्धता जांचें ➔',
-    adviceTitle: 'सलाह एवं सामान्य सावधानियां',
-    followUpTitle: 'अगला परामर्श कार्यक्रम',
-    signatureText: 'डिजिटल रूप से अधिकृत:',
-    eSignedAt: 'डिजिटल हस्ताक्षर तिथि',
-    disclaimer: 'स्वास्थ्य पथ कालाहांडी टेली-हेल्थ पोर्टल द्वारा जारी आधिकारिक ई-प्रिस्क्रिप्शन। ABDM और ई-संजीवनी मानकों के अनुरूप सत्यापित।',
-    printPdf: 'प्रिंट / PDF डाउनलोड',
-    sharePatient: 'रोगी के साथ साझा करें',
-    closeBtn: 'बंद करें',
-    saveBtn: 'प्रिस्क्रिप्शन सहेजें',
-    savedNotice: 'प्रिस्क्रिप्शन सहेज लिया गया!',
-    sharedSuccess: 'रोगी के स्वास्थ्य रिकॉर्ड और मोबाइल SMS पर भेजा गया!'
+    modalTitle: 'ई-प्रिस्क्रिप्शन',
+    modalSub: 'स्वास्थ्य पथ टेली-हेल्थ • ओडिशा स्वास्थ्य एवं परिवार कल्याण विभाग',
+    headerGovt: 'ओडिशा सरकार • जिला स्वास्थ्य समिति कालाहांडी',
+    hospital: 'जिला मुख्य चिकित्सालय (DHH) भवानीपटना टेली-हेल्थ यूनिट',
+    clinician: 'परामर्शदाता चिकित्सक:',
+    dept: '(सामान्य चिकित्सा विभाग)',
+    date: 'दिनांक:',
+    patient: 'रोगी:',
+    patientId: 'रोगी ID:',
+    ageSex: 'आयु/लिंग:',
+    ageSexVal: '२६ वर्ष / पुरुष',
+    district: 'जिला:',
+    districtVal: 'कालाहांडी',
+    assessment: 'क्लीनिकल मूल्यांकन एवं निष्कर्ष',
+    diagText: 'हल्की कमजोरी के साथ तीव्र वायरल बुखार। श्वसन या रक्तस्राव का कोई आपातकालीन लक्षण नहीं है।',
+    rxHeader: 'निर्धारित दवा सूची (स्वास्थ्य पथ प्रोटोटाइप)',
+    thNum: '#',
+    thMedicine: 'दवा और क्षमता',
+    thDosage: 'खुराक और समय',
+    thDuration: 'अवधि',
+    thInstructions: 'विशेष निर्देश',
+    med1Name: 'टैबलेट पैरासिटामोल (जन औषधि)',
+    med1Dosage: '1 गोली',
+    med1Freq: 'बुखार > 100°F होने पर (SOS)',
+    med1Duration: '3 दिन',
+    med1Inst: 'भोजन के बाद गुनगुने पानी के साथ लें। 24 घंटे में अधिकतम 3 गोलियां।',
+    med2Name: 'ओआरएस (ORS) पैकेट (WHO फॉर्मूला)',
+    med2Dosage: '1 पैकेट 1 लीटर पानी में',
+    med2Freq: 'दिनभर',
+    med2Duration: '3 दिन',
+    med2Inst: 'शरीर में पानी और खनिज बनाए रखने के लिए थोड़ा-थोड़ा पिएं।',
+    localAvailabilityTitle: 'स्थानीय दवा उपलब्धता (कालाहांडी मेडिकल स्टोर)',
+    localAvailabilitySub: '* दवा दुकानों के नवीनतम अपडेट पर आधारित।',
+    storeCardTitle: 'स्थानीय दुकानों पर दवा खोजें',
+    storeCardSub: 'स्टोर A (जन औषधि), स्टोर B (जूनागढ़), और स्टोर C में लाइव स्टॉक देखें।',
+    storeCardBtn: 'दवा की उपलब्धता जांचें ➔',
+    adviceLabel: 'डॉक्टर की सलाह / सामान्य देखरेख:',
+    adviceText: 'पर्याप्त पानी पिएं और आराम करें। बिना डॉक्टरी सलाह के अन्य दवा न लें।',
+    followUpLabel: 'फॉलो-अप समय:',
+    followUpText: 'यदि 3 दिनों में बुखार कम न हो तो दोबारा टेली-परामर्श लें।',
+    digitalSig: 'डॉ. अनन्या मिश्रा द्वारा डिजिटली सत्यापित (Reg: OD-MED-8492)',
+    eSignedAt: 'ई-हस्ताक्षर समय:',
+    disclaimer: 'स्वास्थ्य पथ कालाहांडी प्लेटफॉर्म द्वारा जारी टेली-हेल्थ ई-प्रिस्क्रिप्शन। केवल डेमो प्रदर्शन के लिए।',
+    btnPrint: 'प्रिंट / PDF',
+    btnShare: 'रोगी को भेजें',
+    btnSave: 'प्रिस्क्रिप्शन सुरक्षित करें',
+    btnSaved: 'सुरक्षित हो गया!',
+    btnClose: 'बंद करें',
+    sharedSuccess: 'रोगी रिकॉर्ड और SMS पर सफलतापूर्वक भेजा गया!'
   }
-};
-
-const translateText = (text: string, currentLang: Language): string => {
-  if (currentLang === 'English') return text;
-
-  const odiaMap: Record<string, string> = {
-    '1 tablet': '୧ ଟି ଟାବଲେଟ୍',
-    '1 sachet in 1 Litre water': '୧ ଲିଟର ପାଣିରେ ୧ ପ୍ୟାକେଟ୍',
-    'SOS (When needed for fever > 100°F)': 'ଆବଶ୍ୟକ ହେଲେ (୧୦୦°F ରୁ ଅଧିକ ଜ୍ୱର ହେଲେ)',
-    'Throughout the day': 'ସାରା ଦିନ ଧରି',
-    '3 days': '୩ ଦିନ',
-    'Take after meals with warm water. Maximum 3 tablets in 24 hours.': 'ଖାଇବା ପରେ ଉଷୁମ ପାଣି ସହିତ ନିଅନ୍ତୁ। ୨୪ ଘଣ୍ଟାରେ ସର୍ବାଧିକ ୩ଟି ଟାବଲେଟ।',
-    'Sip frequently to maintain hydration and electrolytes.': 'ଶରୀରରେ ଜଳୀୟଅଂଶ ବଜାୟ ରଖିବା ପାଇଁ ବାରମ୍ବାର ଟିକେ ଟିକେ ପିଅନ୍ତୁ।',
-    'Acute viral febrile episode with mild asthenia. No red-flag respiratory or hemorrhagic distress noted.': 'ସାମାନ୍ୟ ଦୁର୍ବଳତା ସହ ଭାଇରାଲ ଜ୍ୱର। କୌଣସି ଜରୁରୀ ଶ୍ୱାସକ୍ରିୟା ବା ରକ୍ତସ୍ରାବ ସଙ୍କଟ ନାହିଁ।',
-    'Acute mild viral upper respiratory infection without emergency red-flags.': 'ଜରୁରୀ ସଙ୍କଟ ବିନା ସାମାନ୍ୟ ଋତୁକାଳୀନ ଭାଇରାଲ ଥଣ୍ଡା ଓ ଜ୍ୱର।',
-    'Maintain oral fluids and rest. Avoid self-medication with NSAIDs.': 'ପ୍ରଚୁର ପାଣି/ଓଆରଏସ ପିଅନ୍ତୁ ଓ ବିଶ୍ରାମ ନିଅନ୍ତୁ। ନିଜ ଇଚ୍ଛାରେ ଅନ୍ୟ ଔଷଧ ଖାଆନ୍ତୁ ନାହିଁ।',
-    'Follow-up teleconsultation in 3 days if fever does not subside or if warning signs develop.': 'ଯଦି ୩ ଦିନରେ ଜ୍ୱର ନ କମେ ବା କୌଣସି ଜରୁରୀ ସଙ୍କଟ ଲକ୍ଷଣ ଦେଖାଦିଏ, ତେବେ ପୁଣି ଟେଲି-ପରାମର୍ଶ କରନ୍ତୁ।',
-    'Kalahandi': 'କଳାହାଣ୍ଡି, ଓଡ଼ିଶା',
-    '26 Y / M': '୨୬ ବର୍ଷ / ପୁରୁଷ',
-    'District Headquarters Hospital (DHH) Bhawanipatna Telehealth Unit': 'ଜିଲ୍ଲା ମୁଖ୍ୟ ଚିକିତ୍ସାଳୟ (DHH) ଭବାନୀପାଟଣା ଟେଲି-ହେଲ୍ଥ ୟୁନିଟ୍',
-    'DHH Bhawanipatna Telehealth Unit': 'DHH ଭବାନୀପାଟଣା ଟେଲି-ହେଲ୍ଥ ୟୁନିଟ୍'
-  };
-
-  const hindiMap: Record<string, string> = {
-    '1 tablet': '१ गोली',
-    '1 sachet in 1 Litre water': '१ लीटर पानी में १ पैकेट',
-    'SOS (When needed for fever > 100°F)': 'ज़रूरत पड़ने पर (१००°F से अधिक बुखार होने पर)',
-    'Throughout the day': 'दिन भर में',
-    '3 days': '३ दिन',
-    'Take after meals with warm water. Maximum 3 tablets in 24 hours.': 'खाना खाने के बाद गुनगुने पानी के साथ लें। २४ घंटे में अधिकतम ३ गोलियां।',
-    'Sip frequently to maintain hydration and electrolytes.': 'शरीर में पानी की कमी दूर करने के लिए थोड़ा-थोड़ा पीते रहें।',
-    'Acute viral febrile episode with mild asthenia. No red-flag respiratory or hemorrhagic distress noted.': 'हल्की कमजोरी के साथ वायरल बुखार। सांस लेने में या कोई गंभीर खतरे के लक्षण नहीं हैं।',
-    'Acute mild viral upper respiratory infection without emergency red-flags.': 'सामान्य मौसमी वायरल बुखार और सर्दी। कोई गंभीर आपातकालीन लक्षण नहीं।',
-    'Maintain oral fluids and rest. Avoid self-medication with NSAIDs.': 'भरपूर पानी/ओआरएस पिएं और आराम करें। बिना सलाह के अन्य दवाइयां न लें।',
-    'Follow-up teleconsultation in 3 days if fever does not subside or if warning signs develop.': 'यदि ३ दिनों में बुखार कम न हो या कोई गंभीर लक्षण दिखे, तो पुनः टेली-परामर्श करें।',
-    'Kalahandi': 'कालाहांडी, ओडिशा',
-    '26 Y / M': '२६ वर्ष / पुरुष',
-    'District Headquarters Hospital (DHH) Bhawanipatna Telehealth Unit': 'जिला मुख्य चिकित्सालय (DHH) भवानीपटना टेली-हेल्थ यूनिट',
-    'DHH Bhawanipatna Telehealth Unit': 'DHH भवानीपटना टेली-हेल्थ यूनिट'
-  };
-
-  const map = currentLang === 'ଓଡ଼ିଆ' ? odiaMap : hindiMap;
-  return map[text] || text;
 };
 
 export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
@@ -206,12 +231,15 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
   doctorName = 'Dr. Ananya Mishra',
   patientName = 'Keshab Rout',
   patientId = 'RHB-OD-KLH-0941',
-  lang = 'English',
-  onCheckStock
+  onCheckStock,
+  lang = 'English'
 }) => {
   const [activeLang, setActiveLang] = useState<Language>(lang);
 
-  // Creation form state if mode === 'create'
+  useEffect(() => {
+    if (lang) setActiveLang(lang);
+  }, [lang]);
+
   const [medicines, setMedicines] = useState<PrescriptionMedicine[]>([
     {
       id: 'm1',
@@ -243,11 +271,6 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [sharedAlert, setSharedAlert] = useState(false);
 
-  // Sync internal language state if external prop changes
-  React.useEffect(() => {
-    if (lang) setActiveLang(lang);
-  }, [lang]);
-
   if (!isOpen) return null;
 
   const t = RX_I18N[activeLang] || RX_I18N.English;
@@ -259,13 +282,13 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
     patientId,
     patientName,
     doctorName,
-    doctorHospital: 'District Headquarters Hospital (DHH) Bhawanipatna Telehealth Unit',
+    doctorHospital: t.hospital,
     date: new Date().toLocaleDateString('en-GB'),
     diagnosisSummary,
     medicines,
     followUp,
     notes: clinicalNotes,
-    digitalSignature: `Digitally Authorized by ${doctorName} (Reg No: OD-MED-8492)`
+    digitalSignature: t.digitalSig
   };
 
   // Nearby Jan Aushadhi & local pharmacy stock
@@ -301,7 +324,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-modal-title">
-      <div className="modal-dialog" style={{ maxWidth: '720px', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
+      <div className="modal-dialog" style={{ maxWidth: '680px', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
         {/* Modal Header */}
         <div style={{
           background: 'linear-gradient(135deg, #071c42 0%, #0d3875 100%)',
@@ -310,9 +333,9 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           flexWrap: 'wrap',
-          gap: '10px'
+          gap: '10px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
@@ -329,19 +352,19 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
             </div>
             <div>
               <h3 id="rx-modal-title" style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
-                {mode === 'create' ? t.headerTitleCreate : `${t.headerTitleView} • ${currentRx.prescriptionNumber}`}
+                {mode === 'create' ? `${t.modalTitle} (Create)` : `${t.modalTitle} • ${currentRx.prescriptionNumber}`}
               </h3>
               <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
-                {t.subHeader}
+                {t.modalSub}
               </p>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Multilingual Switcher Pills inside Prescription */}
+            {/* Interactive Language Selector inside E-Prescription */}
             <div style={{
               display: 'flex',
-              background: 'rgba(255, 255, 255, 0.12)',
+              background: 'rgba(255, 255, 255, 0.15)',
               borderRadius: '20px',
               padding: '2px',
               border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -394,22 +417,22 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#0369a1', letterSpacing: '0.05em' }}>
-                    {t.govtHeader}
+                    {t.headerGovt}
                   </div>
                   <h4 style={{ margin: '2px 0 0', fontSize: '17px', color: '#071c42' }}>
-                    {translateText(currentRx.doctorHospital, activeLang)}
+                    {t.hospital}
                   </h4>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {t.consultingClinician}: <strong>{currentRx.doctorName}</strong> (General Medicine / ସାଧାରଣ ଚିକିତ୍ସା)
+                    {t.clinician} <strong>{currentRx.doctorName}</strong> {t.dept}
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', fontFamily: 'monospace' }}>
                     {currentRx.prescriptionNumber}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {activeLang === 'ଓଡ଼ିଆ' ? 'ତାରିଖ:' : activeLang === 'हिन्दी' ? 'दिनांक:' : 'Date:'} <strong>{currentRx.date}</strong>
+                    {t.date} <strong>{currentRx.date}</strong>
                   </div>
                 </div>
               </div>
@@ -417,72 +440,76 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
               {/* Patient Banner */}
               <div style={{
                 marginTop: '12px',
-                padding: '10px 14px',
+                padding: '8px 12px',
                 background: '#f0f9ff',
                 borderRadius: '8px',
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
                 gap: '8px',
-                fontSize: '12px',
-                border: '1px solid #bae6fd'
+                fontSize: '12px'
               }}>
-                <div><span style={{ color: '#64748b' }}>{t.patient}:</span> <strong>{currentRx.patientName}</strong></div>
-                <div><span style={{ color: '#64748b' }}>{t.patientId}:</span> <strong style={{ color: '#0284c7' }}>{currentRx.patientId}</strong></div>
-                <div><span style={{ color: '#64748b' }}>{t.ageSex}:</span> <strong>{translateText('26 Y / M', activeLang)}</strong></div>
-                <div><span style={{ color: '#64748b' }}>{t.district}:</span> <strong>{translateText('Kalahandi', activeLang)}</strong></div>
+                <div><span style={{ color: '#64748b' }}>{t.patient}</span> <strong>{currentRx.patientName}</strong></div>
+                <div><span style={{ color: '#64748b' }}>{t.patientId}</span> <strong style={{ color: '#0284c7' }}>{currentRx.patientId}</strong></div>
+                <div><span style={{ color: '#64748b' }}>{t.ageSex}</span> <strong>{t.ageSexVal}</strong></div>
+                <div><span style={{ color: '#64748b' }}>{t.district}</span> <strong>{t.districtVal}</strong></div>
               </div>
             </div>
 
             {/* Clinical Evaluation Summary */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
-                {t.clinicalImpression}
+                {t.assessment}
               </div>
-              <div style={{ fontSize: '13px', color: '#0f172a', background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', lineHeight: 1.5 }}>
-                {translateText(currentRx.diagnosisSummary, activeLang)}
+              <div style={{ fontSize: '13px', color: '#0f172a', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', lineHeight: 1.5 }}>
+                {activeLang === 'English' ? currentRx.diagnosisSummary : t.diagText}
               </div>
             </div>
 
             {/* Prescribed Medicines Table (Rx) */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 900, color: '#0284c7', fontFamily: 'serif' }}>℞</span>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#0284c7', fontFamily: 'serif' }}>℞</span>
                 <span style={{ fontSize: '12px', fontWeight: 800, color: '#071c42', textTransform: 'uppercase' }}>
                   {t.rxHeader}
                 </span>
               </div>
 
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '500px' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #cbd5e1' }}>
-                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>{t.tableNum}</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>{t.tableMed}</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>{t.tableDosage}</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>{t.tableDuration}</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>{t.tableInstructions}</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>{t.thNum}</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>{t.thMedicine}</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>{t.thDosage}</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>{t.thDuration}</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>{t.thInstructions}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentRx.medicines.map((m, idx) => (
-                      <tr key={m.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '10px 8px', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
-                        <td style={{ padding: '10px 8px' }}>
-                          <strong style={{ color: '#0f172a', fontSize: '13px' }}>{m.name}</strong>
-                          <div style={{ color: '#0284c7', fontSize: '11px', fontWeight: 600 }}>{m.strength}</div>
-                        </td>
-                        <td style={{ padding: '10px 8px', color: '#334155' }}>
-                          <div>{translateText(m.dosage, activeLang)}</div>
-                          <strong style={{ color: '#0369a1', fontSize: '11px' }}>{translateText(m.frequency, activeLang)}</strong>
-                        </td>
-                        <td style={{ padding: '10px 8px', fontWeight: 700, color: '#0f172a' }}>
-                          {translateText(m.duration, activeLang)}
-                        </td>
-                        <td style={{ padding: '10px 8px', color: '#475569', fontSize: '12px', lineHeight: 1.4 }}>
-                          {translateText(m.instructions, activeLang)}
-                        </td>
-                      </tr>
-                    ))}
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px', fontWeight: 700, color: '#64748b' }}>1</td>
+                      <td style={{ padding: '8px' }}>
+                        <strong style={{ color: '#0f172a' }}>{t.med1Name}</strong>
+                        <div style={{ color: '#0284c7', fontSize: '11px', fontWeight: 600 }}>500 mg</div>
+                      </td>
+                      <td style={{ padding: '8px', color: '#334155' }}>
+                        {t.med1Dosage} • <strong>{t.med1Freq}</strong>
+                      </td>
+                      <td style={{ padding: '8px', fontWeight: 600 }}>{t.med1Duration}</td>
+                      <td style={{ padding: '8px', color: '#64748b', fontSize: '11px' }}>{t.med1Inst}</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px', fontWeight: 700, color: '#64748b' }}>2</td>
+                      <td style={{ padding: '8px' }}>
+                        <strong style={{ color: '#0f172a' }}>{t.med2Name}</strong>
+                        <div style={{ color: '#0284c7', fontSize: '11px', fontWeight: 600 }}>21.8 g WHO Formula</div>
+                      </td>
+                      <td style={{ padding: '8px', color: '#334155' }}>
+                        {t.med2Dosage} • <strong>{t.med2Freq}</strong>
+                      </td>
+                      <td style={{ padding: '8px', fontWeight: 600 }}>{t.med2Duration}</td>
+                      <td style={{ padding: '8px', color: '#64748b', fontSize: '11px' }}>{t.med2Inst}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -500,37 +527,37 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <MapPin size={15} style={{ color: '#16a34a' }} />
                   <strong style={{ fontSize: '12px', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {t.localStockTitle}
+                    {t.localAvailabilityTitle}
                   </strong>
                 </div>
                 <span style={{ fontSize: '10px', color: '#15803d', fontStyle: 'italic' }}>
-                  {t.localStockNote}
+                  {t.localAvailabilitySub}
                 </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', fontSize: '11px' }}>
                 <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #dcfce7' }}>
-                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{paracetamolStock.name}</div>
+                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{t.med1Name}</div>
                   <div style={{ color: '#64748b' }}>{paracetamolStock.pharmacyName} ({paracetamolStock.block})</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                     <span className="badge badge-green" style={{ fontSize: '10px' }}>
-                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଷ୍ଟକ୍ ଅଛି' : activeLang === 'हिन्दी' ? 'उपलब्ध है' : paracetamolStock.status}
+                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଉପଲବ୍ଧ' : activeLang === 'हिन्दी' ? 'उपलब्ध' : 'AVAILABLE'}
                     </span>
                     <span style={{ color: '#64748b' }}>
-                      {activeLang === 'ଓଡ଼ିଆ' ? 'ସଦ୍ୟ ଅପଡେଟ୍' : activeLang === 'हिन्दी' ? 'ताजा अपडेट' : 'Updated'} {paracetamolStock.lastUpdated}
+                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଅପଡେଟ୍: ଆଜି' : activeLang === 'हिन्दी' ? 'अपडेट: आज' : `Updated ${paracetamolStock.lastUpdated}`}
                     </span>
                   </div>
                 </div>
 
                 <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #dcfce7' }}>
-                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{orsStock.name}</div>
+                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{t.med2Name}</div>
                   <div style={{ color: '#64748b' }}>{orsStock.pharmacyName} ({orsStock.block})</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                     <span className="badge badge-green" style={{ fontSize: '10px' }}>
-                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଷ୍ଟକ୍ ଅଛି' : activeLang === 'हिन्दी' ? 'उपलब्ध है' : orsStock.status}
+                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଉପଲବ୍ଧ' : activeLang === 'हिन्दी' ? 'उपलब्ध' : 'AVAILABLE'}
                     </span>
                     <span style={{ color: '#64748b' }}>
-                      {activeLang === 'ଓଡ଼ିଆ' ? 'ସଦ୍ୟ ଅପଡେଟ୍' : activeLang === 'हिन्दी' ? 'ताजा अपडेट' : 'Updated'} {orsStock.lastUpdated}
+                      {activeLang === 'ଓଡ଼ିଆ' ? 'ଅପଡେଟ୍: ଆଜି' : activeLang === 'हिन्दी' ? 'अपडेट: आज' : `Updated ${orsStock.lastUpdated}`}
                     </span>
                   </div>
                 </div>
@@ -541,10 +568,10 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
             <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', padding: '12px 16px', borderRadius: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <strong style={{ fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Pill size={15} /> {t.findMedStoreTitle}
+                  <Pill size={15} /> {t.storeCardTitle}
                 </strong>
                 <div style={{ fontSize: '11px', color: '#15803d', marginTop: '2px' }}>
-                  {t.findMedStoreSub}
+                  {t.storeCardSub}
                 </div>
               </div>
               <button
@@ -556,38 +583,30 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
                 }}
                 style={{ background: '#16a34a', border: 'none', padding: '8px 14px', fontSize: '12px', fontWeight: 800, borderRadius: '8px', cursor: 'pointer' }}
               >
-                {t.checkPharmacyBtn}
+                {t.storeCardBtn}
               </button>
             </div>
 
             {/* Follow-up & Advice */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: '16px', fontSize: '12px' }}>
-              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: '8px' }}>
-                <strong style={{ color: '#b45309', display: 'block', marginBottom: '4px' }}>
-                  {t.adviceTitle}:
-                </strong>
-                <span style={{ color: '#78350f', lineHeight: 1.4, display: 'block' }}>
-                  {translateText(currentRx.notes || clinicalNotes, activeLang)}
-                </span>
+              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '10px', borderRadius: '8px' }}>
+                <strong style={{ color: '#b45309', display: 'block', marginBottom: '4px' }}>{t.adviceLabel}</strong>
+                <span style={{ color: '#78350f' }}>{activeLang === 'English' ? currentRx.notes : t.adviceText}</span>
               </div>
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px', borderRadius: '8px' }}>
-                <strong style={{ color: '#0369a1', display: 'block', marginBottom: '4px' }}>
-                  {t.followUpTitle}:
-                </strong>
-                <span style={{ color: '#334155', lineHeight: 1.4, display: 'block' }}>
-                  {translateText(currentRx.followUp || followUp, activeLang)}
-                </span>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px', borderRadius: '8px' }}>
+                <strong style={{ color: '#0369a1', display: 'block', marginBottom: '4px' }}>{t.followUpLabel}</strong>
+                <span style={{ color: '#334155' }}>{activeLang === 'English' ? currentRx.followUp : t.followUpText}</span>
               </div>
             </div>
 
             {/* Digital Signature & Disclaimer */}
             <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ fontSize: '10px', color: '#64748b', maxWidth: '340px', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8', maxWidth: '320px' }}>
                 {t.disclaimer}
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#059669', fontSize: '11px', fontWeight: 700 }}>
-                  <ShieldCheck size={14} /> {t.signatureText} {currentRx.doctorName}
+                  <ShieldCheck size={14} /> {t.digitalSig}
                 </div>
                 <div style={{ fontSize: '10px', color: '#64748b' }}>{t.eSignedAt} {currentRx.date}</div>
               </div>
@@ -620,7 +639,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
               className="btn btn-secondary"
               onClick={() => alert(`Printing E-Prescription ${currentRx.prescriptionNumber}...`)}
             >
-              <Printer size={14} /> {t.printPdf}
+              <Printer size={14} /> {t.btnPrint}
             </button>
 
             <button
@@ -628,7 +647,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
               className="btn btn-secondary"
               onClick={handleShare}
             >
-              <Share2 size={14} /> {t.sharePatient}
+              <Share2 size={14} /> {t.btnShare}
             </button>
 
             {mode === 'create' ? (
@@ -639,7 +658,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
                 style={{ fontWeight: 800 }}
               >
                 {isSaved ? <Check size={14} /> : <FileText size={14} />}
-                <span>{isSaved ? t.savedNotice : t.saveBtn}</span>
+                <span>{isSaved ? t.btnSaved : t.btnSave}</span>
               </button>
             ) : (
               <button
@@ -647,7 +666,7 @@ export const EPrescriptionModal: React.FC<EPrescriptionModalProps> = ({
                 className="btn btn-primary"
                 onClick={onClose}
               >
-                {t.closeBtn}
+                {t.btnClose}
               </button>
             )}
           </div>

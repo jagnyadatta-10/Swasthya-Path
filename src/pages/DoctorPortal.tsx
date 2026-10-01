@@ -945,6 +945,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         onClose={() => setIsRxModalOpen(false)}
         prescription={activeRxForView}
         mode={rxModalMode}
+        lang="English"
         doctorName={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
@@ -971,6 +972,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={isCarePlanModalOpen}
         onClose={() => setIsCarePlanModalOpen(false)}
         doctorName={user.name}
+        lang="English"
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
         onSaved={(plan) => {

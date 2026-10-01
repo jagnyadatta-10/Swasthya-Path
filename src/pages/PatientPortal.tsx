@@ -2578,6 +2578,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         isOpen={isHealthCardOpen}
         onClose={() => setIsHealthCardOpen(false)}
         user={user}
+        lang={lang}
         onViewFullRecord={() => setActiveTab('records')}
       />
 
@@ -2594,6 +2595,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         onClose={() => setViewingPrescription(null)}
         prescription={viewingPrescription}
         mode="view"
+        lang={lang}
         patientName={user.name}
         patientId={patientId}
         onCheckStock={(medName) => {
@@ -2606,12 +2608,14 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       <EmergencyHelpModal
         isOpen={isEmergencyHelpOpen}
         onClose={() => setIsEmergencyHelpOpen(false)}
+        lang={lang}
       />
 
       {/* Facility Directory Modal (Prompt Section 17) */}
       <FacilityDirectoryModal
         isOpen={isFacilityDirectoryOpen}
         onClose={() => setIsFacilityDirectoryOpen(false)}
+        lang={lang}
       />
 
       {/* Consent Management Modal (Prompt Section 17) */}
@@ -2620,6 +2624,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         onClose={() => setIsConsentManagerOpen(false)}
         patientName={user.name}
         patientId={patientId}
+        lang={lang}
       />
 
       {/* Primary Care & AAM Services Modal (Prompt Section 17) */}
@@ -2627,6 +2632,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         isOpen={isPrimaryCareOpen}
         onClose={() => setIsPrimaryCareOpen(false)}
         onNavigateToQueue={() => setActiveTab('doctor')}
+        lang={lang}
       />
 
       {/* 3-Step Appointment Booking Modal (Prompt Section 13 & 24) */}

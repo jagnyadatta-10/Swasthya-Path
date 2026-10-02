@@ -499,9 +499,22 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                   background: item.urgency === 'urgent' ? '#fffbfa' : '#ffffff'
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: '16px' }}>{item.patientName}</strong>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flex: 1 }}>
+                  <img
+                    src="/images/patient-feed.jpg"
+                    alt={item.patientName}
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #0284c7',
+                      flexShrink: 0
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: '16px' }}>{item.patientName}</strong>
                     <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
                       {item.patientId || 'RHB-OD-KLH-0941'}
                     </span>
@@ -534,6 +547,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                       ✓ Saved Doctor Assessment: {item.doctorNotes}
                     </div>
                   )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
@@ -571,17 +585,31 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           {/* Left Column: Full Patient Clinical File */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2 style={{ margin: 0, fontSize: '20px' }}>
-                    {selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
-                  </h2>
-                  <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
-                    {selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                  Age: {selectedQueueItem?.age || 26} yrs • {selectedQueueItem?.gender || 'Male'} • Location: Kalahandi, Odisha
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <img
+                  src="/images/patient-feed.jpg"
+                  alt={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid #0284c7',
+                    flexShrink: 0
+                  }}
+                />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ margin: 0, fontSize: '20px' }}>
+                      {selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
+                    </h2>
+                    <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      {selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                    Age: {selectedQueueItem?.age || 26} yrs • {selectedQueueItem?.gender || 'Male'} • Location: Kalahandi, Odisha
+                  </div>
                 </div>
               </div>
 

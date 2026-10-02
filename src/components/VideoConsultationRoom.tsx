@@ -791,8 +791,24 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               </div>
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>{t.patLabel}</span>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{patient.name}</div>
-                <div style={{ fontSize: '10px', color: '#64748b' }}>Kalahandi, Odisha</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                  <img
+                    src="/images/patient-feed.jpg"
+                    alt={patient.name}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1.5px solid #0284c7',
+                      flexShrink: 0
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{patient.name}</div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>Kalahandi, Odisha</div>
+                  </div>
+                </div>
               </div>
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>{t.durLabel}</span>
@@ -1500,73 +1516,110 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   </>
                 ) : (
                   /* Doctor Portal View: Remote peer is patient Keshab Rout */
-                  <div style={{ textAlign: 'center' }}>
-                    <div
+                  <>
+                    {/* Realistic Patient Smartphone Front-Camera / Webcam Video Stream */}
+                    <img
+                      src="/images/patient-feed.jpg"
+                      alt={patient.name}
                       style={{
-                        width: '100px',
-                        height: '100px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '32px',
-                        fontWeight: 800,
-                        margin: '0 auto 16px',
-                        border: '3px solid rgba(25, 211, 255, 0.4)',
-                        boxShadow: '0 0 30px rgba(2, 132, 199, 0.3)'
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center 15%',
+                        filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
+                        transition: 'filter 0.4s ease'
                       }}
-                    >
-                      KR
-                    </div>
+                    />
 
-                    <h3 style={{ margin: 0, fontSize: '18px', color: '#ffffff' }}>
-                      {patient.name}
-                    </h3>
-                    <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
-                      {roomLang === 'ଓଡ଼ିଆ'
-                        ? 'ରୋଗୀ ଲାଇଭ୍ ଫିଡ୍ • କଳାହାଣ୍ଡି, ଓଡ଼ିଶା'
-                        : roomLang === 'हिन्दी'
-                        ? 'मरीज लाइव फीड • कालाहांडी, ओडिशा'
-                        : 'Patient Remote Feed • Kalahandi, Odisha'}
-                    </div>
-
-                    {/* Audio status indicator & simulated waveform */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.08)', padding: '6px 12px', borderRadius: '999px', marginTop: '14px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }}></div>
-                      <span style={{ fontSize: '12px', color: '#86efac' }}>
-                        {roomLang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ଅଡିଓ ସଂଯୁକ୍ତ' : roomLang === 'हिन्दी' ? 'मरीज ऑडियो कनेक्टेड' : 'Patient Audio Stream Active'}
-                      </span>
-                    </div>
-
-                    {networkQuality === 'limited' && (
-                      <div style={{ fontSize: '11px', color: '#fde047', marginTop: '8px' }}>
-                        {roomLang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ରିଜୋଲ୍ୟୁସନ୍ ସକ୍ରିୟ' : roomLang === 'हिन्दी' ? 'कम रिज़ॉल्यूशन सक्रिय' : 'Low resolution active to preserve audio clarity'}
-                      </div>
-                    )}
-
-                    {/* Main feed label */}
+                    {/* Subtle Live Stream Gradient Vignette for crisp overlay readability */}
                     <div
                       style={{
                         position: 'absolute',
-                        bottom: '16px',
+                        inset: 0,
+                        background: 'linear-gradient(to top, rgba(4, 13, 26, 0.88) 0%, rgba(4, 13, 26, 0.1) 40%, rgba(4, 13, 26, 0.15) 65%, rgba(4, 13, 26, 0.65) 100%)',
+                        pointerEvents: 'none'
+                      }}
+                    />
+
+                    {/* Top Left Live Status Pill */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '16px',
                         left: '16px',
-                        background: 'rgba(0, 0, 0, 0.65)',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '8px',
+                        background: 'rgba(15, 23, 42, 0.82)',
+                        backdropFilter: 'blur(8px)',
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
                       }}
                     >
-                      <span style={{ color: '#38bdf8' }}>👤 {patient.name}</span>
-                      <span className="badge badge-gray" style={{ fontSize: '10px' }}>
-                        {roomLang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ଫିଡ୍' : roomLang === 'हिन्दी' ? 'मरीज फीड' : 'Remote Feed'}
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#22c55e',
+                          boxShadow: '0 0 8px #22c55e',
+                          animation: 'streamPulse 2s infinite'
+                        }}
+                      />
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em' }}>
+                        {roomLang === 'ଓଡ଼ିଆ' ? 'ଲାଇଭ୍ ରୋଗୀ ଫିଡ୍' : roomLang === 'हिन्दी' ? 'लाइव मरीज वीडियो' : 'LIVE PATIENT FEED'}
+                      </span>
+                      <span style={{ fontSize: '10px', color: '#94a3b8' }}>•</span>
+                      <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 700 }}>
+                        {networkQuality === 'limited'
+                          ? (roomLang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ୩୬୦p' : roomLang === 'हिन्दी' ? 'अनुकूली 360p' : 'Adaptive 360p')
+                          : '4G HD Uplink (Kalahandi)'}
                       </span>
                     </div>
-                  </div>
+
+                    {/* Bottom Left Patient Clinical Card & Audio Waveform */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '20px',
+                        left: '20px',
+                        background: 'rgba(15, 23, 42, 0.88)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(56, 189, 248, 0.35)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+                        maxWidth: '420px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '16px' }}>👤</span>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff' }}>
+                            {patient.name} <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>(26 Y / M)</span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#93c5fd' }}>
+                            {patient.location} • ID: {patient.patientId || 'RHB-OD-KLH-0941'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Speaking / Audio Waveform Indicator */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '14px' }}>
+                          <span style={{ width: '3px', height: '7px', background: '#22c55e', borderRadius: '1px', animation: 'waveform 0.75s ease infinite alternate' }} />
+                          <span style={{ width: '3px', height: '13px', background: '#22c55e', borderRadius: '1px', animation: 'waveform 0.6s ease infinite alternate 0.15s' }} />
+                          <span style={{ width: '3px', height: '5px', background: '#22c55e', borderRadius: '1px', animation: 'waveform 0.85s ease infinite alternate 0.3s' }} />
+                          <span style={{ width: '3px', height: '10px', background: '#22c55e', borderRadius: '1px', animation: 'waveform 0.65s ease infinite alternate 0.2s' }} />
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#86efac', fontWeight: 600 }}>
+                          {roomLang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ଅଡିଓ ସଂଯୁକ୍ତ • କଥାବାର୍ତ୍ତା ଚାଲୁଅଛି' : roomLang === 'हिन्दी' ? 'मरीज ऑडियो कनेक्टेड • आवाज स्पष्ट' : 'Patient Audio Stream Active'}
+                        </span>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -1619,23 +1672,18 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                         }}
                       />
                     ) : (
-                      <div
+                      <img
+                        src="/images/patient-feed.jpg"
+                        alt={patient.name}
                         style={{
-                          width: '42px',
-                          height: '42px',
+                          width: '44px',
+                          height: '44px',
                           borderRadius: '50%',
-                          background: '#1e293b',
-                          color: '#cbd5e1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          objectFit: 'cover',
                           margin: '0 auto 6px',
-                          fontSize: '14px',
-                          fontWeight: 700
+                          border: '2px solid #0284c7'
                         }}
-                      >
-                        KR
-                      </div>
+                      />
                     )}
                     <div style={{ fontSize: '11px', color: '#94a3b8' }}>{t.cameraOffLabel}</div>
                   </div>
@@ -1809,6 +1857,21 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                           borderRadius: '50%',
                           objectFit: 'cover',
                           border: '1px solid #38bdf8',
+                          flexShrink: 0,
+                          marginTop: '2px'
+                        }}
+                      />
+                    )}
+                    {msg.sender === 'patient' && (
+                      <img
+                        src="/images/patient-feed.jpg"
+                        alt="Patient"
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid #22c55e',
                           flexShrink: 0,
                           marginTop: '2px'
                         }}

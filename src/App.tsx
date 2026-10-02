@@ -76,6 +76,7 @@ export const App: React.FC = () => {
             onToggleLowBandwidth={() => setLowBandwidthMode(!lowBandwidthMode)}
             lang={lang}
             onSelectLang={setLang}
+            onBack={handleLogout}
           />
         ) : currentUser.role === 'doctor' ? (
           <DoctorPortal
@@ -84,6 +85,7 @@ export const App: React.FC = () => {
             onNetworkChange={setNetworkQuality}
             lang={lang}
             onSelectLang={setLang}
+            onBack={handleLogout}
           />
         ) : currentUser.role === 'pharmacy' ? (
           <PharmacyPortal
@@ -91,6 +93,7 @@ export const App: React.FC = () => {
             networkQuality={networkQuality}
             lang={lang}
             onSelectLang={setLang}
+            onBack={handleLogout}
           />
         ) : currentUser.role === 'lab' ? (
           <MedicalDashboard
@@ -98,6 +101,7 @@ export const App: React.FC = () => {
             networkQuality={networkQuality}
             lang={lang}
             onSelectLang={setLang}
+            onBack={handleLogout}
           />
         ) : (
           <AdminPortal
@@ -105,6 +109,7 @@ export const App: React.FC = () => {
             networkQuality={networkQuality}
             lang={lang}
             onSelectLang={setLang}
+            onBack={handleLogout}
           />
         )}
       </main>

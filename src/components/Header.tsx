@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, LogOut, Globe, Activity, ZoomIn, ZoomOut, Layers, Signal, Bell, RefreshCw, CheckCircle2, Database, Compass } from 'lucide-react';
+import { Wifi, WifiOff, LogOut, Globe, Activity, ZoomIn, ZoomOut, Layers, Signal, Bell, RefreshCw, CheckCircle2, Database, Compass, ArrowLeft } from 'lucide-react';
 import { DemoUser, Language, NetworkQuality, AppNotification } from '../types';
 import { getTranslation } from '../utils/translations';
 import { storage } from '../utils/storage';
@@ -68,7 +68,31 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="top-nav">
       <div className="top-nav-inner">
-        <div className="brand-wrap">
+        <div className="brand-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {currentUser && (
+            <button
+              type="button"
+              className="btn btn-ghost-light"
+              onClick={onLogout}
+              title={lang === 'ଓଡ଼ିଆ' ? 'ମୁଖ୍ୟ ପୋର୍ଟାଲ୍ ଚୟନକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'मुख्य पोर्टल चयन पर वापस जाएं' : 'Back to Portal Selection'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'rgba(25, 211, 255, 0.15)',
+                border: '1px solid rgba(25, 211, 255, 0.4)',
+                color: '#19d3ff',
+                fontWeight: 700,
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              <ArrowLeft size={15} />
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ପଛକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'पीछे जाएं' : 'Back'}</span>
+            </button>
+          )}
           <div className="brand-icon-box" title="Swasthya Path Care Bridge">
             <Activity size={24} />
           </div>

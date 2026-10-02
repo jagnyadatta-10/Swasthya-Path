@@ -26,7 +26,8 @@ import {
   Sliders,
   Calendar,
   Layers,
-  FileCheck
+  FileCheck,
+  ArrowLeft
 } from 'lucide-react';
 import { DemoUser, Language, NetworkQuality, DiagnosticDocument, DiagnosticTestParameter, PhysiologicalVitals } from '../types';
 import { storage } from '../utils/storage';
@@ -37,6 +38,7 @@ interface MedicalDashboardProps {
   networkQuality: NetworkQuality;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
+  onBack?: () => void;
 }
 
 const DASH_I18N = {
@@ -402,7 +404,8 @@ export const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
   user,
   networkQuality,
   lang,
-  onSelectLang
+  onSelectLang,
+  onBack
 }) => {
   const t = DASH_I18N[lang] || DASH_I18N.English;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -975,6 +978,65 @@ export const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
           <span>{t.tabInstruments}</span>
         </button>
       </div>
+
+      {/* Universal Back Navigation for Medical Dashboard Tabs */}
+      {activeTab !== 'submit' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '18px',
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('submit')}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#0284c7',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '8px',
+              padding: '7px 14px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>
+              {lang === 'ଓଡ଼ିଆ' ? '← ରିପୋର୍ଟ ଦାଖଲ ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← मुख्य रिपोर्ट डैशबोर्ड पर वापस जाएं' : '← Back to Report Submission'}
+            </span>
+          </button>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                color: '#64748b',
+                padding: '6px 12px'
+              }}
+            >
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 3. TAB 1: SUBMIT PHYSICAL PATIENT REPORT */}
       {activeTab === 'submit' && (

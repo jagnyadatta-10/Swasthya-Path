@@ -24,7 +24,8 @@ import {
   Save,
   MapPin,
   ClipboardList,
-  Edit3
+  Edit3,
+  ArrowLeft
 } from 'lucide-react';
 import {
   DemoUser,
@@ -52,6 +53,7 @@ interface DoctorPortalProps {
   onNetworkChange?: (quality: NetworkQuality) => void;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
+  onBack?: () => void;
 }
 
 const DOCTOR_I18N = {
@@ -135,7 +137,8 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   networkQuality,
   onNetworkChange,
   lang,
-  onSelectLang
+  onSelectLang,
+  onBack
 }) => {
   const t = DOCTOR_I18N[lang] || DOCTOR_I18N.English;
   const [activeTab, setActiveTab] = useState<'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history'>('home');
@@ -379,6 +382,92 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           {t.tabHistory}
         </button>
       </nav>
+
+      {/* Universal Back Navigation for Doctor Tabs */}
+      {activeTab !== 'home' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '16px',
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('home')}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                color: '#0284c7',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '8px',
+                padding: '7px 14px',
+                cursor: 'pointer'
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>
+                {lang === 'ଓଡ଼ିଆ' ? '← ଡାକ୍ତର ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← डॉक्टर डैशबोर्ड पर वापस जाएं' : '← Back to Doctor Dashboard'}
+              </span>
+            </button>
+
+            {activeTab === 'evaluation' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('queue')}
+                className="btn btn-ghost"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  color: '#334155',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '7px 12px',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>
+                  {lang === 'ଓଡ଼ିଆ' ? '← ଟ୍ରାଇଏଜ୍ କତାରକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← ट्राइएज कतार पर वापस जाएं' : '← Back to Triage Queue'}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                color: '#64748b',
+                padding: '6px 12px'
+              }}
+            >
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* TAB 1: CLINICIAN DASHBOARD & TODAY'S OVERVIEW (Section 20) */}

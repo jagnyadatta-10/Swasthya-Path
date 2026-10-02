@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pill, CheckCircle2, AlertTriangle, Clock, RefreshCw, Plus, Check, ShieldCheck, ClipboardList, User, Package, Bell, MapPin } from 'lucide-react';
+import { Pill, CheckCircle2, AlertTriangle, Clock, RefreshCw, Plus, Check, ShieldCheck, ClipboardList, User, Package, Bell, MapPin, ArrowLeft } from 'lucide-react';
 import { DemoUser, Language, MedicineItem, PharmacyRequest, NetworkQuality } from '../types';
 import { storage } from '../utils/storage';
 import { getTranslation } from '../utils/translations';
@@ -9,6 +9,7 @@ interface PharmacyPortalProps {
   networkQuality: NetworkQuality;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
+  onBack?: () => void;
 }
 
 const enPharmacy = {
@@ -188,7 +189,7 @@ const PHARMACY_I18N: Record<string, any> = {
   hi: hiPharmacy
 };
 
-export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQuality, lang, onSelectLang }) => {
+export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQuality, lang, onSelectLang, onBack }) => {
   const [activeTab, setActiveTab] = useState<'home' | 'stock' | 'requests' | 'profile'>('home');
   const [updateNotice, setUpdateNotice] = useState('');
   const [medicines, setMedicines] = useState<MedicineItem[]>(storage.getMedicines());
@@ -344,6 +345,65 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
           {t.tabProfile}
         </button>
       </nav>
+
+      {/* Universal Back Navigation for Pharmacy Tabs */}
+      {activeTab !== 'home' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '18px',
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('home')}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#0284c7',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '8px',
+              padding: '7px 14px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>
+              {lang === 'ଓଡ଼ିଆ' ? '← ଔଷଧାଳୟ ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← फार्मेसी डैशबोर्ड पर वापस जाएं' : '← Back to Pharmacy Dashboard'}
+            </span>
+          </button>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                color: '#64748b',
+                padding: '6px 12px'
+              }}
+            >
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {updateNotice && (
         <div className="alert ok" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>

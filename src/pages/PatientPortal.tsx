@@ -29,7 +29,8 @@ import {
   Home,
   Compass,
   Bot,
-  Store
+  Store,
+  ArrowLeft
 } from 'lucide-react';
 import {
   DemoUser,
@@ -66,6 +67,7 @@ interface PatientPortalProps {
   onToggleLowBandwidth: () => void;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
+  onBack?: () => void;
 }
 
 export const PatientPortal: React.FC<PatientPortalProps> = ({
@@ -75,7 +77,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
   lowBandwidthMode,
   onToggleLowBandwidth,
   lang,
-  onSelectLang
+  onSelectLang,
+  onBack
 }) => {
   // Navigation Tabs: Home, Doctor, Records, Medicines, Profile (Prompt Section 8)
   const [activeTab, setActiveTab] = useState<'home' | 'symptom' | 'doctor' | 'records' | 'medicines' | 'profile'>('home');
@@ -696,6 +699,77 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         </div>
       )}
 
+      {/* Universal Back Navigation for Patient Tabs */}
+      {!isSimpleMode && activeTab !== 'home' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '18px',
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('home')}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#0284c7',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '8px',
+              padding: '7px 14px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>
+              {lang === 'ଓଡ଼ିଆ' ? '← ରୋଗୀ ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← रोगी डैशबोर्ड पर वापस जाएं' : '← Back to Patient Dashboard'}
+            </span>
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
+              {activeTab === 'symptom' && (lang === 'ଓଡ଼ିଆ' ? 'ଲକ୍ଷଣ ନେଭିଗେସନ୍' : lang === 'हिन्दी' ? 'लक्षण नेविगेशन' : 'Symptom Care Navigation')}
+              {activeTab === 'doctor' && (lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର ପରାମର୍ଶ' : lang === 'हिन्दी' ? 'चिकित्सक परामर्श' : 'Doctor Consultation')}
+              {activeTab === 'records' && (lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଓ ପ୍ରେସକ୍ରିପସନ୍' : lang === 'हिन्दी' ? 'स्वास्थ्य रिकॉर्ड एवं पर्चे' : 'Health Records & Prescriptions')}
+              {activeTab === 'medicines' && (lang === 'ଓଡ଼ିଆ' ? 'ଔଷଧ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? 'दवा स्टॉक' : 'Medicine Stock')}
+              {activeTab === 'profile' && (lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ପ୍ରୋଫାଇଲ୍' : lang === 'हिन्दी' ? 'रोगी प्रोफाइल' : 'Patient Profile')}
+            </span>
+
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="btn btn-ghost"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  color: '#64748b',
+                  padding: '6px 12px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px'
+                }}
+              >
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ======================================================== */}
       {/* 3. STANDARD TAB 1: HOME (Prompt Section 2 & 3)           */}
       {/* ======================================================== */}
@@ -1229,8 +1303,33 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
 
           {/* Progress Indicator (Prompt Section 27) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7' }}>
-              {symptomStep <= 4 ? `Step ${symptomStep} of 4` : 'Your Care Recommendation'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {symptomStep > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSymptomStep((prev) => (prev > 1 ? prev - 1 : 1))}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#0284c7',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="Go back to previous symptom question"
+                >
+                  <ArrowLeft size={12} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପ୍ରଶ୍ନ' : lang === 'हिन्दी' ? '← पिछला सवाल' : '← Previous Question'}</span>
+                </button>
+              )}
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7' }}>
+                {symptomStep <= 4 ? `Step ${symptomStep} of 4` : 'Your Care Recommendation'}
+              </div>
             </div>
             <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
               YOUR SYMPTOMS: {symptomStep === 1 ? '●━━━○━━━○━━━○' : symptomStep === 2 ? '●━━━●━━━○━━━○' : symptomStep === 3 ? '●━━━●━━━●━━━○' : '●━━━●━━━●━━━●'}

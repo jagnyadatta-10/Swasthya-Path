@@ -14,7 +14,8 @@ import {
   BarChart3,
   Calendar,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 import { DemoUser, Language, NetworkQuality } from '../types';
 import { storage } from '../utils/storage';
@@ -24,6 +25,7 @@ interface AdminPortalProps {
   networkQuality: NetworkQuality;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
+  onBack?: () => void;
 }
 
 const enAdmin = {
@@ -203,7 +205,7 @@ const ADMIN_I18N: Record<string, any> = {
   hi: hiAdmin
 };
 
-export const AdminPortal: React.FC<AdminPortalProps> = ({ user, networkQuality, lang, onSelectLang }) => {
+export const AdminPortal: React.FC<AdminPortalProps> = ({ user, networkQuality, lang, onSelectLang, onBack }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'impact' | 'facilities' | 'audit'>('overview');
   const [syncedAlert, setSyncedAlert] = useState('');
 
@@ -317,6 +319,65 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ user, networkQuality, 
           {t.tabAudit} ({auditLog.length})
         </button>
       </nav>
+
+      {/* Universal Back Navigation for Admin Tabs */}
+      {activeTab !== 'overview' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '18px',
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#047857',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              borderRadius: '8px',
+              padding: '7px 14px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>
+              {lang === 'ଓଡ଼ିଆ' ? '← ଜିଲ୍ଲା ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← मुख्य ज़िला डैशबोर्ड पर वापस जाएं' : '← Back to District Dashboard'}
+            </span>
+          </button>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                color: '#64748b',
+                padding: '6px 12px'
+              }}
+            >
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {syncedAlert && (
         <div className="alert ok" style={{ marginBottom: '16px' }}>

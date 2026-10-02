@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Stethoscope, Pill, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Sparkles, Key, Building2 } from 'lucide-react';
+import { User, Stethoscope, Pill, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Sparkles, Key, Building2, FlaskConical } from 'lucide-react';
 import { Role, DemoUser, Language } from '../types';
 import { DEMO_USERS } from '../data/mockData';
 import { getTranslation } from '../utils/translations';
@@ -23,6 +23,8 @@ const LOGIN_I18N = {
     pharmacyDesc: 'Local medicine stock updates',
     adminRole: 'Administrator',
     adminDesc: 'District impact & facility telemetry',
+    labRole: 'Diagnostic Lab',
+    labDesc: 'Submit physical reports & pathology',
     loginAs: (role: string) => `Login as ${role}`,
     useDemo: 'Use Demo Account',
     demoAccount: 'Demo Account:',
@@ -38,7 +40,8 @@ const LOGIN_I18N = {
       patient: 'Patient',
       doctor: 'Doctor',
       pharmacy: 'Pharmacy',
-      admin: 'Administrator'
+      admin: 'Administrator',
+      lab: 'Diagnostic Lab & Medical Center'
     }
   },
   'ଓଡ଼ିଆ': {
@@ -53,6 +56,8 @@ const LOGIN_I18N = {
     pharmacyDesc: 'ସ୍ଥାନୀୟ ଔଷଧ ଷ୍ଟକ୍ ଯାଞ୍ଚ ଓ ଅପଡେଟ୍',
     adminRole: 'ପ୍ରଶାସକ (Admin)',
     adminDesc: 'ଜିଲ୍ଲା ସ୍ତରୀୟ ତଥ୍ୟ ଓ କେନ୍ଦ୍ର ଟେଲିମେଟ୍ରି',
+    labRole: 'ନିଦାନ କେନ୍ଦ୍ର (Lab)',
+    labDesc: 'ରୋଗୀଙ୍କ ଶାରୀରିକ ରିପୋର୍ଟ ଦାଖଲ ଓ ପରୀକ୍ଷା',
     loginAs: (role: string) => `${role} ଭାବେ ପ୍ରବେଶ କରନ୍ତୁ`,
     useDemo: 'ଡେମୋ ଆକାଉଣ୍ଟ୍ ବ୍ୟବହାର କରନ୍ତୁ',
     demoAccount: 'ଡେମୋ ଆକାଉଣ୍ଟ୍:',
@@ -68,7 +73,8 @@ const LOGIN_I18N = {
       patient: 'ରୋଗୀ',
       doctor: 'ଡାକ୍ତର',
       pharmacy: 'ଔଷଧାଳୟ',
-      admin: 'ପ୍ରଶାସକ'
+      admin: 'ପ୍ରଶାସକ',
+      lab: 'ଡାକ୍ତରୀ ନିଦାନ କେନ୍ଦ୍ର'
     }
   },
   'हिन्दी': {
@@ -83,6 +89,8 @@ const LOGIN_I18N = {
     pharmacyDesc: 'स्थानीय दवा स्टॉक जांच और अपडेट',
     adminRole: 'व्यवस्थापक (Admin)',
     adminDesc: 'जिला प्रभाव एवं स्वास्थ्य केंद्र टेलीमेट्री',
+    labRole: 'डायग्नोस्टिक लैब',
+    labDesc: 'शारीरिक रिपोर्ट जमा एवं पैथोलॉजी टेस्ट',
     loginAs: (role: string) => `${role} के रूप में लॉगिन करें`,
     useDemo: 'डेमो खाता उपयोग करें',
     demoAccount: 'डेमो खाता:',
@@ -98,7 +106,8 @@ const LOGIN_I18N = {
       patient: 'रोगी',
       doctor: 'डॉक्टर',
       pharmacy: 'फार्मेसी',
-      admin: 'व्यवस्थापक'
+      admin: 'व्यवस्थापक',
+      lab: 'डायग्नोस्टिक लैब एवं मेडिकल सेंटर'
     }
   }
 };
@@ -201,8 +210,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
           </p>
         </div>
 
-        {/* 4 Portal Role Selection Cards */}
-        <div className="role-selector-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+        {/* 5 Portal Role Selection Cards */}
+        <div className="role-selector-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
           <button
             type="button"
             className={`role-card-btn ${selectedRole === 'patient' ? 'selected' : ''}`}
@@ -215,7 +224,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'patient' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.patientRole}</strong>
+            <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{t.patientRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
               {t.patientDesc}
             </span>
@@ -233,7 +242,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'doctor' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.doctorRole}</strong>
+            <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{t.doctorRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
               {t.doctorDesc}
             </span>
@@ -251,7 +260,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'pharmacy' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.pharmacyRole}</strong>
+            <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{t.pharmacyRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
               {t.pharmacyDesc}
             </span>
@@ -269,9 +278,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'admin' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.adminRole}</strong>
+            <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{t.adminRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
               {t.adminDesc}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`role-card-btn ${selectedRole === 'lab' ? 'selected' : ''}`}
+            onClick={() => handleRoleSelect('lab')}
+            aria-pressed={selectedRole === 'lab'}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FlaskConical size={20} />
+              </div>
+              {selectedRole === 'lab' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
+            </div>
+            <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{t.labRole}</strong>
+            <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
+              {t.labDesc}
             </span>
           </button>
         </div>

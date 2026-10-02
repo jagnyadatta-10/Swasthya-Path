@@ -10,6 +10,7 @@ import { PatientPortal } from './pages/PatientPortal';
 import { DoctorPortal } from './pages/DoctorPortal';
 import { PharmacyPortal } from './pages/PharmacyPortal';
 import { AdminPortal } from './pages/AdminPortal';
+import { MedicalDashboard } from './pages/MedicalDashboard';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<DemoUser | null>(null);
@@ -86,6 +87,13 @@ export const App: React.FC = () => {
           />
         ) : currentUser.role === 'pharmacy' ? (
           <PharmacyPortal
+            user={currentUser}
+            networkQuality={networkQuality}
+            lang={lang}
+            onSelectLang={setLang}
+          />
+        ) : currentUser.role === 'lab' ? (
+          <MedicalDashboard
             user={currentUser}
             networkQuality={networkQuality}
             lang={lang}

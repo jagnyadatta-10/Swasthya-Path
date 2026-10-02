@@ -71,6 +71,16 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     badge: 'District Health Society • Kalahandi, Odisha',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
     location: 'CDMO Complex, Bhawanipatna, Kalahandi'
+  },
+  lab: {
+    name: 'DHH Central Diagnostic & Pathology Center',
+    email: 'lab@swasthyapath.demo',
+    mobile: '+91 90000 10005',
+    role: 'lab',
+    portalTitle: 'Medical Diagnostic Dashboard',
+    badge: 'District Health Diagnostic Unit • Kalahandi',
+    avatar: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=150&q=80',
+    location: 'District Headquarters Hospital (DHH) Pathology Wing, Bhawanipatna, Kalahandi'
   }
 };
 
@@ -92,16 +102,37 @@ export const INITIAL_DOCUMENTS: DiagnosticDocument[] = [
     title: 'Complete Blood Count (CBC) Panel',
     category: 'Lab Report',
     date: '30/08/2026',
-    provider: 'DHH Bhawanipatna Pathology Lab',
-    notes: 'Hemoglobin: 11.8 g/dL, Platelets: 2.1 Lakh, TLC: 7,400. Normal reference range.'
+    provider: 'DHH Bhawanipatna Central Pathology Lab',
+    patientId: 'RHB-OD-KLH-0941',
+    patientName: 'Keshab Rout',
+    status: 'Verified',
+    labName: 'DHH Bhawanipatna Central Pathology Lab',
+    technicianName: 'Bipin Bihari Das, Sr. MLT',
+    doctorInCharge: 'Dr. M. K. Rath (MD Pathology)',
+    notes: 'Hemoglobin: 12.8 g/dL, Platelets: 2.1 Lakh, TLC: 7,400. Normal reference range. No abnormal blasts seen.',
+    parameters: [
+      { name: 'Hemoglobin (Hb)', result: '12.8', unit: 'g/dL', refRange: '12.0 - 16.5' },
+      { name: 'Total Leukocyte Count (TLC)', result: '7,400', unit: '/cumm', refRange: '4,000 - 11,000' },
+      { name: 'Platelet Count', result: '2.10', unit: 'Lakhs/cumm', refRange: '1.50 - 4.50' },
+      { name: 'Neutrophils', result: '62', unit: '%', refRange: '40 - 75' },
+      { name: 'Lymphocytes', result: '30', unit: '%', refRange: '20 - 45' },
+      { name: 'ESR (Westergren)', result: '14', unit: 'mm/1st hr', refRange: '0 - 20' }
+    ],
+    syncedAbha: true
   },
   {
     id: 'doc-xray-02',
-    title: 'Chest X-Ray PA View',
+    title: 'Chest X-Ray PA View (Digital Scan)',
     category: 'X-Ray',
     date: '15/07/2026',
     provider: 'District Mobile Radiology Van',
-    notes: 'Bilateral lung fields clear. No active infiltrates or consolidation observed.'
+    patientId: 'RHB-OD-KLH-0941',
+    patientName: 'Keshab Rout',
+    status: 'Verified',
+    labName: 'District Mobile Radiology Unit',
+    technicianName: 'Sanjay Kumar Sahoo, Rad Tech',
+    doctorInCharge: 'Dr. P. C. Mohapatra (Radiologist)',
+    notes: 'Bilateral lung fields clear. Costophrenic angles normal. Normal cardiothoracic ratio.'
   },
   {
     id: 'doc-ref-03',
@@ -109,7 +140,12 @@ export const INITIAL_DOCUMENTS: DiagnosticDocument[] = [
     category: 'Referral',
     date: '20/05/2026',
     provider: 'Kalahandi Sub-Center Clinic',
-    notes: 'Routine maternal & child health follow-up records verified.'
+    patientId: 'RHB-OD-KLH-0941',
+    patientName: 'Keshab Rout',
+    status: 'Verified',
+    labName: 'Sub-Center Health Wellness Clinic',
+    technicianName: 'Savitri Majhi (ASHA / ANM)',
+    notes: 'Routine health screening and baseline vitals validated.'
   }
 ];
 

@@ -101,8 +101,8 @@ export const DemoSimulator: React.FC<DemoSimulatorProps> = ({
               <User size={13} />
               <span>Simulate Role:</span>
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-              {(['patient', 'doctor', 'pharmacy', 'admin'] as Role[]).map((r) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+              {(['patient', 'doctor', 'pharmacy', 'admin', 'lab'] as Role[]).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -120,7 +120,7 @@ export const DemoSimulator: React.FC<DemoSimulatorProps> = ({
                     textAlign: 'center'
                   }}
                 >
-                  {r === 'patient' ? '👤 Patient' : r === 'doctor' ? '🩺 Doctor' : r === 'pharmacy' ? '💊 Chemist' : '🏛️ Admin'}
+                  {r === 'patient' ? '👤 Patient' : r === 'doctor' ? '🩺 Doctor' : r === 'pharmacy' ? '💊 Chemist' : r === 'admin' ? '🏛️ Admin' : '🔬 Lab'}
                 </button>
               ))}
             </div>

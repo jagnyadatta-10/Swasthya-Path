@@ -411,40 +411,86 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                   </div>
                 </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
-                      <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>{t.haemoglobin}</td>
-                      <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>12.8 g/dL</td>
-                      <td style={{ padding: '6px', color: '#64748b' }}>12.0 – 15.5 g/dL</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>{t.leukocyte}</td>
-                      <td style={{ padding: '6px', fontWeight: 700, color: '#0284c7' }}>7,400 /cumm</td>
-                      <td style={{ padding: '6px', color: '#64748b' }}>4,000 – 11,000 /cumm</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px' }}>{t.platelet}</td>
-                      <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>2.4 Lakhs/cumm</td>
-                      <td style={{ padding: '6px', color: '#64748b' }}>1.5 – 4.0 Lakhs/cumm</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '6px' }}>{t.malariaSmear}</td>
-                      <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>{t.negative}</td>
-                      <td style={{ padding: '6px', color: '#64748b' }}>Negative</td>
-                    </tr>
-                  </tbody>
-                </table>
+                {document.fileUrl ? (
+                  <div style={{ marginBottom: '14px', textAlign: 'center', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: 600 }}>
+                      Physical Scanned Document Attachment:
+                    </div>
+                    <img
+                      src={document.fileUrl}
+                      alt="Scanned Physical Report"
+                      style={{ maxWidth: '100%', maxHeight: '360px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                ) : null}
 
-                <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
-                  {t.validatedBy}
+                {document.parameters && document.parameters.length > 0 ? (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {document.parameters.map((param, pIdx) => (
+                        <tr key={pIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px', fontWeight: 500 }}>{param.name}</td>
+                          <td style={{
+                            padding: '6px',
+                            fontWeight: 700,
+                            color: param.isAbnormal ? '#dc2626' : '#059669'
+                          }}>
+                            {param.result} {param.unit || ''}
+                            {param.isAbnormal && (
+                              <span style={{ marginLeft: '6px', fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '1px 5px', borderRadius: '4px' }}>
+                                ABNORMAL
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '6px', color: '#64748b' }}>{param.refRange}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px' }}>{t.haemoglobin}</td>
+                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>12.8 g/dL</td>
+                        <td style={{ padding: '6px', color: '#64748b' }}>12.0 – 15.5 g/dL</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px' }}>{t.leukocyte}</td>
+                        <td style={{ padding: '6px', fontWeight: 700, color: '#0284c7' }}>7,400 /cumm</td>
+                        <td style={{ padding: '6px', color: '#64748b' }}>4,000 – 11,000 /cumm</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px' }}>{t.platelet}</td>
+                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>2.4 Lakhs/cumm</td>
+                        <td style={{ padding: '6px', color: '#64748b' }}>1.5 – 4.0 Lakhs/cumm</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '6px' }}>{t.malariaSmear}</td>
+                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>{t.negative}</td>
+                        <td style={{ padding: '6px', color: '#64748b' }}>Negative</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
+                  <span>{document.patientName ? `Patient: ${document.patientName} (${document.patientId || 'RHB-OD-KLH-0941'})` : 'Patient: Keshab Rout'}</span>
+                  <span>{document.doctorInCharge ? `Sign-off: ${document.doctorInCharge}` : t.validatedBy}</span>
                 </div>
               </div>
             )}

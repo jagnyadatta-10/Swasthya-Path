@@ -1,4 +1,4 @@
-export type Role = 'patient' | 'doctor' | 'pharmacy' | 'admin';
+export type Role = 'patient' | 'doctor' | 'pharmacy' | 'admin' | 'lab';
 
 export type Language = 'English' | 'ଓଡ଼ିଆ' | 'हिन्दी';
 
@@ -103,6 +103,14 @@ export interface PhysiologicalVitals {
   recordedAt: string;
 }
 
+export interface DiagnosticTestParameter {
+  name: string;
+  result: string;
+  unit?: string;
+  refRange: string;
+  isAbnormal?: boolean;
+}
+
 export interface DiagnosticDocument {
   id: string;
   title: string;
@@ -111,6 +119,17 @@ export interface DiagnosticDocument {
   provider: string;
   thumbnail?: string;
   notes?: string;
+  patientId?: string;
+  patientName?: string;
+  status?: 'Verified' | 'Pending Review' | 'Critical Flag';
+  fileUrl?: string;
+  sampleType?: string;
+  labName?: string;
+  technicianName?: string;
+  doctorInCharge?: string;
+  criticalAlert?: boolean;
+  parameters?: DiagnosticTestParameter[];
+  syncedAbha?: boolean;
 }
 
 export interface PrescriptionMedicine {

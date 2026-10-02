@@ -314,15 +314,25 @@ export const storage = {
     }
   },
 
-  addDocument(doc: Omit<DiagnosticDocument, 'id'>): DiagnosticDocument {
+  addDocument(doc: Omit<DiagnosticDocument, 'id'> & Partial<DiagnosticDocument>): DiagnosticDocument {
     const list = this.getDocuments();
     const newDoc: DiagnosticDocument = {
       ...doc,
-      id: `doc-${Date.now()}`
+      id: doc.id || `doc-${Date.now()}`
     };
     list.unshift(newDoc);
     localStorage.setItem(KEYS.DOCUMENTS, JSON.stringify(list));
     return newDoc;
+  },
+
+  updateDocumentStatus(id: string, status: DiagnosticDocument['status']): DiagnosticDocument[] {
+    const list = this.getDocuments();
+    const idx = list.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      list[idx].status = status;
+      localStorage.setItem(KEYS.DOCUMENTS, JSON.stringify(list));
+    }
+    return list;
   },
 
   // Prescriptions

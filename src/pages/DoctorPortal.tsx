@@ -23,7 +23,8 @@ import {
   Share2,
   Save,
   MapPin,
-  ClipboardList
+  ClipboardList,
+  Edit3
 } from 'lucide-react';
 import {
   DemoUser,
@@ -146,7 +147,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   // Modals
   const [viewingDocument, setViewingDocument] = useState<DiagnosticDocument | null>(null);
   const [isRxModalOpen, setIsRxModalOpen] = useState(false);
-  const [rxModalMode, setRxModalMode] = useState<'view' | 'create'>('create');
+  const [rxModalMode, setRxModalMode] = useState<'view' | 'create' | 'edit'>('create');
   const [activeRxForView, setActiveRxForView] = useState<FullPrescription | null>(null);
   const [isSpecialistModalOpen, setIsSpecialistModalOpen] = useState(false);
   const [isCarePlanModalOpen, setIsCarePlanModalOpen] = useState(false);
@@ -792,18 +793,33 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                     <div style={{ color: '#475569', marginTop: '2px' }}>
                       {rx.diagnosisSummary}
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-ghost-light"
-                      onClick={() => {
-                        setActiveRxForView(rx);
-                        setRxModalMode('view');
-                        setIsRxModalOpen(true);
-                      }}
-                      style={{ padding: '2px 8px', fontSize: '11px', marginTop: '4px', color: '#0284c7' }}
-                    >
-                      View Prescription
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost-light"
+                        onClick={() => {
+                          setActiveRxForView(rx);
+                          setRxModalMode('view');
+                          setIsRxModalOpen(true);
+                        }}
+                        style={{ padding: '3px 8px', fontSize: '11px', color: '#0284c7' }}
+                      >
+                        <Eye size={12} /> {lang === 'ଓଡ଼ିଆ' ? 'ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'देखें' : 'View'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setActiveRxForView(rx);
+                          setRxModalMode('edit');
+                          setIsRxModalOpen(true);
+                        }}
+                        style={{ padding: '3px 8px', fontSize: '11px', background: '#eff6ff', borderColor: '#93c5fd', color: '#1d4ed8', fontWeight: 600 }}
+                      >
+                        <Edit3 size={12} /> {lang === 'ଓଡ଼ିଆ' ? 'ସଂଶୋଧନ' : lang === 'हिन्दी' ? 'संपादित करें' : 'Edit'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -932,7 +948,20 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setActiveRxForView(rx);
+                      setRxModalMode('edit');
+                      setIsRxModalOpen(true);
+                    }}
+                    style={{ fontSize: '12px', padding: '6px 12px', background: '#eff6ff', borderColor: '#93c5fd', color: '#1d4ed8', fontWeight: 700 }}
+                  >
+                    <Edit3 size={13} /> {lang === 'ଓଡ଼ିଆ' ? 'ସଂଶୋଧନ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'संपादित करें' : 'Edit Prescription'}
+                  </button>
+
                   <button
                     type="button"
                     className="btn btn-primary"
@@ -943,7 +972,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                     }}
                     style={{ fontSize: '12px', padding: '6px 14px' }}
                   >
-                    Open Details & Stock
+                    {lang === 'ଓଡ଼ିଆ' ? 'ବିବରଣୀ ଓ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? 'विवरण एवं स्टॉक' : 'Open Details & Stock'}
                   </button>
                 </div>
               </div>
@@ -1086,7 +1115,14 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         lang={lang}
         onPrescriptionSaved={(newRx) => {
           setPrescriptions(storage.getPrescriptions());
-          alert(`E-Prescription ${newRx.prescriptionNumber} generated & shared with patient!`);
+          setRecords(storage.getRecords());
+          alert(
+            lang === 'ଓଡ଼ିଆ'
+              ? `ଇ-ପ୍ରେସକ୍ରିପସନ୍ (${newRx.prescriptionNumber}) ସଫଳତାର ସହିତ ସଂରକ୍ଷଣ/ସଂଶୋଧନ କରାଗଲା ଏବଂ ରୋଗୀ ରେକର୍ଡ ସହିତ ସିଙ୍କ ହେଲା!`
+              : lang === 'हिन्दी'
+              ? `ई-प्रिस्क्रिप्शन (${newRx.prescriptionNumber}) सफलतापूर्वक सहेजा/संशोधित किया गया एवं रोगी रिकॉर्ड के साथ सिंक हुआ!`
+              : `E-Prescription (${newRx.prescriptionNumber}) successfully saved & updated in patient record!`
+          );
         }}
       />
 

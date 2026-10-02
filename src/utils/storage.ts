@@ -351,6 +351,36 @@ export const storage = {
 
   savePrescription(rx: Omit<FullPrescription, 'id' | 'prescriptionNumber' | 'date'> & Partial<FullPrescription>): FullPrescription {
     const list = this.getPrescriptions();
+    const existingIndex = rx.id 
+      ? list.findIndex(p => p.id === rx.id) 
+      : rx.prescriptionNumber 
+      ? list.findIndex(p => p.prescriptionNumber === rx.prescriptionNumber) 
+      : -1;
+
+    if (existingIndex !== -1) {
+      const updatedRx: FullPrescription = {
+        ...list[existingIndex],
+        ...rx,
+        id: list[existingIndex].id,
+        prescriptionNumber: list[existingIndex].prescriptionNumber,
+        date: rx.date || list[existingIndex].date,
+        medicines: rx.medicines || list[existingIndex].medicines,
+        diagnosisSummary: rx.diagnosisSummary !== undefined ? rx.diagnosisSummary : list[existingIndex].diagnosisSummary,
+        followUp: rx.followUp !== undefined ? rx.followUp : list[existingIndex].followUp,
+        notes: rx.notes !== undefined ? rx.notes : list[existingIndex].notes,
+        digitalSignature: rx.digitalSignature || `Digitally Revised by ${rx.doctorName || list[existingIndex].doctorName} (${new Date().toLocaleDateString('en-GB')})`
+      };
+      list[existingIndex] = updatedRx;
+      localStorage.setItem(KEYS.PRESCRIPTIONS, JSON.stringify(list));
+      this.addNotification({
+        title: 'E-Prescription Updated',
+        body: `E-Prescription ${updatedRx.prescriptionNumber} for ${updatedRx.patientName} was revised by ${updatedRx.doctorName}.`,
+        type: 'prescription'
+      });
+      this.addAuditLog(`E-Prescription ${updatedRx.prescriptionNumber} revised by ${updatedRx.doctorName}`, updatedRx.doctorName);
+      return updatedRx;
+    }
+
     const newRx: FullPrescription = {
       ...rx,
       id: rx.id || `rx-${Date.now()}`,

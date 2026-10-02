@@ -2586,6 +2586,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         networkQuality={networkQuality}
         onNetworkChange={onNetworkChange}
         userRole="patient"
+        lang={lang}
         onCheckPharmacy={() => {
           setIsVideoCallOpen(false);
           setActiveTab('medicines');
@@ -2894,7 +2895,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   gap: '6px'
                 }}
               >
-                <Volume2 size={16} /> <span>Listen to Guide</span>
+                <Volume2 size={16} /> <span>{lang === 'ଓଡ଼ିଆ' ? 'ଗାଇଡ୍ ଶୁଣନ୍ତୁ' : lang === 'हिन्दी' ? 'गाइड सुनें' : 'Listen to Guide'}</span>
               </button>
 
               <button
@@ -2903,7 +2904,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 onClick={() => setActiveHelpTopic(null)}
                 style={{ padding: '10px 20px', fontSize: '13px', fontWeight: 700 }}
               >
-                Got It, Thanks!
+                {lang === 'ଓଡ଼ିଆ' ? 'ବୁଝିଲି, ଧନ୍ୟବାଦ!' : lang === 'हिन्दी' ? 'समझ गया, धन्यवाद!' : 'Got It, Thanks!'}
               </button>
             </div>
           </div>

@@ -12,7 +12,9 @@ export const SafetyBanner: React.FC<SafetyBannerProps> = ({ lang }) => {
     <div className="safety-banner" role="region" aria-label="Clinical Safety and Emergency Notice">
       <AlertTriangle size={20} style={{ color: '#d97706', flexShrink: 0 }} />
       <div style={{ flex: 1 }}>
-        <strong>CLINICAL SAFETY NOTICE: </strong>
+        <strong>
+          {lang === 'ଓଡ଼ିଆ' ? 'କ୍ଲିନିକାଲ୍ ସୁରକ୍ଷା ସୂଚନା: ' : lang === 'हिन्दी' ? 'चिकित्सीय सुरक्षा सूचना: ' : 'CLINICAL SAFETY NOTICE: '}
+        </strong>
         {getTranslation(lang, 'safetyDisclaimer')}
       </div>
       <div
@@ -30,7 +32,7 @@ export const SafetyBanner: React.FC<SafetyBannerProps> = ({ lang }) => {
         }}
       >
         <PhoneCall size={13} />
-        <span>108 Emergency</span>
+        <span>{lang === 'ଓଡ଼ିଆ' ? '୧୦୮ ଜରୁରୀକାଳୀନ' : lang === 'हिन्दी' ? '108 आपातकालीन' : '108 Emergency'}</span>
       </div>
     </div>
   );

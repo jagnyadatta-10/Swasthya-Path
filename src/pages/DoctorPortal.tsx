@@ -50,14 +50,93 @@ interface DoctorPortalProps {
   networkQuality: NetworkQuality;
   onNetworkChange?: (quality: NetworkQuality) => void;
   lang: Language;
+  onSelectLang?: (lang: Language) => void;
 }
+
+const DOCTOR_I18N = {
+  English: {
+    specialistBtn: 'Request Specialist Opinion',
+    createRxBtn: 'Create E-Prescription',
+    soleAuth: 'Doctor retains sole diagnostic authority',
+    tabHome: 'Home',
+    tabQueue: (count: number) => `Triage Queue (${count})`,
+    tabEval: 'Patient Evaluation & Vitals',
+    tabSchedule: (count: number) => `Appointments (${count})`,
+    tabRx: (count: number) => `Prescriptions (${count})`,
+    tabSpecialist: (count: number) => `Specialist Requests (${count})`,
+    tabHistory: 'Consultation History',
+    heroTitle: 'Clinician Workspace & Tele-Triage Hub',
+    heroSubtitle: 'Review AI-assisted intake summaries, verify clinical safety flags, conduct low-bandwidth teleconsultations, and make authoritative medical care decisions.',
+    openQueueBtn: 'Open Triage Queue',
+    startTeleconsultBtn: 'Start Teleconsultation',
+    issueRxBtn: 'Issue E-Prescription',
+    requestSpecialistBtn: 'Request Specialist Opinion',
+    doctorCarePlanBtn: 'Doctor Care Plan',
+    // Mobile Nav
+    navHome: 'Dashboard',
+    navQueue: 'Queue',
+    navPatients: 'Patients',
+    navConsult: 'Consult',
+    navSpecialist: 'Specialist'
+  },
+  'ଓଡ଼ିଆ': {
+    specialistBtn: 'ବିଶେଷଜ୍ଞ ମତାମତ ମାଗନ୍ତୁ',
+    createRxBtn: 'ଇ-ପ୍ରେସକ୍ରିପସନ୍ ପ୍ରସ୍ତୁତ କରନ୍ତୁ',
+    soleAuth: 'କେବଳ ଡାକ୍ତରଙ୍କର ହିଁ ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ଅଧିକାର ଅଛି',
+    tabHome: 'ଡ୍ୟାସବୋର୍ଡ',
+    tabQueue: (count: number) => `ଟ୍ରାଇଏଜ୍ କତାର (${count})`,
+    tabEval: 'ରୋଗୀ ମୂଲ୍ୟାଙ୍କନ ଓ ଭାଇଟାଲ୍ସ',
+    tabSchedule: (count: number) => `ଅପଏଣ୍ଟମେଣ୍ଟ (${count})`,
+    tabRx: (count: number) => `ପ୍ରେସକ୍ରିପସନ୍ (${count})`,
+    tabSpecialist: (count: number) => `ବିଶେଷଜ୍ଞ ଅନୁରୋଧ (${count})`,
+    tabHistory: 'ପରାମର୍ଶ ଇତିହାସ',
+    heroTitle: 'ଚିକିତ୍ସକ କାର୍ଯ୍ୟକ୍ଷେତ୍ର ଓ ଟେଲି-ଟ୍ରାଇଏଜ୍ କେନ୍ଦ୍ର',
+    heroSubtitle: 'AI-ସହାୟକ ଲକ୍ଷଣ ସାରାଂଶ ସମୀକ୍ଷା କରନ୍ତୁ, ନିରାପତ୍ତା ଯାଞ୍ଚ କରନ୍ତୁ, ସ୍ୱଳ୍ପ ଡାଟାରେ ଟେଲିକନସଲ୍ଟେସନ୍ କରନ୍ତୁ ଏବଂ ଅନ୍ତିମ ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ନିଅନ୍ତୁ।',
+    openQueueBtn: 'ଟ୍ରାଇଏଜ୍ କତାର ଖୋଲନ୍ତୁ',
+    startTeleconsultBtn: 'ଟେଲିକନସଲ୍ଟେସନ୍ ଆରମ୍ଭ କରନ୍ତୁ',
+    issueRxBtn: 'ପ୍ରେସକ୍ରିପସନ୍ ଦିଅନ୍ତୁ',
+    requestSpecialistBtn: 'ବିଶେଷଜ୍ଞ ମତାମତ ମାଗନ୍ତୁ',
+    doctorCarePlanBtn: 'ଚିକିତ୍ସା ଯତ୍ନ ଯୋଜନା',
+    navHome: 'ଡ୍ୟାସବୋର୍ଡ',
+    navQueue: 'କତାର',
+    navPatients: 'ରୋଗୀ',
+    navConsult: 'ପରାମର୍ଶ',
+    navSpecialist: 'ବିଶେଷଜ୍ଞ'
+  },
+  'हिन्दी': {
+    specialistBtn: 'विशेषज्ञ परामर्श का अनुरोध करें',
+    createRxBtn: 'ई-प्रिस्क्रिप्शन बनाएं',
+    soleAuth: 'केवल चिकित्सक के पास नैदानिक निर्णय का अधिकार है',
+    tabHome: 'डैशबोर्ड',
+    tabQueue: (count: number) => `ट्राइएज कतार (${count})`,
+    tabEval: 'रोगी मूल्यांकन एवं वाइटल्स',
+    tabSchedule: (count: number) => `अपॉइंटमेंट्स (${count})`,
+    tabRx: (count: number) => `प्रिस्क्रिप्शन (${count})`,
+    tabSpecialist: (count: number) => `विशेषज्ञ अनुरोध (${count})`,
+    tabHistory: 'परामर्श इतिहास',
+    heroTitle: 'चिकित्सक कार्यस्थल एवं टेली-ट्राइएज हब',
+    heroSubtitle: 'एआई-सहायक लक्षण सारांश की समीक्षा करें, सुरक्षा अलर्ट जांचें, कम बैंडविड्थ पर टेलीपरामर्श करें और आधिकारिक चिकित्सा निर्णय लें।',
+    openQueueBtn: 'ट्राइएज कतार खोलें',
+    startTeleconsultBtn: 'टेलीपरामर्श प्रारंभ करें',
+    issueRxBtn: 'प्रिस्क्रिप्शन जारी करें',
+    requestSpecialistBtn: 'विशेषज्ञ राय मांगें',
+    doctorCarePlanBtn: 'डॉक्टर केयर प्लान',
+    navHome: 'डैशबोर्ड',
+    navQueue: 'कतार',
+    navPatients: 'रोगी',
+    navConsult: 'परामर्श',
+    navSpecialist: 'विशेषज्ञ'
+  }
+};
 
 export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   user,
   networkQuality,
   onNetworkChange,
-  lang
+  lang,
+  onSelectLang
 }) => {
+  const t = DOCTOR_I18N[lang] || DOCTOR_I18N.English;
   const [activeTab, setActiveTab] = useState<'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history'>('home');
   const [selectedQueueItem, setSelectedQueueItem] = useState<TriageQueueItem | null>(null);
   const [doctorActionNote, setDoctorActionNote] = useState('');
@@ -186,13 +265,41 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* In-Portal Language Selector */}
+          {onSelectLang && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', padding: '3px 8px', borderRadius: '999px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>
+                {lang === 'ଓଡ଼ିଆ' ? 'ଭାଷା:' : lang === 'हिन्दी' ? 'भाषा:' : 'Lang:'}
+              </span>
+              {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => onSelectLang(l)}
+                  style={{
+                    background: lang === l ? '#0284c7' : 'transparent',
+                    color: lang === l ? '#ffffff' : '#334155',
+                    border: 'none',
+                    borderRadius: '999px',
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    fontWeight: lang === l ? 700 : 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          )}
+
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => setIsSpecialistModalOpen(true)}
             style={{ fontSize: '12px', padding: '6px 12px' }}
           >
-            <UserPlus size={14} /> Request Specialist Opinion
+            <UserPlus size={14} /> {t.specialistBtn}
           </button>
 
           <button
@@ -204,7 +311,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             }}
             style={{ fontSize: '12px', padding: '6px 12px', fontWeight: 700 }}
           >
-            <Plus size={14} /> Create E-Prescription
+            <Plus size={14} /> {t.createRxBtn}
           </button>
 
           <div
@@ -221,7 +328,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             }}
           >
             <ShieldCheck size={14} />
-            <span>Doctor retains sole diagnostic authority</span>
+            <span>{t.soleAuth}</span>
           </div>
         </div>
       </div>
@@ -232,43 +339,43 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           className={`tab-btn ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => setActiveTab('home')}
         >
-          {getTranslation(lang, 'tabHome')}
+          {t.tabHome}
         </button>
         <button
           className={`tab-btn ${activeTab === 'queue' ? 'active' : ''}`}
           onClick={() => setActiveTab('queue')}
         >
-          Triage Queue ({queue.filter((q) => q.status === 'pending' || q.status === 'escalated').length})
+          {t.tabQueue(queue.filter((q) => q.status === 'pending' || q.status === 'escalated').length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'evaluation' ? 'active' : ''}`}
           onClick={() => setActiveTab('evaluation')}
         >
-          Patient Evaluation & Vitals
+          {t.tabEval}
         </button>
         <button
           className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
           onClick={() => setActiveTab('schedule')}
         >
-          Appointments ({appointments.length})
+          {t.tabSchedule(appointments.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'prescriptions' ? 'active' : ''}`}
           onClick={() => setActiveTab('prescriptions')}
         >
-          Prescriptions ({prescriptions.length})
+          {t.tabRx(prescriptions.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'specialist' ? 'active' : ''}`}
           onClick={() => setActiveTab('specialist')}
         >
-          Specialist Requests ({specialistRequests.length})
+          {t.tabSpecialist(specialistRequests.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Consultation History
+          {t.tabHistory}
         </button>
       </nav>
 
@@ -278,24 +385,22 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       {activeTab === 'home' && (
         <div>
           <div className="hero-card" style={{ borderRadius: '16px', marginBottom: '20px' }}>
-            <h1>Clinician Workspace & Tele-Triage Hub</h1>
-            <p>
-              Review AI-assisted intake summaries, verify clinical safety flags, conduct low-bandwidth teleconsultations, and make authoritative medical care decisions.
-            </p>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroSubtitle}</p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 className="btn btn-primary"
                 onClick={() => setActiveTab('queue')}
               >
                 <Stethoscope size={16} />
-                <span>Open Triage Queue</span>
+                <span>{t.openQueueBtn}</span>
               </button>
               <button
                 className="btn btn-ghost-light"
                 onClick={() => setIsVideoCallOpen(true)}
               >
                 <Video size={16} />
-                <span>Start Teleconsultation</span>
+                <span>{t.startTeleconsultBtn}</span>
               </button>
               <button
                 className="btn btn-ghost-light"
@@ -305,21 +410,21 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 }}
               >
                 <Pill size={16} />
-                <span>Issue E-Prescription</span>
+                <span>{t.issueRxBtn}</span>
               </button>
               <button
                 className="btn btn-ghost-light"
                 onClick={() => setIsSpecialistModalOpen(true)}
               >
                 <UserPlus size={16} />
-                <span>Request Specialist Opinion</span>
+                <span>{t.requestSpecialistBtn}</span>
               </button>
               <button
                 className="btn btn-ghost-light"
                 onClick={() => setIsCarePlanModalOpen(true)}
               >
                 <ClipboardList size={16} />
-                <span>Create Care Plan</span>
+                <span>{t.doctorCarePlanBtn}</span>
               </button>
             </div>
           </div>
@@ -930,6 +1035,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         networkQuality={networkQuality}
         onNetworkChange={onNetworkChange}
         userRole="doctor"
+        lang={lang}
       />
 
       {/* Diagnostic Document Viewer Modal */}
@@ -1000,35 +1106,35 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'home' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <ClipboardList size={18} />
-          <span>Dashboard</span>
+          <span>{t.navHome}</span>
         </button>
         <button
           onClick={() => setActiveTab('queue')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'queue' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <Clock size={18} />
-          <span>Queue</span>
+          <span>{t.navQueue}</span>
         </button>
         <button
           onClick={() => setActiveTab('evaluation')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'evaluation' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <User size={18} />
-          <span>Patients</span>
+          <span>{t.navPatients}</span>
         </button>
         <button
           onClick={() => setIsVideoCallOpen(true)}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#0284c7', fontSize: '10px', cursor: 'pointer' }}
         >
           <Video size={18} />
-          <span>Consult</span>
+          <span>{t.navConsult}</span>
         </button>
         <button
           onClick={() => setActiveTab('specialist')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'specialist' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <UserPlus size={18} />
-          <span>Specialist</span>
+          <span>{t.navSpecialist}</span>
         </button>
       </div>
     </div>

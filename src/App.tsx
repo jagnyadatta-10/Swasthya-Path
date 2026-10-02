@@ -82,18 +82,21 @@ export const App: React.FC = () => {
             networkQuality={networkQuality}
             onNetworkChange={setNetworkQuality}
             lang={lang}
+            onSelectLang={setLang}
           />
         ) : currentUser.role === 'pharmacy' ? (
           <PharmacyPortal
             user={currentUser}
             networkQuality={networkQuality}
             lang={lang}
+            onSelectLang={setLang}
           />
         ) : (
           <AdminPortal
             user={currentUser}
             networkQuality={networkQuality}
             lang={lang}
+            onSelectLang={setLang}
           />
         )}
       </main>
@@ -124,11 +127,19 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="app-footer">
         <p>
-          <strong>SWASTHYA PATH</strong> • Low-bandwidth access to rural care in many languages.
+          <strong>SWASTHYA PATH</strong> •{' '}
+          {lang === 'ଓଡ଼ିଆ'
+            ? 'ବହୁଭାଷୀ ଗ୍ରାମୀଣ ଟେଲିମେଡିସିନ୍ ଓ ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ସେବା।'
+            : lang === 'हिन्दी'
+            ? 'बहुभाषी ग्रामीण टेलीमेडिसिन एवं कम बैंडविड्थ सेवा।'
+            : 'Low-bandwidth access to rural care in many languages.'}
         </p>
         <p style={{ marginTop: '4px', fontSize: '11px', color: 'var(--muted)' }}>
-          AI assists symptom intake & navigation; doctors make clinical decisions.
-          AI is never presented as a medical diagnosis system. In emergencies, call 108 immediately.
+          {lang === 'ଓଡ଼ିଆ'
+            ? 'AI କେବଳ ଲକ୍ଷଣ ତଥ୍ୟ ସଂଗ୍ରହ ଓ ମାର୍ଗଦର୍ଶନରେ ସାହାଯ୍ୟ କରେ; ଡାକ୍ତରମାନେ ହିଁ ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ନିଅନ୍ତି। AI କୌଣସି ଡାକ୍ତରୀ ନିଦାନ ପ୍ରଣାଳୀ ନୁହେଁ। ଜରୁରୀ ପରିସ୍ଥିତିରେ ତୁରନ୍ତ ୧୦୮ କୁ କଲ୍ କରନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'AI केवल लक्षण संग्रह और नेविगेशन में सहायता करता है; डॉक्टर ही नैदानिक निर्णय लेते हैं। AI कोई चिकित्सा निदान प्रणाली नहीं है। आपात स्थिति में तुरंत 108 पर कॉल करें।'
+            : 'AI assists symptom intake & navigation; doctors make clinical decisions. AI is never presented as a medical diagnosis system. In emergencies, call 108 immediately.'}
         </p>
       </footer>
     </div>

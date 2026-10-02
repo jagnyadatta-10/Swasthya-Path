@@ -10,12 +10,107 @@ interface LoginScreenProps {
   onSelectLang?: (lang: Language) => void;
 }
 
+const LOGIN_I18N = {
+  English: {
+    langLabel: 'Language:',
+    whoAreYou: 'Who are you?',
+    subtitle: 'Select your role to access the Swasthya Path telehealth portal.',
+    patientRole: 'Patient',
+    patientDesc: 'Care navigation & records',
+    doctorRole: 'Doctor',
+    doctorDesc: 'Triage queue & clinical decisions',
+    pharmacyRole: 'Pharmacy',
+    pharmacyDesc: 'Local medicine stock updates',
+    adminRole: 'Administrator',
+    adminDesc: 'District impact & facility telemetry',
+    loginAs: (role: string) => `Login as ${role}`,
+    useDemo: 'Use Demo Account',
+    demoAccount: 'Demo Account:',
+    emailLabel: 'Email Address',
+    emailPlaceholder: 'Enter email address',
+    mobileLabel: 'Mobile Number',
+    mobilePlaceholder: '+91 90000 10001',
+    passwordLabel: 'Password',
+    passwordPlaceholder: 'Enter password',
+    location: 'Location:',
+    invalidCreds: 'Invalid credentials. Click [Use Demo Account] above to auto-fill the required demo credentials.',
+    rolesMap: {
+      patient: 'Patient',
+      doctor: 'Doctor',
+      pharmacy: 'Pharmacy',
+      admin: 'Administrator'
+    }
+  },
+  'ଓଡ଼ିଆ': {
+    langLabel: 'ଭାଷା:',
+    whoAreYou: 'ଆପଣ କିଏ?',
+    subtitle: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଟେଲିହେଲ୍ଥ ପୋର୍ଟାଲ୍ ବ୍ୟବହାର କରିବାକୁ ଆପଣଙ୍କ ଭୂମିକା ଚୟନ କରନ୍ତୁ।',
+    patientRole: 'ରୋଗୀ (Patient)',
+    patientDesc: 'ଚିକିତ୍ସା ନେଭିଗେସନ୍ ଓ ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ',
+    doctorRole: 'ଡାକ୍ତର (Doctor)',
+    doctorDesc: 'ଟ୍ରାଇଏଜ୍ କତାର ଓ ଡାକ୍ତରୀ ନିଷ୍ପତ୍ତି',
+    pharmacyRole: 'ଔଷଧାଳୟ (Pharmacy)',
+    pharmacyDesc: 'ସ୍ଥାନୀୟ ଔଷଧ ଷ୍ଟକ୍ ଯାଞ୍ଚ ଓ ଅପଡେଟ୍',
+    adminRole: 'ପ୍ରଶାସକ (Admin)',
+    adminDesc: 'ଜିଲ୍ଲା ସ୍ତରୀୟ ତଥ୍ୟ ଓ କେନ୍ଦ୍ର ଟେଲିମେଟ୍ରି',
+    loginAs: (role: string) => `${role} ଭାବେ ପ୍ରବେଶ କରନ୍ତୁ`,
+    useDemo: 'ଡେମୋ ଆକାଉଣ୍ଟ୍ ବ୍ୟବହାର କରନ୍ତୁ',
+    demoAccount: 'ଡେମୋ ଆକାଉଣ୍ଟ୍:',
+    emailLabel: 'ଇମେଲ୍ ଠିକଣା',
+    emailPlaceholder: 'ଇମେଲ୍ ଲେଖନ୍ତୁ',
+    mobileLabel: 'ମୋବାଇଲ୍ ନମ୍ବର',
+    mobilePlaceholder: '+91 90000 10001',
+    passwordLabel: 'ପାସୱାର୍ଡ',
+    passwordPlaceholder: 'ପାସୱାର୍ଡ ଲେଖନ୍ତୁ',
+    location: 'ସ୍ଥାନ:',
+    invalidCreds: 'ତ୍ରୁଟିପୂର୍ଣ୍ଣ ପ୍ରମାଣପତ୍ର। ଆପଣାଛାଏଁ ତଥ୍ୟ ପୂରଣ କରିବାକୁ ଉପରେ ଥିବା [ଡେମୋ ଆକାଉଣ୍ଟ୍ ବ୍ୟବହାର କରନ୍ତୁ] ବଟନ୍ କ୍ଲିକ୍ କରନ୍ତୁ।',
+    rolesMap: {
+      patient: 'ରୋଗୀ',
+      doctor: 'ଡାକ୍ତର',
+      pharmacy: 'ଔଷଧାଳୟ',
+      admin: 'ପ୍ରଶାସକ'
+    }
+  },
+  'हिन्दी': {
+    langLabel: 'भाषा:',
+    whoAreYou: 'आप कौन हैं?',
+    subtitle: 'स्वास्थ्य पथ टेलीहेल्थ पोर्टल का उपयोग करने के लिए अपनी भूमिका चुनें।',
+    patientRole: 'रोगी (Patient)',
+    patientDesc: 'देखभाल नेविगेशन और स्वास्थ्य रिकॉर्ड',
+    doctorRole: 'चिकित्सक (Doctor)',
+    doctorDesc: 'ट्राइएज कतार और नैदानिक निर्णय',
+    pharmacyRole: 'फार्मेसी (Pharmacy)',
+    pharmacyDesc: 'स्थानीय दवा स्टॉक जांच और अपडेट',
+    adminRole: 'व्यवस्थापक (Admin)',
+    adminDesc: 'जिला प्रभाव एवं स्वास्थ्य केंद्र टेलीमेट्री',
+    loginAs: (role: string) => `${role} के रूप में लॉगिन करें`,
+    useDemo: 'डेमो खाता उपयोग करें',
+    demoAccount: 'डेमो खाता:',
+    emailLabel: 'ईमेल पता',
+    emailPlaceholder: 'ईमेल पता दर्ज करें',
+    mobileLabel: 'मोबाइल नंबर',
+    mobilePlaceholder: '+91 90000 10001',
+    passwordLabel: 'पासवर्ड',
+    passwordPlaceholder: 'पासवर्ड दर्ज करें',
+    location: 'स्थान:',
+    invalidCreds: 'अमान्य क्रेडेंशियल्स। आवश्यक डेमो क्रेडेंशियल्स ऑटो-भरने के लिए ऊपर [डेमो खाता उपयोग करें] पर क्लिक करें।',
+    rolesMap: {
+      patient: 'रोगी',
+      doctor: 'डॉक्टर',
+      pharmacy: 'फार्मेसी',
+      admin: 'व्यवस्थापक'
+    }
+  }
+};
+
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, onSelectLang }) => {
   const [selectedRole, setSelectedRole] = useState<Role>('patient');
   const [email, setEmail] = useState(DEMO_USERS.patient.email);
   const [mobile, setMobile] = useState(DEMO_USERS.patient.mobile);
   const [password, setPassword] = useState('Demo@123');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const t = LOGIN_I18N[lang] || LOGIN_I18N.English;
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
@@ -43,7 +138,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
       trimMobile !== expected.mobile ||
       password !== 'Demo@123'
     ) {
-      setErrorMsg('Invalid credentials. Click [Use Demo Account] above to auto-fill the required demo credentials.');
+      setErrorMsg(t.invalidCreds);
       return;
     }
 
@@ -51,12 +146,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
     onLoginSuccess(expected);
   };
 
+  const roleDisplay = t.rolesMap[selectedRole];
+
   return (
     <div className="login-screen-wrap">
       {/* Prominent Language Bar (Prompt Section 7) */}
       {onSelectLang && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Language:</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>{t.langLabel}</span>
           {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
             <button
               key={l}
@@ -98,9 +195,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
           >
             <ShieldCheck size={32} />
           </div>
-          <h2 style={{ marginBottom: '6px' }}>Who are you?</h2>
+          <h2 style={{ marginBottom: '6px' }}>{t.whoAreYou}</h2>
           <p style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '440px', margin: '0 auto' }}>
-            Select your role to access the Swasthya Path telehealth portal.
+            {t.subtitle}
           </p>
         </div>
 
@@ -118,9 +215,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'patient' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>Patient</strong>
+            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.patientRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
-              Care navigation & records
+              {t.patientDesc}
             </span>
           </button>
 
@@ -136,9 +233,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'doctor' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>Doctor</strong>
+            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.doctorRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
-              Triage queue & clinical decisions
+              {t.doctorDesc}
             </span>
           </button>
 
@@ -154,9 +251,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'pharmacy' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>Pharmacy</strong>
+            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.pharmacyRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
-              Local medicine stock updates
+              {t.pharmacyDesc}
             </span>
           </button>
 
@@ -172,9 +269,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               </div>
               {selectedRole === 'admin' && <CheckCircle2 size={18} style={{ color: '#168cff' }} />}
             </div>
-            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>Administrator</strong>
+            <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{t.adminRole}</strong>
             <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
-              District impact & facility telemetry
+              {t.adminDesc}
             </span>
           </button>
         </div>
@@ -184,7 +281,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: '20px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--navy-mid)' }}>
-                Login as {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
+                {t.loginAs(roleDisplay)}
               </h3>
               <button
                 type="button"
@@ -200,7 +297,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
                 title="Auto-fill the required demo credentials"
               >
                 <Sparkles size={14} />
-                <span>Use Demo Account</span>
+                <span>{t.useDemo}</span>
               </button>
             </div>
 
@@ -208,50 +305,50 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
             <div className="demo-credentials-box">
               <div style={{ fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Key size={14} style={{ color: '#0b4a92' }} />
-                <span>Demo Account:</span>
+                <span>{t.demoAccount}</span>
                 <span style={{ color: '#0b4a92' }}>{DEMO_USERS[selectedRole].name}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '12px' }}>
                 <div><strong>Email:</strong> {DEMO_USERS[selectedRole].email}</div>
                 <div><strong>Mobile:</strong> {DEMO_USERS[selectedRole].mobile}</div>
                 <div><strong>Password:</strong> Demo@123</div>
-                <div><strong>Location:</strong> {DEMO_USERS[selectedRole].location}</div>
+                <div><strong>{t.location}</strong> {DEMO_USERS[selectedRole].location}</div>
               </div>
             </div>
 
             <div className="field">
-              <label htmlFor="login-email">Email Address</label>
+              <label htmlFor="login-email">{t.emailLabel}</label>
               <input
                 id="login-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address"
+                placeholder={t.emailPlaceholder}
               />
             </div>
 
             <div className="field">
-              <label htmlFor="login-mobile">Mobile Number</label>
+              <label htmlFor="login-mobile">{t.mobileLabel}</label>
               <input
                 id="login-mobile"
                 type="text"
                 required
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
-                placeholder="+91 90000 10001"
+                placeholder={t.mobilePlaceholder}
               />
             </div>
 
             <div className="field">
-              <label htmlFor="login-password">Password</label>
+              <label htmlFor="login-password">{t.passwordLabel}</label>
               <input
                 id="login-password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder={t.passwordPlaceholder}
               />
             </div>
 
@@ -267,7 +364,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, 
               className="btn btn-primary"
               style={{ width: '100%', marginTop: '14px', padding: '14px', fontSize: '15px' }}
             >
-              <span>Login as {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}</span>
+              <span>{t.loginAs(roleDisplay)}</span>
               <ArrowRight size={18} />
             </button>
           </div>

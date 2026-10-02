@@ -27,7 +27,7 @@ import {
   Store,
   ArrowDown
 } from 'lucide-react';
-import { DemoUser, DoctorItem, NetworkQuality, ChatMessage, HealthRecord } from '../types';
+import { DemoUser, DoctorItem, NetworkQuality, ChatMessage, HealthRecord, Language } from '../types';
 import { storage } from '../utils/storage';
 
 interface VideoConsultationRoomProps {
@@ -39,7 +39,203 @@ interface VideoConsultationRoomProps {
   onNetworkChange?: (quality: NetworkQuality) => void;
   userRole: 'patient' | 'doctor';
   onCheckPharmacy?: () => void;
+  lang?: Language;
 }
+
+const VIDEO_ROOM_I18N = {
+  English: {
+    preCallTitle: 'Consultation Pre-Call Check',
+    preCallSubtitle: 'Swasthya Path Telehealth Bridge • Kalahandi, Odisha',
+    diagnostics: 'System Diagnostics',
+    mic: 'Microphone:',
+    micReady: '✓ Ready / Tested',
+    micTest: 'Needs Test / Audio Only',
+    cam: 'Camera:',
+    camReady: '✓ Camera Active',
+    camOff: 'Off / Avatar Fallback',
+    net: 'Network Connection:',
+    netGood: '● Good (4G/WiFi ~25ms)',
+    netLimited: '● Limited (2G audio prioritized)',
+    netOffline: '● Offline',
+    patientIdLabel: 'Patient Identity:',
+    testMedia: 'Test Camera & Mic',
+    limitedAlert: 'Limited Network Detected: Video resolution will automatically scale down and audio packets will be prioritized for stability.',
+    offlineAlert: 'Offline Mode Active: Live consultation cannot start while offline. Reconnect or review offline records.',
+    cancelCall: 'Cancel / Exit Call',
+    enterCall: 'Enter Video Consultation ➔',
+    consultWith: (name: string) => `Consultation with ${name}`,
+    cameraOffLabel: 'Camera Off',
+    youDoctor: 'You (Doctor)',
+    youPatient: 'You (Patient)',
+    audioBtn: '🎤 Audio',
+    videoBtn: '🎥 Video',
+    speakerBtn: 'Speaker',
+    muted: 'Muted',
+    camOffBtn: 'Cam Off',
+    chatBtn: '💬 Chat',
+    recordsBtn: '📋 Health Records',
+    notesBtn: 'Notes',
+    endCallBtn: '🔴 END CALL',
+    chatTitle: 'Consultation Chat',
+    noMessages: 'No messages yet. Send a note or symptom update below.',
+    chatPlaceholder: 'Type lightweight message...',
+    intakeTitle: 'Patient Intake Summary',
+    doctorNotesTitle: 'Clinical Notes',
+    saveNotesBtn: 'Save Notes',
+    confirmTitle: 'End Consultation?',
+    confirmSubtitle: 'Conclude active teleconsult session',
+    confirmBody: (name: string) => `Are you sure you want to end this teleconsultation with ${name}? Your consultation duration, clinical notes, and digital prescription will be saved.`,
+    continueCallBtn: 'Continue Call',
+    yesEndBtn: 'Yes, End Call',
+    callEndedBadge: '🔴 CALL ENDED',
+    callEndedTitle: 'Teleconsultation Session Concluded',
+    docLabel: 'Doctor:',
+    patLabel: 'Patient:',
+    durLabel: 'Duration:',
+    encrypted: '✓ 256-bit Encrypted',
+    summaryTitle: '📋 Consultation Summary',
+    diagnosisLabel: 'Clinical Diagnosis:',
+    doctorNotesLabel: "Doctor's Notes:",
+    carePlanTitle: '🩺 Doctor Care Plan',
+    carePlanAuth: 'CLINICIAN AUTHORIZED',
+    homeCareLabel: 'Home Care Directive:',
+    medicineTitle: '💊 Medicine Needed?',
+    medIssued: 'YES • E-Prescription Issued',
+    pharmacyTitle: '🏪 Pharmacy Availability (Live Kalahandi Stock)',
+    verified: 'REAL-TIME VERIFIED',
+    syncedABHA: 'Offline sync complete with ABHA Health Record',
+    checkPharmacyBtn: '💊 Check Live Pharmacy Availability ➔',
+    returnDashBtn: 'Return to Dashboard'
+  },
+  'ଓଡ଼ିଆ': {
+    preCallTitle: 'ପରାମର୍ଶ ପୂର୍ବ ପ୍ରସ୍ତୁତି ଯାଞ୍ଚ',
+    preCallSubtitle: 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଟେଲିହେଲ୍ଥ ବ୍ରିଜ୍ • କଳାହାଣ୍ଡି, ଓଡ଼ିଶା',
+    diagnostics: 'ସିଷ୍ଟମ୍ ନିଦାନ ଓ ଯାଞ୍ଚ',
+    mic: 'ମାଇକ୍ରୋଫୋନ୍:',
+    micReady: '✓ ପ୍ରସ୍ତୁତ / ପରୀକ୍ଷିତ',
+    micTest: 'ପରୀକ୍ଷା ଆବଶ୍ୟକ / କେବଳ ଅଡିଓ',
+    cam: 'କ୍ୟାମେରା:',
+    camReady: '✓ କ୍ୟାମେରା ସକ୍ରିୟ',
+    camOff: 'ବନ୍ଦ / ଆଭାଟାର ପ୍ରଦର୍ଶିତ',
+    net: 'ନେଟୱର୍କ ସଂଯୋଗ:',
+    netGood: '● ଉତ୍ତମ (4G/WiFi ~25ms)',
+    netLimited: '● ସୀମିତ (2G ଅଡିଓ ପ୍ରାଥମିକତା)',
+    netOffline: '● ଅଫଲାଇନ୍',
+    patientIdLabel: 'ରୋଗୀ ପରିଚୟ:',
+    testMedia: 'କ୍ୟାମେରା ଓ ମାଇକ୍ ପରୀକ୍ଷା କରନ୍ତୁ',
+    limitedAlert: 'ସୀମିତ ନେଟୱର୍କ ଚିହ୍ନଟ ହୋଇଛି: ସ୍ଥିରତା ବଜାୟ ରଖିବାକୁ ଭିଡିଓ ରିଜୋଲ୍ୟୁସନ୍ ଆପେ ଆପେ ହ୍ରାସ ପାଇବ ଏବଂ ଅଡିଓକୁ ପ୍ରାଥମିକତା ଦିଆଯିବ।',
+    offlineAlert: 'ଅଫଲାଇନ୍ ମୋଡ୍ ସକ୍ରିୟ: ଲାଇଭ୍ ପରାମର୍ଶ ଅଫଲାଇନ୍ ଥିବାବେଳେ ଆରମ୍ଭ ହୋଇପାରିବ ନାହିଁ। ଦୟାକରି ଇଣ୍ଟରନେଟ୍ ଯୋଡନ୍ତୁ କିମ୍ବା ଅଫଲାଇନ୍ ରେକର୍ଡ ଦେଖନ୍ତୁ।',
+    cancelCall: 'ବାତିଲ୍ / ବାହାରନ୍ତୁ',
+    enterCall: 'ଭିଡିଓ ପରାମର୍ଶ ଆରମ୍ଭ କରନ୍ତୁ ➔',
+    consultWith: (name: string) => `${name} ଙ୍କ ସହିତ ପରାମର୍ଶ`,
+    cameraOffLabel: 'କ୍ୟାମେରା ବନ୍ଦ',
+    youDoctor: 'ଆପଣ (ଡାକ୍ତର)',
+    youPatient: 'ଆପଣ (ରୋଗୀ)',
+    audioBtn: '🎤 ଅଡିଓ',
+    videoBtn: '🎥 ଭିଡିଓ',
+    speakerBtn: 'ସ୍ପିକର',
+    muted: 'ନିରବ (Muted)',
+    camOffBtn: 'କ୍ୟାମେରା ବନ୍ଦ',
+    chatBtn: '💬 ଚାଟ୍',
+    recordsBtn: '📋 ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ',
+    notesBtn: 'ଟିପ୍ପଣୀ',
+    endCallBtn: '🔴 କଲ୍ ଶେଷ (END CALL)',
+    chatTitle: 'ପରାମର୍ଶ ବାର୍ତ୍ତାଳାପ',
+    noMessages: 'କୌଣସି ବାର୍ତ୍ତା ନାହିଁ। ନିମ୍ନରେ ଲକ୍ଷଣ କିମ୍ବା ପ୍ରଶ୍ନ ଲେଖନ୍ତୁ।',
+    chatPlaceholder: 'ସଂକ୍ଷିପ୍ତ ବାର୍ତ୍ତା ଲେଖନ୍ତୁ...',
+    intakeTitle: 'ରୋଗୀ ଲକ୍ଷଣ ସାରାଂଶ',
+    doctorNotesTitle: 'ଡାକ୍ତରୀ ଟିପ୍ପଣୀ',
+    saveNotesBtn: 'ଟିପ୍ପଣୀ ସାଇତନ୍ତୁ',
+    confirmTitle: 'କଲ୍ ଶେଷ କରିବେ କି?',
+    confirmSubtitle: 'ସକ୍ରିୟ ଟେଲିକନସଲ୍ଟେସନ୍ ସମାପ୍ତ କରନ୍ତୁ',
+    confirmBody: (name: string) => `ଆପଣ ନିଶ୍ଚିତ କି ଆପଣ ${name} ଙ୍କ ସହ ଏହି ଟେଲିପରାମର୍ଶ ଶେଷ କରିବାକୁ ଚାହାଁନ୍ତି? ଆପଣଙ୍କ ପରାମର୍ଶ ସମୟ, ଡାକ୍ତରୀ ଟିପ୍ପଣୀ ଏବଂ ଡିଜିଟାଲ୍ ପ୍ରେସକ୍ରିପସନ୍ ସୁରକ୍ଷିତ ଭାବେ ରହିବ।`,
+    continueCallBtn: 'କଲ୍ ଜାରି ରଖନ୍ତୁ',
+    yesEndBtn: 'ହଁ, କଲ୍ ଶେଷ କରନ୍ତୁ',
+    callEndedBadge: '🔴 କଲ୍ ଶେଷ ହେଲା',
+    callEndedTitle: 'ଟେଲିକନସଲ୍ଟେସନ୍ ଅଧିବେଶନ ସମ୍ପୂର୍ଣ୍ଣ ହେଲା',
+    docLabel: 'ଡାକ୍ତର:',
+    patLabel: 'ରୋଗୀ:',
+    durLabel: 'ସମୟ ଅବଧି:',
+    encrypted: '✓ ୨୫୬-ବିଟ୍ ଏନକ୍ରିପ୍ଟେଡ୍',
+    summaryTitle: '📋 ପରାମର୍ଶ ସାରାଂଶ',
+    diagnosisLabel: 'ଡାକ୍ତରୀ ନିଦାନ (Diagnosis):',
+    doctorNotesLabel: 'ଡାକ୍ତରଙ୍କ ଟିପ୍ପଣୀ:',
+    carePlanTitle: '🩺 ଡାକ୍ତରୀ ଯତ୍ନ ଯୋଜନା (Care Plan)',
+    carePlanAuth: 'ଡାକ୍ତରଙ୍କ ଦ୍ୱାରା ଅନୁମୋଦିତ',
+    homeCareLabel: 'ଘରୋଇ ଯତ୍ନ ନିର୍ଦ୍ଦେଶ:',
+    medicineTitle: '💊 ଔଷଧ ଆବଶ୍ୟକ କି?',
+    medIssued: 'ହଁ • ଇ-ପ୍ରେସକ୍ରିପସନ୍ ପ୍ରଦାନ କରାଯାଇଛି',
+    pharmacyTitle: '🏪 ଔଷଧାଳୟ ଉପଲବ୍ଧତା (କଳାହାଣ୍ଡି ଲାଇଭ୍ ଷ୍ଟକ୍)',
+    verified: 'ବାସ୍ତବ-ସମୟରେ ଯାଞ୍ଚ ହୋଇଛି',
+    syncedABHA: 'ABHA ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ସହିତ ଅଫଲାଇନ୍ ସିଙ୍କ୍ ସମ୍ପୂର୍ଣ୍ଣ',
+    checkPharmacyBtn: '💊 ଲାଇଭ୍ ଔଷଧ ଷ୍ଟକ୍ ଯାଞ୍ଚ କରନ୍ତୁ ➔',
+    returnDashBtn: 'ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ'
+  },
+  'हिन्दी': {
+    preCallTitle: 'परामर्श पूर्व तैयारी जांच',
+    preCallSubtitle: 'स्वास्थ्य पथ टेलीहेल्थ ब्रिज • कालाहांडी, ओडिशा',
+    diagnostics: 'सिस्टम डायग्नोस्टिक्स',
+    mic: 'माइक्रोफ़ोन:',
+    micReady: '✓ तैयार / परीक्षित',
+    micTest: 'परीक्षण आवश्यक / केवल ऑडियो',
+    cam: 'कैमरा:',
+    camReady: '✓ कैमरा सक्रिय',
+    camOff: 'बंद / अवतार प्रदर्शित',
+    net: 'नेटवर्क कनेक्शन:',
+    netGood: '● अच्छा (4G/WiFi ~25ms)',
+    netLimited: '● सीमित (2G ऑडियो प्राथमिकता)',
+    netOffline: '● ऑफलाइन',
+    patientIdLabel: 'रोगी की पहचान:',
+    testMedia: 'कैमरा और माइक टेस्ट करें',
+    limitedAlert: 'सीमित नेटवर्क का पता चला: स्थिरता बनाए रखने के लिए वीडियो रिज़ॉल्यूशन स्वचालित रूप से कम हो जाएगा और ऑडियो को प्राथमिकता दी जाएगी।',
+    offlineAlert: 'ऑफलाइन मोड सक्रिय: ऑफलाइन रहते हुए लाइव परामर्श शुरू नहीं किया जा सकता। पुनः कनेक्ट करें या ऑफलाइन रिकॉर्ड देखें।',
+    cancelCall: 'रद्द करें / बाहर निकलें',
+    enterCall: 'वीडियो परामर्श शुरू करें ➔',
+    consultWith: (name: string) => `${name} के साथ परामर्श`,
+    cameraOffLabel: 'कैमरा बंद',
+    youDoctor: 'आप (डॉक्टर)',
+    youPatient: 'आप (रोगी)',
+    audioBtn: '🎤 ऑडियो',
+    videoBtn: '🎥 वीडियो',
+    speakerBtn: 'स्पीकर',
+    muted: 'म्यूट',
+    camOffBtn: 'कैमरा बंद',
+    chatBtn: '💬 चैट',
+    recordsBtn: '📋 स्वास्थ्य रिकॉर्ड',
+    notesBtn: 'नोट्स',
+    endCallBtn: '🔴 कॉल समाप्त (END CALL)',
+    chatTitle: 'परामर्श चैट',
+    noMessages: 'अभी तक कोई संदेश नहीं। नीचे अपना संदेश लिखें।',
+    chatPlaceholder: 'संक्षिप्त संदेश लिखें...',
+    intakeTitle: 'रोगी लक्षण सारांश',
+    doctorNotesTitle: 'नैदानिक नोट्स',
+    saveNotesBtn: 'नोट्स सहेजें',
+    confirmTitle: 'परामर्श समाप्त करें?',
+    confirmSubtitle: 'सक्रिय टेलीपरामर्श सत्र समाप्त करें',
+    confirmBody: (name: string) => `क्या आप वाकई ${name} के साथ यह टेलीपरामर्श समाप्त करना चाहते हैं? आपका परामर्श समय, नैदानिक नोट्स और डिजिटल पर्चा सुरक्षित रहेगा।`,
+    continueCallBtn: 'कॉल जारी रखें',
+    yesEndBtn: 'हाँ, कॉल समाप्त करें',
+    callEndedBadge: '🔴 कॉल समाप्त',
+    callEndedTitle: 'टेलीपरामर्श सत्र संपन्न हुआ',
+    docLabel: 'डॉक्टर:',
+    patLabel: 'रोगी:',
+    durLabel: 'अवधि:',
+    encrypted: '✓ 256-बिट एन्क्रिप्टेड',
+    summaryTitle: '📋 परामर्श सारांश',
+    diagnosisLabel: 'नैदानिक निदान:',
+    doctorNotesLabel: 'डॉक्टर के नोट्स:',
+    carePlanTitle: '🩺 डॉक्टर केयर प्लान',
+    carePlanAuth: 'चिकित्सक द्वारा अधिकृत',
+    homeCareLabel: 'घरेलू देखभाल निर्देश:',
+    medicineTitle: '💊 दवा की आवश्यकता है?',
+    medIssued: 'हाँ • ई-प्रिस्क्रिप्शन जारी',
+    pharmacyTitle: '🏪 फार्मेसी उपलब्धता (कालाहांडी लाइव स्टॉक)',
+    verified: 'रीयल-टाइम सत्यापित',
+    syncedABHA: 'ABHA स्वास्थ्य रिकॉर्ड के साथ ऑफलाइन सिंक पूर्ण',
+    checkPharmacyBtn: '💊 लाइव फार्मेसी उपलब्धता जांचें ➔',
+    returnDashBtn: 'डैशबोर्ड पर लौटें'
+  }
+};
 
 export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   isOpen,
@@ -49,8 +245,17 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   networkQuality,
   onNetworkChange,
   userRole,
-  onCheckPharmacy
+  onCheckPharmacy,
+  lang = 'English'
 }) => {
+  const [roomLang, setRoomLang] = useState<Language>(lang);
+
+  useEffect(() => {
+    if (lang) setRoomLang(lang);
+  }, [lang]);
+
+  const t = VIDEO_ROOM_I18N[roomLang] || VIDEO_ROOM_I18N.English;
+
   // Pre-call stage
   const [preCallDone, setPreCallDone] = useState(false);
   const [cameraPermGranted, setCameraPermGranted] = useState<boolean | null>(null);
@@ -291,15 +496,41 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     return (
       <div className="modal-overlay" role="dialog" aria-modal="true">
         <div className="modal-dialog" style={{ maxWidth: '640px', background: '#ffffff', padding: '28px' }}>
+          {/* In-Dialog Language Selector */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>
+              {roomLang === 'ଓଡ଼ିଆ' ? 'ଭାଷା:' : roomLang === 'हिन्दी' ? 'भाषा:' : 'Language:'}
+            </span>
+            {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setRoomLang(l)}
+                style={{
+                  background: roomLang === l ? '#0284c7' : '#f1f5f9',
+                  color: roomLang === l ? '#ffffff' : '#334155',
+                  border: 'none',
+                  borderRadius: '999px',
+                  padding: '3px 10px',
+                  fontSize: '11px',
+                  fontWeight: roomLang === l ? 700 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Activity size={22} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px' }}>Consultation Pre-Call Check</h3>
+                <h3 style={{ margin: 0, fontSize: '18px' }}>{t.preCallTitle}</h3>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
-                  Swasthya Path Telehealth Bridge • Kalahandi, Odisha
+                  {t.preCallSubtitle}
                 </p>
               </div>
             </div>
@@ -309,43 +540,43 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
           </div>
 
           <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid var(--line)' }}>
-            <h4 style={{ fontSize: '14px', marginBottom: '10px', color: 'var(--navy-mid)' }}>System Diagnostics</h4>
+            <h4 style={{ fontSize: '14px', marginBottom: '10px', color: 'var(--navy-mid)' }}>{t.diagnostics}</h4>
             
             <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Mic size={16} style={{ color: micPermGranted ? '#059669' : '#d97706' }} />
-                  <span>Microphone:</span>
+                  <span>{t.mic}</span>
                 </span>
                 <span className={`badge ${micPermGranted ? 'badge-green' : 'badge-amber'}`}>
-                  {micPermGranted ? '✓ Ready / Tested' : 'Needs Test / Audio Only'}
+                  {micPermGranted ? t.micReady : t.micTest}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Video size={16} style={{ color: cameraPermGranted ? '#059669' : '#d97706' }} />
-                  <span>Camera:</span>
+                  <span>{t.cam}</span>
                 </span>
                 <span className={`badge ${cameraPermGranted ? 'badge-green' : 'badge-amber'}`}>
-                  {cameraPermGranted ? '✓ Camera Active' : 'Off / Avatar Fallback'}
+                  {cameraPermGranted ? t.camReady : t.camOff}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Signal size={16} style={{ color: networkQuality === 'offline' ? '#b42318' : networkQuality === 'limited' ? '#b54708' : '#059669' }} />
-                  <span>Network Connection:</span>
+                  <span>{t.net}</span>
                 </span>
                 <span className={`badge ${networkQuality === 'offline' ? 'badge-red' : networkQuality === 'limited' ? 'badge-amber' : 'badge-green'}`}>
-                  {networkQuality === 'good' ? '● Good (4G/WiFi ~25ms)' : networkQuality === 'limited' ? '● Limited (2G audio prioritized)' : '● Offline'}
+                  {networkQuality === 'good' ? t.netGood : networkQuality === 'limited' ? t.netLimited : t.netOffline}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <User size={16} style={{ color: '#0284c7' }} />
-                  <span>Patient Identity:</span>
+                  <span>{t.patientIdLabel}</span>
                 </span>
                 <span style={{ fontWeight: 600 }}>{patient.name} ({patient.location})</span>
               </div>
@@ -359,20 +590,22 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 style={{ fontSize: '12px', padding: '6px 12px' }}
               >
                 <Video size={14} />
-                <span>Test Camera & Mic</span>
+                <span>{t.testMedia}</span>
               </button>
             </div>
           </div>
 
           {networkQuality === 'limited' && (
             <div className="alert warn" style={{ fontSize: '13px' }}>
-              <strong>Limited Network Detected:</strong> Video resolution will automatically scale down and audio packets will be prioritized for stability.
+              <strong>{roomLang === 'ଓଡ଼ିଆ' ? 'ସୀମିତ ନେଟୱର୍କ:' : roomLang === 'हिन्दी' ? 'सीमित नेटवर्क:' : 'Limited Network Detected:'} </strong>
+              {t.limitedAlert}
             </div>
           )}
 
           {networkQuality === 'offline' && (
             <div className="alert danger" style={{ fontSize: '13px' }}>
-              <strong>Offline Mode Active:</strong> Live consultation cannot start while offline. Reconnect or review offline records.
+              <strong>{roomLang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍ ମୋଡ୍:' : roomLang === 'हिन्दी' ? 'ऑफलाइन मोड:' : 'Offline Mode Active:'} </strong>
+              {t.offlineAlert}
             </div>
           )}
 
@@ -390,10 +623,10 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 alignItems: 'center',
                 gap: '6px'
               }}
-              title="Cancel and Exit Consultation"
+              title={t.cancelCall}
             >
               <PhoneOff size={14} />
-              <span>Cancel / Exit Call</span>
+              <span>{t.cancelCall}</span>
             </button>
             <button
               className="btn btn-primary"
@@ -408,7 +641,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               style={{ fontWeight: 700, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Video size={16} />
-              <span>Enter Video Consultation ➔</span>
+              <span>{t.enterCall}</span>
             </button>
           </div>
         </div>
@@ -435,6 +668,32 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
           }}
         >
+          {/* Post-Call In-Modal Language Pill Selector */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>
+              {roomLang === 'ଓଡ଼ିଆ' ? 'ଭାଷା:' : roomLang === 'हिन्दी' ? 'भाषा:' : 'Language:'}
+            </span>
+            {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setRoomLang(l)}
+                style={{
+                  background: roomLang === l ? '#0284c7' : '#f1f5f9',
+                  color: roomLang === l ? '#ffffff' : '#334155',
+                  border: 'none',
+                  borderRadius: '999px',
+                  padding: '3px 10px',
+                  fontSize: '11px',
+                  fontWeight: roomLang === l ? 700 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+
           {/* STEP 1: CALL ENDED */}
           <div
             style={{
@@ -448,26 +707,26 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
           >
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#dc2626', color: '#ffffff', padding: '4px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 800, marginBottom: '8px' }}>
               <PhoneOff size={13} />
-              <span>🔴 CALL ENDED</span>
+              <span>{t.callEndedBadge}</span>
             </div>
             <h2 style={{ margin: '0 0 6px', fontSize: '20px', color: '#991b1b' }}>
-              Teleconsultation Session Concluded
+              {t.callEndedTitle}
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '10px', textAlign: 'left', background: '#ffffff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Doctor:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>{t.docLabel}</span>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{doctor.name}</div>
                 <div style={{ fontSize: '10px', color: '#64748b' }}>{doctor.hospital}</div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Patient:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>{t.patLabel}</span>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{patient.name}</div>
                 <div style={{ fontSize: '10px', color: '#64748b' }}>Kalahandi, Odisha</div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>Duration:</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>{t.durLabel}</span>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7' }}>{formatTimer(callDuration)}</div>
-                <div style={{ fontSize: '10px', color: '#16a34a' }}>✓ 256-bit Encrypted</div>
+                <div style={{ fontSize: '10px', color: '#16a34a' }}>{t.encrypted}</div>
               </div>
             </div>
           </div>
@@ -491,15 +750,21 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a', fontWeight: 800, fontSize: '13px', marginBottom: '8px' }}>
               <FileText size={16} style={{ color: '#0284c7' }} />
-              <span>📋 Consultation Summary</span>
+              <span>{t.summaryTitle}</span>
             </div>
             <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
               <div style={{ marginBottom: '6px' }}>
-                <strong style={{ color: '#0f172a' }}>Clinical Diagnosis: </strong>
-                <span style={{ color: '#0284c7', fontWeight: 600 }}>Acute Gastroenteritis with Mild Dehydration & Low-Grade Pyrexia</span>
+                <strong style={{ color: '#0f172a' }}>{t.diagnosisLabel} </strong>
+                <span style={{ color: '#0284c7', fontWeight: 600 }}>
+                  {roomLang === 'ଓଡ଼ିଆ'
+                    ? 'ସାମାନ୍ୟ ଜଳହ୍ରାସ ଓ ଅଳ୍ପ ଜ୍ୱର ସହିତ ପେଟ ସଂକ୍ରମଣ (Acute Gastroenteritis)'
+                    : roomLang === 'हिन्दी'
+                    ? 'हल्का निर्जलीकरण एवं अल्प ज्वर सहित आंत्रशोथ (Acute Gastroenteritis)'
+                    : 'Acute Gastroenteritis with Mild Dehydration & Low-Grade Pyrexia'}
+                </span>
               </div>
               <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.5 }}>
-                <strong>Doctor's Notes: </strong>
+                <strong>{t.doctorNotesLabel} </strong>
                 <em>"{doctorNotes}"</em>
               </div>
             </div>
@@ -525,19 +790,47 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0369a1', fontWeight: 800, fontSize: '13px' }}>
                 <Activity size={16} />
-                <span>🩺 Doctor Care Plan</span>
+                <span>{t.carePlanTitle}</span>
               </div>
               <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
-                CLINICIAN AUTHORIZED
+                {t.carePlanAuth}
               </span>
             </div>
 
             <div style={{ display: 'grid', gap: '6px', marginBottom: '10px' }}>
               {[
-                { id: 'Routine monitoring', label: 'Routine monitoring (Home care / ASHA follow-up)' },
-                { id: 'Follow-up required', label: 'Follow-up teleconsultation in 3 days (Recommended)' },
-                { id: 'Physical consultation recommended', label: 'Physical consultation at PHC/CHC recommended' },
-                { id: 'Emergency escalation', label: '🚨 Immediate Emergency Escalation (DHH / 108 Ambulance)' }
+                {
+                  id: 'Routine monitoring',
+                  label: roomLang === 'ଓଡ଼ିଆ'
+                    ? 'ନିୟମିତ ନିରୀକ୍ଷଣ (ଘରୋଇ ଯତ୍ନ / ଆଶା କର୍ମୀ ଫଲୋ-ଅପ୍)'
+                    : roomLang === 'हिन्दी'
+                    ? 'नियमित निगरानी (घरेलू देखभाल / आशा कार्यकर्ता फॉलो-अप)'
+                    : 'Routine monitoring (Home care / ASHA follow-up)'
+                },
+                {
+                  id: 'Follow-up required',
+                  label: roomLang === 'ଓଡ଼ିଆ'
+                    ? '୩ ଦିନ ପରେ ପୁନଃ ଟେଲିପରାମର୍ଶ (ଅନୁମୋଦିତ)'
+                    : roomLang === 'हिन्दी'
+                    ? '3 दिनों में पुनः टेलीपरामर्श (अनुशंसित)'
+                    : 'Follow-up teleconsultation in 3 days (Recommended)'
+                },
+                {
+                  id: 'Physical consultation recommended',
+                  label: roomLang === 'ଓଡ଼ିଆ'
+                    ? 'ପ୍ରାଥମିକ/ଗୋଷ୍ଠୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (PHC/CHC) ରେ ଶାରୀରିକ ଯାଞ୍ଚ'
+                    : roomLang === 'हिन्दी'
+                    ? 'प्राथमिक/सामुदायिक स्वास्थ्य केंद्र (PHC/CHC) में शारीरिक जांच'
+                    : 'Physical consultation at PHC/CHC recommended'
+                },
+                {
+                  id: 'Emergency escalation',
+                  label: roomLang === 'ଓଡ଼ିଆ'
+                    ? '🚨 ଜରୁରୀକାଳୀନ ଡାକ୍ତରଖାନା ସ୍ଥାନାନ୍ତର (DHH / 108 ଆମ୍ବୁଲାନ୍ସ)'
+                    : roomLang === 'हिन्दी'
+                    ? '🚨 तत्काल आपातकालीन रेफरल (DHH / 108 एम्बुलेंस)'
+                    : '🚨 Immediate Emergency Escalation (DHH / 108 Ambulance)'
+                }
               ].map((opt) => (
                 <label
                   key={opt.id}
@@ -567,7 +860,12 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             </div>
 
             <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bae6fd', fontSize: '12px', color: '#0c4a6e', lineHeight: 1.4 }}>
-              <strong>Home Care Directive:</strong> Drink 2.5L boiled water daily with ORS solution. Rest for 48 hours. Light diet (khichdi). Consult Sub-Centre / ASHA if symptoms worsen.
+              <strong>{t.homeCareLabel} </strong>
+              {roomLang === 'ଓଡ଼ିଆ'
+                ? 'ଦୈନିକ ୨.୫ ଲିଟର ଫୁଟା ପାଣି ସହିତ ORS ଦ୍ରବଣ ପିଅନ୍ତୁ। ୪୮ ଘଣ୍ଟା ବିଶ୍ରାମ ନିଅନ୍ତୁ। ହାଲୁକା ଖାଦ୍ୟ (ଖେଚୁଡ଼ି) ଖାଆନ୍ତୁ। ଲକ୍ଷଣ ବଢିଲେ ତୁରନ୍ତ ଉପକେନ୍ଦ୍ର/ଆଶା କର୍ମୀଙ୍କୁ ଜଣାନ୍ତୁ।'
+                : roomLang === 'हिन्दी'
+                ? 'प्रतिदिन 2.5 लीटर उबले पानी में ओआरएस घोल बनाकर पिएं। 48 घंटे आराम करें। हल्का भोजन (खिचड़ी) लें। लक्षण बिगड़ने पर तुरंत उपकेंद्र/आशा से संपर्क करें।'
+                : 'Drink 2.5L boiled water daily with ORS solution. Rest for 48 hours. Light diet (khichdi). Consult Sub-Centre / ASHA if symptoms worsen.'}
             </div>
           </div>
 
@@ -591,36 +889,54 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 800, fontSize: '13px' }}>
                 <Pill size={16} />
-                <span>💊 Medicine Needed?</span>
+                <span>{t.medicineTitle}</span>
               </div>
               <span style={{ background: '#16a34a', color: '#ffffff', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 800 }}>
-                YES • E-Prescription Issued
+                {t.medIssued}
               </span>
             </div>
 
             <div style={{ display: 'grid', gap: '8px' }}>
               <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>Paracetamol 500mg</strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>1 tablet TID after food • 3 days • Fever & body ache</div>
+                  <strong style={{ fontSize: '13px', color: '#166534' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? 'ପାରାସିଟାମଲ୍ ୫୦୦ମି.ଗ୍ରା. (Paracetamol 500mg)' : roomLang === 'हिन्दी' ? 'पैरासिटामोल 500mg (Paracetamol)' : 'Paracetamol 500mg'}
+                  </strong>
+                  <div style={{ fontSize: '11px', color: '#475569' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ବଟିକା ଦିନକୁ ୩ ଥର ଖାଇବା ପରେ • ୩ ଦିନ • ଜ୍ୱର ଓ ଶରୀର ଯନ୍ତ୍ରଣା ପାଇଁ' : roomLang === 'हिन्दी' ? '1 गोली दिन में 3 बार भोजन के बाद • 3 दिन • बुखार एवं बदन दर्द' : '1 tablet TID after food • 3 days • Fever & body ache'}
+                  </div>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>Qty: 10 Tabs</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୧୦ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 10' : 'Qty: 10 Tabs'}
+                </span>
               </div>
 
               <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>ORS Electrolyte Powder (WHO Formula)</strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>1 sachet dissolved in 1L clean water • Frequent sips</div>
+                  <strong style={{ fontSize: '13px', color: '#166534' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? 'ORS ଇଲେକ୍ଟ୍ରୋଲାଇଟ୍ ପାଉଡର (WHO ଫର୍ମୁଲା)' : roomLang === 'हिन्दी' ? 'ओआरएस पाउडर (WHO फॉर्मूला)' : 'ORS Electrolyte Powder (WHO Formula)'}
+                  </strong>
+                  <div style={{ fontSize: '11px', color: '#475569' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ପ୍ୟାକେଟ୍ ୧ ଲିଟର ସଫା ପାଣିରେ ମିଶାଇ ପିଅନ୍ତୁ • ଘନ ଘନ ଅଳ୍ପ ଅଳ୍ପ' : roomLang === 'हिन्दी' ? '1 पैकेट 1 लीटर स्वच्छ पानी में घोलकर पिएं • बार-बार थोड़ा-थोड़ा' : '1 sachet dissolved in 1L clean water • Frequent sips'}
+                  </div>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>Qty: 4 Sachets</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୪ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 4' : 'Qty: 4 Sachets'}
+                </span>
               </div>
 
               <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>Zinc Sulfate 20mg Dispersible</strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>1 tablet OD dissolved in water • 14 days • Gut healing</div>
+                  <strong style={{ fontSize: '13px', color: '#166534' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? 'ଜିଙ୍କ୍ ସଲଫେଟ୍ ୨୦ମି.ଗ୍ରା. (Zinc Sulfate 20mg)' : roomLang === 'हिन्दी' ? 'जिंक सल्फेट 20mg (Zinc Sulfate)' : 'Zinc Sulfate 20mg Dispersible'}
+                  </strong>
+                  <div style={{ fontSize: '11px', color: '#475569' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ବଟିକା ପାଣିରେ ମିଳାଇ ଦିନକୁ ୧ ଥର • ୧୪ ଦିନ' : roomLang === 'हिन्दी' ? '1 गोली पानी में घोलकर दिन में 1 बार • 14 दिन' : '1 tablet OD dissolved in water • 14 days • Gut healing'}
+                  </div>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>Qty: 14 Tabs</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୧୪ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 14' : 'Qty: 14 Tabs'}
+                </span>
               </div>
             </div>
           </div>
@@ -647,10 +963,10 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 800, fontSize: '14px' }}>
                 <Store size={17} />
-                <span>🏪 Pharmacy Availability (Live Kalahandi Stock)</span>
+                <span>{t.pharmacyTitle}</span>
               </div>
               <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
-                REAL-TIME VERIFIED
+                {t.verified}
               </span>
             </div>
 
@@ -659,31 +975,43 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               <div style={{ background: '#1e293b', border: '1px solid #22c55e', borderRadius: '8px', padding: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#f8fafc' }}>Store A</span>
-                  <span style={{ background: '#14532d', color: '#86efac', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🟢 Available</span>
+                  <span style={{ background: '#14532d', color: '#86efac', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '🟢 ଉପଲବ୍ଧ' : roomLang === 'हिन्दी' ? '🟢 उपलब्ध' : '🟢 Available'}
+                  </span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '3px' }}>Maa Manikeswari Medicos</div>
                 <div style={{ fontSize: '10px', color: '#94a3b8' }}>Bhawanipatna (1.2 km)</div>
-                <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '3px', fontWeight: 700 }}>240 in stock • ₹18</div>
+                <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '3px', fontWeight: 700 }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? '୨୪୦ ଟି ଷ୍ଟକ୍ରେ • ₹୧୮' : roomLang === 'हिन्दी' ? '240 उपलब्ध • ₹18' : '240 in stock • ₹18'}
+                </div>
               </div>
 
               <div style={{ background: '#1e293b', border: '1px solid #eab308', borderRadius: '8px', padding: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#f8fafc' }}>Store B</span>
-                  <span style={{ background: '#713f12', color: '#fef08a', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🟡 Limited</span>
+                  <span style={{ background: '#713f12', color: '#fef08a', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '🟡 ସୀମିତ' : roomLang === 'हिन्दी' ? '🟡 सीमित' : '🟡 Limited'}
+                  </span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '3px' }}>Kalahandi Jan Aushadhi</div>
                 <div style={{ fontSize: '10px', color: '#94a3b8' }}>Kesinga (6.5 km)</div>
-                <div style={{ fontSize: '10px', color: '#fde047', marginTop: '3px', fontWeight: 700 }}>4 strips left • ₹15</div>
+                <div style={{ fontSize: '10px', color: '#fde047', marginTop: '3px', fontWeight: 700 }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? '୪ ଟି ବାକି ଅଛି • ₹୧୫' : roomLang === 'हिन्दी' ? '4 बची हैं • ₹15' : '4 strips left • ₹15'}
+                </div>
               </div>
 
               <div style={{ background: '#1e293b', border: '1px solid #ef4444', borderRadius: '8px', padding: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#f8fafc' }}>Store C</span>
-                  <span style={{ background: '#7f1d1d', color: '#fca5a5', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🔴 Out of Stock</span>
+                  <span style={{ background: '#7f1d1d', color: '#fca5a5', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>
+                    {roomLang === 'ଓଡ଼ିଆ' ? '🔴 ଷ୍ଟକ୍ ଶେଷ' : roomLang === 'हिन्दी' ? '🔴 अनुपलब्ध' : '🔴 Out of Stock'}
+                  </span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '3px' }}>Junagarh Block CHC</div>
                 <div style={{ fontSize: '10px', color: '#94a3b8' }}>Junagarh (14 km)</div>
-                <div style={{ fontSize: '10px', color: '#f87171', marginTop: '3px', fontWeight: 700 }}>Restock in 48h</div>
+                <div style={{ fontSize: '10px', color: '#f87171', marginTop: '3px', fontWeight: 700 }}>
+                  {roomLang === 'ଓଡ଼ିଆ' ? '୪୮ ଘଣ୍ଟାରେ ଆସିବ' : roomLang === 'हिन्दी' ? '48 घंटे में पुनः उपलब्ध' : 'Restock in 48h'}
+                </div>
               </div>
             </div>
 
@@ -691,7 +1019,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <span style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <ShieldCheck size={14} style={{ color: '#4ade80' }} />
-                Offline sync complete with ABHA Health Record
+                {t.syncedABHA}
               </span>
 
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -714,7 +1042,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   }}
                 >
                   <Pill size={15} />
-                  <span>💊 Check Live Pharmacy Availability ➔</span>
+                  <span>{t.checkPharmacyBtn}</span>
                 </button>
 
                 <button
@@ -729,7 +1057,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     padding: '8px 14px'
                   }}
                 >
-                  Return to Dashboard
+                  {t.returnDashBtn}
                 </button>
               </div>
             </div>
@@ -780,7 +1108,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
           </div>
           <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>|</span>
           <span style={{ fontSize: '13px', color: '#cbd5e1' }}>
-            Consultation with {userRole === 'doctor' ? patient.name : doctor.name}
+            {t.consultWith(userRole === 'doctor' ? patient.name : doctor.name)}
           </span>
           <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>|</span>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontSize: '13px', fontWeight: 700 }}>
@@ -790,7 +1118,30 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
         </div>
 
         {/* Connection Quality & Network Simulation Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* In-Call Language Selector Pill */}
+          <div style={{ display: 'inline-flex', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '6px', padding: '2px' }}>
+            {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setRoomLang(l)}
+                style={{
+                  background: roomLang === l ? '#0284c7' : 'transparent',
+                  color: roomLang === l ? '#ffffff' : '#94a3b8',
+                  border: 0,
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: roomLang === l ? 700 : 500,
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+
           <div
             style={{
               display: 'inline-flex',
@@ -826,10 +1177,10 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             {networkQuality === 'offline' && <WifiOff size={13} />}
             <span>
               {networkQuality === 'good'
-                ? '● Good connection • 4G / Fiber • ~25 ms'
+                ? (roomLang === 'ଓଡ଼ିଆ' ? '● ଉତ୍ତମ ସଂଯୋଗ • 4G/WiFi ~୨୫ms' : roomLang === 'हिन्दी' ? '● अच्छा कनेक्शन • 4G/WiFi ~25ms' : '● Good connection • 4G / Fiber • ~25 ms')
                 : networkQuality === 'limited'
-                ? '● Limited connection • 2G / unstable network'
-                : '● Offline • Connection Lost'}
+                ? (roomLang === 'ଓଡ଼ିଆ' ? '● ସୀମିତ ସଂଯୋଗ • 2G ଅଡିଓ' : roomLang === 'हिन्दी' ? '● सीमित कनेक्शन • 2G ऑडियो' : '● Limited connection • 2G / unstable network')
+                : (roomLang === 'ଓଡ଼ିଆ' ? '● ଅଫଲାଇନ୍ • ସଂଯୋଗ ବିଚ୍ଛିନ୍ନ' : roomLang === 'हिन्दी' ? '● ऑफलाइन • कनेक्शन टूटा' : '● Offline • Connection Lost')}
             </span>
           </div>
 
@@ -882,7 +1233,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             title="End Video Consultation Call"
           >
             <PhoneOff size={15} />
-            <span>🔴 End Call</span>
+            <span>{t.endCallBtn}</span>
           </button>
         </div>
       </header>
@@ -1092,9 +1443,9 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                         fontWeight: 700
                       }}
                     >
-                      {userRole === 'doctor' ? 'AM' : 'RD'}
+                      {userRole === 'doctor' ? 'AM' : 'KR'}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Camera Off</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{t.cameraOffLabel}</div>
                   </div>
                 )}
 
@@ -1110,7 +1461,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     color: '#ffffff'
                   }}
                 >
-                  {userRole === 'doctor' ? 'You (Doctor)' : 'You (Patient)'}
+                  {userRole === 'doctor' ? t.youDoctor : t.youPatient}
                   {isMicMuted && ' • 🔇'}
                 </div>
               </div>
@@ -1195,7 +1546,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   title="End Consultation Call"
                 >
                   <PhoneOff size={16} />
-                  <span>🔴 END CALL</span>
+                  <span>{t.endCallBtn}</span>
                 </button>
               </div>
             </>
@@ -1315,7 +1666,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileText size={16} style={{ color: '#19d3ff' }} />
-                <strong style={{ fontSize: '14px' }}>Patient Intake Summary</strong>
+                <strong style={{ fontSize: '14px' }}>{t.intakeTitle}</strong>
               </div>
               <button
                 type="button"
@@ -1330,7 +1681,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
                 <div style={{ fontWeight: 700, fontSize: '15px', color: '#ffffff' }}>{patient.name}</div>
                 <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                  Age: {patient.age || 24} • Gender: Female • Location: {patient.location}
+                  Age: {patient.age || 26} • Gender: {patient.gender || 'Male'} • Location: {patient.location}
                 </div>
               </div>
 
@@ -1414,7 +1765,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileText size={16} style={{ color: '#19d3ff' }} />
-                <strong style={{ fontSize: '14px' }}>Doctor's Clinical Notes</strong>
+                <strong style={{ fontSize: '14px' }}>{t.doctorNotesTitle}</strong>
               </div>
               <button
                 type="button"
@@ -1456,7 +1807,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 onClick={handleSaveNote}
                 style={{ marginTop: 'auto' }}
               >
-                <span>Save Note</span>
+                <span>{t.saveNotesBtn}</span>
               </button>
             </div>
           </aside>
@@ -1498,7 +1849,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             title={isMicMuted ? 'Unmute Microphone' : 'Mute Microphone'}
           >
             {isMicMuted ? <MicOff size={18} /> : <Mic size={18} />}
-            <span style={{ fontSize: '13px' }}>{isMicMuted ? 'Muted' : '🎤 Audio'}</span>
+            <span style={{ fontSize: '13px' }}>{isMicMuted ? t.muted : t.audioBtn}</span>
           </button>
 
           <button
@@ -1515,7 +1866,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
           >
             {isCameraOff ? <VideoOff size={18} /> : <Video size={18} />}
-            <span style={{ fontSize: '13px' }}>{isCameraOff ? 'Cam Off' : '🎥 Video'}</span>
+            <span style={{ fontSize: '13px' }}>{isCameraOff ? t.camOffBtn : t.videoBtn}</span>
           </button>
 
           <button
@@ -1532,7 +1883,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             title={isSpeakerMuted ? 'Turn Speaker On' : 'Mute Speaker'}
           >
             {isSpeakerMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            <span style={{ fontSize: '13px' }}>{isSpeakerMuted ? 'Muted' : 'Speaker'}</span>
+            <span style={{ fontSize: '13px' }}>{isSpeakerMuted ? t.muted : t.speakerBtn}</span>
           </button>
         </div>
 
@@ -1555,7 +1906,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             }}
           >
             <MessageSquare size={16} />
-            <span style={{ fontSize: '13px' }}>💬 Chat</span>
+            <span style={{ fontSize: '13px' }}>{t.chatBtn}</span>
             {unreadChatCount > 0 && (
               <span
                 style={{
@@ -1592,7 +1943,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             }}
           >
             <FileText size={16} />
-            <span style={{ fontSize: '13px' }}>📋 Health Records</span>
+            <span style={{ fontSize: '13px' }}>{t.recordsBtn}</span>
           </button>
 
           {userRole === 'doctor' && (
@@ -1609,7 +1960,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               }}
             >
               <FileText size={16} />
-              <span style={{ fontSize: '13px' }}>Notes</span>
+              <span style={{ fontSize: '13px' }}>{t.notesBtn}</span>
             </button>
           )}
         </div>
@@ -1639,7 +1990,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             title="End Consultation Call"
           >
             <PhoneOff size={18} />
-            <span>🔴 END CALL</span>
+            <span>{t.endCallBtn}</span>
           </button>
         </div>
       </footer>
@@ -1689,14 +2040,13 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 <PhoneOff size={22} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', color: '#991b1b' }}>End Consultation?</h3>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>Conclude active teleconsult session</span>
+                <h3 style={{ margin: 0, fontSize: '18px', color: '#991b1b' }}>{t.confirmTitle}</h3>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>{t.confirmSubtitle}</span>
               </div>
             </div>
 
             <p style={{ color: '#475569', fontSize: '13px', margin: '0 0 20px', lineHeight: 1.5 }}>
-              Are you sure you want to end this teleconsultation with <strong>{doctor.name}</strong>?
-              Your consultation duration, clinical notes, and digital prescription will be saved.
+              {t.confirmBody(doctor.name)}
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -1706,7 +2056,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 onClick={() => setShowEndConfirm(false)}
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
-                Continue Call
+                {t.continueCallBtn}
               </button>
               <button
                 type="button"
@@ -1728,7 +2078,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 id="confirm-end-call-button"
               >
                 <PhoneOff size={16} />
-                <span>Yes, End Call</span>
+                <span>{t.yesEndBtn}</span>
               </button>
             </div>
           </div>

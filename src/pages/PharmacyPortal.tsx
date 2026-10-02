@@ -8,14 +8,193 @@ interface PharmacyPortalProps {
   user: DemoUser;
   networkQuality: NetworkQuality;
   lang: Language;
+  onSelectLang?: (lang: Language) => void;
 }
 
-export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQuality, lang }) => {
+const enPharmacy = {
+  partnerPharmacy: 'Jan Aushadhi Partner Pharmacy',
+  chemistLicense: 'Licensed Chemist • Drug Lic: KLH-2024-8192',
+  broadcastingLive: 'Broadcasting Real-Time Stock',
+  offlineQueued: 'Offline: Changes Queued',
+  tabHome: 'Dashboard',
+  tabStock: 'Medicine Inventory',
+  tabRequests: 'Patient Requests',
+  tabProfile: 'Pharmacy Profile',
+  heroTitle: 'Pharmacy Partner Portal',
+  heroDesc: 'Publish real-time essential medicine inventory for Kalahandi district so rural villagers and daily-wage workers can verify availability before traveling 15–30km to town.',
+  manageStockBtn: 'Manage Stock Inventory',
+  viewRequestsBtn: 'View Patient Hold Requests',
+  liveSectionTitle: 'Live Inventory & Patient Requests',
+  kpiAvailable: 'Available Medicines',
+  kpiAvailableSub: 'In stock ready for dispensing',
+  kpiLimited: 'Low Stock',
+  kpiLimitedSub: 'Replenishment recommended',
+  kpiOutOfStock: 'Out of Stock',
+  kpiOutOfStockSub: 'Prevents futile patient travel',
+  kpiRequests: 'Patient Hold Requests',
+  kpiRequestsSub: 'Awaiting chemist confirmation',
+  partnerNoticeTitle: 'Partner Participation Notice',
+  partnerNoticeDesc: 'Stock information depends on partner updates and may change. When updated, availability updates broadcast directly to patients across Kalahandi blocks in real time.',
+  stockMgmtTitle: 'Medicine Stock Management',
+  stockMgmtDesc: 'Update medicine status instantly. Changes are broadcast to the Patient portal in real time.',
+  category: 'Category',
+  price: 'Price',
+  block: 'Block',
+  availableUnits: 'Available Units',
+  lastUpdated: 'Last updated',
+  markAvailable: 'Mark Available',
+  markLimited: 'Mark Limited',
+  markOutOfStock: 'Mark Out of Stock',
+  patientRequestsTitle: 'Patient Medicine Availability Requests',
+  patientRequestsDesc: 'Rural patients requesting medicine reservation before traveling from their village (Prompt Section 30)',
+  pending: 'Pending',
+  requestedMedicine: 'Requested Medicine',
+  timeReceived: 'Time Received',
+  preferred: 'Preferred',
+  confirmAvailable: 'Confirm Available',
+  confirmedAvailable: 'Confirmed Available',
+  profileTitle: 'Pharmacy Profile & Partner Credentials',
+  profileSubtitle: 'Registered Government Jan Aushadhi & District Health Society Retailer',
+  pharmacyName: 'Pharmacy Name',
+  drugLicense: 'Drug License Number',
+  addressBlock: 'Address & Block',
+  operatingHours: 'Operating Hours',
+  operatingHoursVal: '8:00 AM – 9:30 PM (Daily)',
+  addressVal: 'College Road, Bhawanipatna, Kalahandi, Odisha',
+  navHome: 'Dashboard',
+  navStock: 'Stock',
+  navRequests: 'Requests',
+  navProfile: 'Profile'
+};
+
+const orPharmacy = {
+  partnerPharmacy: 'ଜନ ଔଷଧି ପାର୍ଟନର ଔଷଧାଳୟ',
+  chemistLicense: 'ଲାଇସେନ୍ସପ୍ରାପ୍ତ କେମିଷ୍ଟ • ଡ୍ରଗ୍ ଲାଇସେନ୍ସ: KLH-2024-8192',
+  broadcastingLive: 'ଲାଇଭ୍ ଔଷଧ ଷ୍ଟକ୍ ପ୍ରସାରିତ ହେଉଛି',
+  offlineQueued: 'ଅଫଲାଇନ୍: ପରିବର୍ତ୍ତନ କ୍ୟୁରେ ରହିଛି',
+  tabHome: 'ଡ୍ୟାସବୋର୍ଡ',
+  tabStock: 'ଔଷଧ ତାଲିକା',
+  tabRequests: 'ରୋଗୀଙ୍କ ଅନୁରୋଧ',
+  tabProfile: 'ଫାର୍ମାସୀ ପ୍ରୋଫାଇଲ୍',
+  heroTitle: 'ଔଷଧ ଭଣ୍ଡାର ପାର୍ଟନର ପୋର୍ଟାଲ',
+  heroDesc: 'କଳାହାଣ୍ଡି ଜିଲ୍ଲାର ଗ୍ରାମୀଣ ଲୋକ ଓ ଦିନମଜୁରିଆଙ୍କ ପାଇଁ ଲାଇଭ୍ ଜରୁରୀ ଔଷଧ ଉପଲବ୍ଧତା ପ୍ରକାଶ କରନ୍ତୁ, ଯାହାଦ୍ୱାରା ସେମାନେ ୧୫-୩୦ କିମି ସହରକୁ ଆସିବା ପୂର୍ବରୁ ଯାଞ୍ଚ କରିପାରିବେ।',
+  manageStockBtn: 'ଔଷଧ ଷ୍ଟକ୍ ପରିଚାଳନା',
+  viewRequestsBtn: 'ରୋଗୀ ଅନୁରୋଧ ଦେଖନ୍ତୁ',
+  liveSectionTitle: 'ଲାଇଭ୍ ଇନଭେଣ୍ଟୋରୀ ଏବଂ ରୋଗୀ ଅନୁରୋଧ',
+  kpiAvailable: 'ଉପଲବ୍ଧ ଔଷଧ',
+  kpiAvailableSub: 'ବଣ୍ଟନ ପାଇଁ ଷ୍ଟକ୍ରେ ଉପଲବ୍ଧ',
+  kpiLimited: 'ସୀମିତ ଷ୍ଟକ୍',
+  kpiLimitedSub: 'ପୁନଃପୂରଣ ସୁପାରିଶ କରାଯାଇଛି',
+  kpiOutOfStock: 'ଷ୍ଟକ୍ ଶେଷ',
+  kpiOutOfStockSub: 'ବୃଥା ଯାତ୍ରାକୁ ରୋକିଥାଏ',
+  kpiRequests: 'ରୋଗୀ ଔଷଧ ଅନୁରୋଧ',
+  kpiRequestsSub: 'କେମିଷ୍ଟ ନିଶ୍ଚିତକରଣକୁ ଅପେକ୍ଷା',
+  partnerNoticeTitle: 'ପାର୍ଟନର ସହଭାଗିତା ସୂଚନା',
+  partnerNoticeDesc: 'ଷ୍ଟକ୍ ସୂଚନା ପାର୍ଟନର ଅପଡେଟ୍ ଉପରେ ନିର୍ଭର କରେ। ଅପଡେଟ୍ ହେବା ମାତ୍ରେ କଳାହାଣ୍ଡି ବ୍ଲକ୍‌ର ରୋଗୀଙ୍କ ନିକଟକୁ ସିଧାସଳଖ ପହଞ୍ଚିଥାଏ।',
+  stockMgmtTitle: 'ଔଷଧ ଷ୍ଟକ୍ ପରିଚାଳନା',
+  stockMgmtDesc: 'ତୁରନ୍ତ ଔଷଧର ସ୍ଥିତି ଅପଡେଟ୍ କରନ୍ତୁ। ପରିବର୍ତ୍ତନ ରୋଗୀ ପୋର୍ଟାଲରେ ତୁରନ୍ତ ଦେଖାଯିବ।',
+  category: 'ବିଭାଗ',
+  price: 'ମୂଲ୍ୟ',
+  block: 'ବ୍ଲକ୍',
+  availableUnits: 'ଉପଲବ୍ଧ ୟୁନିଟ୍',
+  lastUpdated: 'ଶେଷ ଅପଡେଟ୍',
+  markAvailable: 'ଉପଲବ୍ଧ କରନ୍ତୁ',
+  markLimited: 'ସୀମିତ କରନ୍ତୁ',
+  markOutOfStock: 'ଶେଷ କରନ୍ତୁ',
+  patientRequestsTitle: 'ରୋଗୀ ଔଷଧ ଉପଲବ୍ଧତା ଅନୁରୋଧ',
+  patientRequestsDesc: 'ଗାଁରୁ ବାହାରିବା ପୂର୍ବରୁ ଔଷଧ ସଂରକ୍ଷଣ ପାଇଁ ଗ୍ରାମୀଣ ରୋଗୀଙ୍କ ଅନୁରୋଧ',
+  pending: 'ବାକି ଅଛି',
+  requestedMedicine: 'ଅନୁରୋଧିତ ଔଷଧ',
+  timeReceived: 'ପ୍ରାପ୍ତ ସମୟ',
+  preferred: 'ପସନ୍ଦିତ କେନ୍ଦ୍ର',
+  confirmAvailable: 'ଉପଲବ୍ଧ ନିଶ୍ଚିତ କରନ୍ତୁ',
+  confirmedAvailable: 'ଉପଲବ୍ଧ ନିଶ୍ଚିତ ହୋଇଛି',
+  profileTitle: 'ଫାର୍ମାସୀ ପ୍ରୋଫାଇଲ୍ ଏବଂ ପାର୍ଟନର ପ୍ରମାଣପତ୍ର',
+  profileSubtitle: 'ପଞ୍ଜୀକୃତ ସରକାରୀ ଜନ ଔଷଧି ଏବଂ ଜିଲ୍ଲା ସ୍ୱାସ୍ଥ୍ୟ ସମିତି ବିକ୍ରେତା',
+  pharmacyName: 'ଫାର୍ମାସୀ ନାମ',
+  drugLicense: 'ଡ୍ରଗ୍ ଲାଇସେନ୍ସ ନମ୍ବର',
+  addressBlock: 'ଠିକଣା ଓ ବ୍ଲକ୍',
+  operatingHours: 'ଖୋଲିବା ସମୟ',
+  operatingHoursVal: 'ସକାଳ ୮:୦୦ – ରାତି ୯:୩୦ (ପ୍ରତିଦିନ)',
+  addressVal: 'କଲେଜ ରୋଡ୍, ଭବାନୀପାଟଣା, କଳାହାଣ୍ଡି, ଓଡ଼ିଶା',
+  navHome: 'ଡ୍ୟାସବୋର୍ଡ',
+  navStock: 'ଷ୍ଟକ୍',
+  navRequests: 'ଅନୁରୋଧ',
+  navProfile: 'ପ୍ରୋଫାଇଲ୍'
+};
+
+const hiPharmacy = {
+  partnerPharmacy: 'जन औषधि पार्टनर फार्मेसी',
+  chemistLicense: 'लाइसेंस प्राप्त केमिस्ट • ड्रग लाइसेंस: KLH-2024-8192',
+  broadcastingLive: 'लाइव स्टॉक प्रसारित हो रहा है',
+  offlineQueued: 'ऑफ़लाइन: परिवर्तन कतारबद्ध हैं',
+  tabHome: 'डैशबोर्ड',
+  tabStock: 'दवा सूची',
+  tabRequests: 'मरीज़ अनुरोध',
+  tabProfile: 'फार्मेसी प्रोफाइल',
+  heroTitle: 'फार्मेसी पार्टनर पोर्टल',
+  heroDesc: 'कालाहांडी जिले के लिए आवश्यक दवाओं का लाइव स्टॉक प्रकाशित करें ताकि ग्रामीण और दिहाड़ी मजदूर 15-30 किमी दूर आने से पहले उपलब्धता जांच सकें।',
+  manageStockBtn: 'दवा स्टॉक प्रबंधित करें',
+  viewRequestsBtn: 'मरीज़ अनुरोध देखें',
+  liveSectionTitle: 'लाइव इन्वेंटरी एवं मरीज़ अनुरोध',
+  kpiAvailable: 'उपलब्ध दवाएं',
+  kpiAvailableSub: 'वितरण हेतु स्टॉक में उपलब्ध',
+  kpiLimited: 'सीमित स्टॉक',
+  kpiLimitedSub: 'पुनर्प्राप्ति अनुशंसित',
+  kpiOutOfStock: 'स्टॉक समाप्त',
+  kpiOutOfStockSub: 'व्यर्थ यात्रा से बचाव',
+  kpiRequests: 'मरीज़ होल्ड अनुरोध',
+  kpiRequestsSub: 'केमिस्ट पुष्टि की प्रतीक्षा',
+  partnerNoticeTitle: 'पार्टनर भागीदारी सूचना',
+  partnerNoticeDesc: 'स्टॉक जानकारी पार्टनर अपडेट पर निर्भर करती है। अपडेट होने पर कालाहांडी के सभी ब्लॉक्स में मरीजों को तुरंत जानकारी प्रसारित होती है।',
+  stockMgmtTitle: 'दवा स्टॉक प्रबंधन',
+  stockMgmtDesc: 'दवा की स्थिति तुरंत अपडेट करें। परिवर्तन मरीज़ पोर्टल पर तुरंत दिखाई देते हैं।',
+  category: 'श्रेणी',
+  price: 'मूल्य',
+  block: 'ब्लॉक',
+  availableUnits: 'उपलब्ध इकाइयां',
+  lastUpdated: 'अंतिम अपडेट',
+  markAvailable: 'उपलब्ध करें',
+  markLimited: 'सीमित करें',
+  markOutOfStock: 'समाप्त करें',
+  patientRequestsTitle: 'मरीज़ दवा उपलब्धता अनुरोध',
+  patientRequestsDesc: 'गाँव से निकलने से पहले दवा आरक्षण हेतु ग्रामीण मरीजों के अनुरोध',
+  pending: 'लंबित',
+  requestedMedicine: 'अनुरोधित दवा',
+  timeReceived: 'प्राप्त समय',
+  preferred: 'पसंदीदा केंद्र',
+  confirmAvailable: 'उपलब्धता की पुष्टि करें',
+  confirmedAvailable: 'उपलब्धता की पुष्टि हुई',
+  profileTitle: 'फार्मेसी प्रोफाइल एवं पार्टनर क्रेडेंशियल',
+  profileSubtitle: 'पंजीकृत सरकारी जन औषधि एवं जिला स्वास्थ्य समिति विक्रेता',
+  pharmacyName: 'फार्मेसी का नाम',
+  drugLicense: 'ड्रग लाइसेंस संख्या',
+  addressBlock: 'पता एवं ब्लॉक',
+  operatingHours: 'खुलने का समय',
+  operatingHoursVal: 'सुबह 8:00 – रात 9:30 (प्रतिदिन)',
+  addressVal: 'कॉलेज रोड, भवानीपटना, कालाहांडी, ओडिशा',
+  navHome: 'डैशबोर्ड',
+  navStock: 'स्टॉक',
+  navRequests: 'अनुरोध',
+  navProfile: 'प्रोफाइल'
+};
+
+const PHARMACY_I18N: Record<string, any> = {
+  English: enPharmacy,
+  'ଓଡ଼ିଆ': orPharmacy,
+  'हिन्दी': hiPharmacy,
+  en: enPharmacy,
+  or: orPharmacy,
+  hi: hiPharmacy
+};
+
+export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQuality, lang, onSelectLang }) => {
   const [activeTab, setActiveTab] = useState<'home' | 'stock' | 'requests' | 'profile'>('home');
   const [updateNotice, setUpdateNotice] = useState('');
   const [medicines, setMedicines] = useState<MedicineItem[]>(storage.getMedicines());
   const [requests, setRequests] = useState<PharmacyRequest[]>(storage.getRequests());
 
+  const t = PHARMACY_I18N[lang] || PHARMACY_I18N.English || PHARMACY_I18N.en;
   const isConnected = networkQuality !== 'offline';
 
   useEffect(() => {
@@ -92,15 +271,39 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
           <div>
             <div style={{ fontWeight: 700, fontSize: '16px' }}>{user.name}</div>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              {user.location} • Jan Aushadhi Partner Pharmacy
+              {user.location} • {t.partnerPharmacy}
             </div>
             <span className="user-badge" style={{ background: '#fef3f2', color: '#b42318' }}>
-              Licensed Chemist • Drug Lic: KLH-2024-8192
+              {t.chemistLicense}
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {onSelectLang && (
+            <div style={{ display: 'inline-flex', background: '#f1f5f9', borderRadius: '8px', padding: '2px', border: '1px solid #cbd5e1' }}>
+              {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => onSelectLang(l)}
+                  style={{
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: lang === l ? 700 : 500,
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    background: lang === l ? '#b42318' : 'transparent',
+                    color: lang === l ? '#ffffff' : '#475569',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {l === 'English' ? 'EN' : l === 'ଓଡ଼ିଆ' ? 'ଓଡ଼ିଆ' : 'हिन्दी'}
+                </button>
+              ))}
+            </div>
+          )}
           <span
             className="status-pill"
             style={{
@@ -109,7 +312,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
             }}
           >
             <span className="status-dot"></span>
-            <span>{isConnected ? 'Broadcasting Real-Time Stock' : 'Offline: Changes Queued'}</span>
+            <span>{isConnected ? t.broadcastingLive : t.offlineQueued}</span>
           </span>
         </div>
       </div>
@@ -120,25 +323,25 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
           className={`tab-btn ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => setActiveTab('home')}
         >
-          {getTranslation(lang, 'tabHome')}
+          {t.tabHome}
         </button>
         <button
           className={`tab-btn ${activeTab === 'stock' ? 'active' : ''}`}
           onClick={() => setActiveTab('stock')}
         >
-          Medicine Inventory ({medicines.length})
+          {t.tabStock} ({medicines.length})
         </button>
         <button
           className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
           onClick={() => setActiveTab('requests')}
         >
-          Patient Requests ({pendingRequests} Pending)
+          {t.tabRequests} ({pendingRequests} {t.pending})
         </button>
         <button
           className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveTab('profile')}
         >
-          Pharmacy Profile
+          {t.tabProfile}
         </button>
       </nav>
 
@@ -155,62 +358,60 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
       {activeTab === 'home' && (
         <div>
           <div className="hero-card" style={{ borderRadius: '16px', marginBottom: '20px' }}>
-            <h1>Pharmacy Partner Portal</h1>
-            <p>
-              Publish real-time essential medicine inventory for Kalahandi district so rural villagers and daily-wage workers can verify availability before traveling 15–30km to town.
-            </p>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroDesc}</p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 className="btn btn-primary"
                 onClick={() => setActiveTab('stock')}
               >
                 <Pill size={16} />
-                <span>Manage Stock Inventory</span>
+                <span>{t.manageStockBtn}</span>
               </button>
               <button
                 className="btn btn-ghost-light"
                 onClick={() => setActiveTab('requests')}
               >
                 <Clock size={16} />
-                <span>View Patient Hold Requests</span>
+                <span>{t.viewRequestsBtn}</span>
               </button>
             </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
             <h3 style={{ fontSize: '15px', color: 'var(--navy-mid)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
-              Live Inventory & Patient Requests
+              {t.liveSectionTitle}
             </h3>
             <div className="kpis-grid">
               <div className="kpi-card">
-                <span className="kpi-label">Available Medicines</span>
+                <span className="kpi-label">{t.kpiAvailable}</span>
                 <div className="kpi-val" style={{ color: '#027a48' }}>{availableCount}</div>
                 <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                  In stock ready for dispensing
+                  {t.kpiAvailableSub}
                 </span>
               </div>
 
               <div className="kpi-card">
-                <span className="kpi-label">Low Stock</span>
+                <span className="kpi-label">{t.kpiLimited}</span>
                 <div className="kpi-val" style={{ color: '#b54708' }}>{limitedCount}</div>
                 <span style={{ fontSize: '12px', color: '#b54708' }}>
-                  Replenishment recommended
+                  {t.kpiLimitedSub}
                 </span>
               </div>
 
               <div className="kpi-card">
-                <span className="kpi-label">Out of Stock</span>
+                <span className="kpi-label">{t.kpiOutOfStock}</span>
                 <div className="kpi-val" style={{ color: '#b42318' }}>{outOfStockCount}</div>
                 <span style={{ fontSize: '12px', color: '#b42318' }}>
-                  Prevents futile patient travel
+                  {t.kpiOutOfStockSub}
                 </span>
               </div>
 
               <div className="kpi-card">
-                <span className="kpi-label">Patient Hold Requests</span>
+                <span className="kpi-label">{t.kpiRequests}</span>
                 <div className="kpi-val" style={{ color: '#0d70d4' }}>{pendingRequests}</div>
                 <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                  Awaiting chemist confirmation
+                  {t.kpiRequestsSub}
                 </span>
               </div>
             </div>
@@ -219,10 +420,10 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
           <div className="card" style={{ marginTop: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <ShieldCheck size={20} style={{ color: '#0284c7' }} />
-              <h3>Partner Participation Notice</h3>
+              <h3>{t.partnerNoticeTitle}</h3>
             </div>
             <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
-              Stock information depends on partner updates and may change. When updated, availability updates broadcast directly to patients across Kalahandi blocks in real time.
+              {t.partnerNoticeDesc}
             </p>
           </div>
         </div>
@@ -235,9 +436,9 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <h2>Medicine Stock Management</h2>
+              <h2>{t.stockMgmtTitle}</h2>
               <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0 }}>
-                Update medicine status instantly. Changes are broadcast to the Patient portal in real time.
+                {t.stockMgmtDesc}
               </p>
             </div>
             <span
@@ -248,7 +449,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
               }}
             >
               <span className="status-dot"></span>
-              {isConnected ? 'Broadcasting live updates' : 'Offline: Queued locally'}
+              {isConnected ? t.broadcastingLive : t.offlineQueued}
             </span>
           </div>
 
@@ -268,19 +469,23 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       }`}
                       style={{ fontSize: '11px', fontWeight: 700 }}
                     >
-                      {med.status}
+                      {med.status === 'AVAILABLE'
+                        ? (lang === 'ଓଡ଼ିଆ' ? 'ଉପଲବ୍ଧ' : lang === 'हिन्दी' ? 'उपलब्ध' : 'AVAILABLE')
+                        : med.status === 'LIMITED STOCK'
+                        ? (lang === 'ଓଡ଼ିଆ' ? 'ସୀମିତ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? 'सीमित स्टॉक' : 'LIMITED STOCK')
+                        : (lang === 'ଓଡ଼ିଆ' ? 'ଷ୍ଟକ୍ ଶେଷ' : lang === 'हिन्दी' ? 'स्टॉक समाप्त' : 'OUT OF STOCK')}
                     </span>
                   </div>
 
                   <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '2px' }}>
-                    Category: {med.category} • Price: {med.unitPrice} • Block: {med.block}
+                    {t.category}: {med.category} • {t.price}: {med.unitPrice} • {t.block}: {med.block}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--muted-light)', marginTop: '2px' }}>
-                    Available Units: <strong>{med.quantity}</strong> • Last updated: {med.lastUpdated}
+                    {t.availableUnits}: <strong>{med.quantity}</strong> • {t.lastUpdated}: {med.lastUpdated}
                   </div>
                 </div>
 
-                {/* Quick Action Buttons from Prompt Section 29 */}
+                {/* Quick Action Buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
@@ -295,7 +500,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       fontWeight: 700
                     }}
                   >
-                    Mark Available
+                    {t.markAvailable}
                   </button>
 
                   <button
@@ -311,7 +516,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       fontWeight: 700
                     }}
                   >
-                    Mark Limited
+                    {t.markLimited}
                   </button>
 
                   <button
@@ -327,7 +532,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       fontWeight: 700
                     }}
                   >
-                    Mark Out of Stock
+                    {t.markOutOfStock}
                   </button>
                 </div>
               </div>
@@ -343,12 +548,12 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
-              <h2>Patient Medicine Availability Requests</h2>
+              <h2>{t.patientRequestsTitle}</h2>
               <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0 }}>
-                Rural patients requesting medicine reservation before traveling from their village (Prompt Section 30)
+                {t.patientRequestsDesc}
               </p>
             </div>
-            <span className="badge badge-blue">{pendingRequests} Pending</span>
+            <span className="badge badge-blue">{pendingRequests} {t.pending}</span>
           </div>
 
           <div className="data-list">
@@ -364,11 +569,11 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                   </div>
 
                   <div style={{ fontSize: '13px', color: '#0f172a' }}>
-                    Requested Medicine: <strong>{req.medicines}</strong>
+                    {t.requestedMedicine}: <strong>{req.medicines}</strong>
                   </div>
 
                   <div style={{ fontSize: '11px', color: 'var(--muted-light)', marginTop: '2px' }}>
-                    Time Received: {req.timestamp} • Preferred: {user.name}
+                    {t.timeReceived}: {req.timestamp} • {t.preferred}: {user.name}
                   </div>
                 </div>
 
@@ -378,7 +583,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       req.status === 'Confirmed Available' ? 'badge-green' : 'badge-amber'
                     }`}
                   >
-                    {req.status}
+                    {req.status === 'Confirmed Available' ? t.confirmedAvailable : t.pending}
                   </span>
 
                   {req.status === 'Pending' && (
@@ -388,7 +593,7 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
                       style={{ fontSize: '12px', padding: '6px 14px', fontWeight: 700 }}
                     >
                       <Check size={14} />
-                      <span>Confirm Available</span>
+                      <span>{t.confirmAvailable}</span>
                     </button>
                   )}
                 </div>
@@ -403,27 +608,27 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
       {/* ======================================================== */}
       {activeTab === 'profile' && (
         <div className="card">
-          <h2>Pharmacy Profile & Partner Credentials</h2>
+          <h2>{t.profileTitle}</h2>
           <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '16px' }}>
-            Registered Government Jan Aushadhi & District Health Society Retailer
+            {t.profileSubtitle}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '13px' }}>
             <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px' }}>
-              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Pharmacy Name</span>
+              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>{t.pharmacyName}</span>
               <strong>{user.name}</strong>
             </div>
             <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px' }}>
-              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Drug License Number</span>
+              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>{t.drugLicense}</span>
               <strong>KLH-2024-8192-RET</strong>
             </div>
             <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px' }}>
-              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Address & Block</span>
-              <strong>College Road, Bhawanipatna, Kalahandi, Odisha</strong>
+              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>{t.addressBlock}</span>
+              <strong>{t.addressVal}</strong>
             </div>
             <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px' }}>
-              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Operating Hours</span>
-              <strong>8:00 AM – 9:30 PM (Daily)</strong>
+              <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>{t.operatingHours}</span>
+              <strong>{t.operatingHoursVal}</strong>
             </div>
           </div>
         </div>
@@ -447,28 +652,28 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'home' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <ClipboardList size={18} />
-          <span>Dashboard</span>
+          <span>{t.navHome}</span>
         </button>
         <button
           onClick={() => setActiveTab('stock')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'stock' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <Package size={18} />
-          <span>Stock</span>
+          <span>{t.navStock}</span>
         </button>
         <button
           onClick={() => setActiveTab('requests')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'requests' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <Clock size={18} />
-          <span>Requests</span>
+          <span>{t.navRequests}</span>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
           style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'profile' ? '#0284c7' : '#64748b', fontSize: '10px', cursor: 'pointer' }}
         >
           <User size={18} />
-          <span>Profile</span>
+          <span>{t.navProfile}</span>
         </button>
       </div>
     </div>

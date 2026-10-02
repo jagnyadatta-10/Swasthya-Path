@@ -135,17 +135,17 @@ export const Header: React.FC<HeaderProps> = ({
             {networkQuality === 'good' ? (
               <>
                 <Wifi size={13} />
-                <span>Good Network</span>
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭଲ ନେଟୱର୍କ' : lang === 'हिन्दी' ? 'अच्छा नेटवर्क' : 'Good Network'}</span>
               </>
             ) : networkQuality === 'limited' ? (
               <>
                 <Signal size={13} />
-                <span>Limited 2G</span>
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ସୀମିତ 2G' : lang === 'हिन्दी' ? 'सीमित 2G' : 'Limited 2G'}</span>
               </>
             ) : (
               <>
                 <WifiOff size={13} />
-                <span>Offline</span>
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍' : lang === 'हिन्दी' ? 'ऑफ़लाइन' : 'Offline'}</span>
               </>
             )}
           </span>
@@ -167,7 +167,11 @@ export const Header: React.FC<HeaderProps> = ({
               title={networkQuality === 'offline' ? 'Saved locally on this device' : 'All records synchronized'}
             >
               <Database size={12} />
-              {networkQuality === 'offline' ? 'Local Only' : networkQuality === 'limited' ? '1 Pending' : 'All Synced'}
+              {networkQuality === 'offline'
+                ? (lang === 'ଓଡ଼ିଆ' ? 'କେବଳ ସ୍ଥାନୀୟ' : lang === 'हिन्दी' ? 'केवल स्थानीय' : 'Local Only')
+                : networkQuality === 'limited'
+                ? (lang === 'ଓଡ଼ିଆ' ? '୧ ଟି ବାକି ଅଛି' : lang === 'हिन्दी' ? '1 लंबित' : '1 Pending')
+                : (lang === 'ଓଡ଼ିଆ' ? 'ସବୁ ସିଙ୍କ୍ ହୋଇଛି' : lang === 'हिन्दी' ? 'सभी सिंक हैं' : 'All Synced')}
             </span>
 
             {networkQuality !== 'offline' && (
@@ -180,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
                 style={{ padding: '4px 8px', fontSize: '11px' }}
               >
                 <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-                <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
+                <span>{syncing ? (lang === 'ଓଡ଼ିଆ' ? 'ସିଙ୍କ୍ ହେଉଛି...' : lang === 'हिन्दी' ? 'सिंकिंग...' : 'Syncing...') : (lang === 'ଓଡ଼ିଆ' ? 'ବର୍ତ୍ତମାନ ସିଙ୍କ୍' : lang === 'हिन्दी' ? 'अभी सिंक करें' : 'Sync Now')}</span>
               </button>
             )}
           </div>
@@ -192,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Cycle network state for testing"
             style={{ padding: '6px 12px' }}
           >
-            <span>Cycle Network</span>
+            <span>{lang === 'ଓଡ଼ିଆ' ? 'ନେଟ୍ ବଦଳାନ୍ତୁ' : lang === 'हिन्दी' ? 'नेटवर्क बदलें' : 'Cycle Network'}</span>
           </button>
 
           {/* Low Bandwidth Mode Toggle */}
@@ -207,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Toggle low-bandwidth optimization mode"
           >
             <span style={{ fontSize: '12px' }}>
-              Low-Bandwidth Mode: <strong>{lowBandwidthMode ? 'ON' : 'OFF'}</strong>
+              {lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ଡାଟା ମୋଡ୍:' : lang === 'हिन्दी' ? 'कम डेटा मोड:' : 'Low-Bandwidth Mode:'} <strong>{lowBandwidthMode ? (lang === 'ଓଡ଼ିଆ' ? 'ଅନ୍' : lang === 'हिन्दी' ? 'चालू' : 'ON') : (lang === 'ଓଡ଼ିଆ' ? 'ଅଫ୍' : lang === 'हिन्दी' ? 'बंद' : 'OFF')}</strong>
             </span>
           </button>
 
@@ -290,12 +294,12 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{fontScale > 1 ? 'A-' : 'A+'}</span>
           </button>
 
-          {/* Care Navigation Flow Diagram (User Request) */}
+            {/* Care Navigation Flow Diagram (User Request) */}
           {onOpenCareFlow && (
             <button
               className="btn btn-ghost-light"
               onClick={onOpenCareFlow}
-              title="View end-to-end Swasthya Path Care Navigation Flow Diagram"
+              title={lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଚିକିତ୍ସା ପ୍ରବାହ ଚିତ୍ର ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'स्वास्थ्य पथ केयर नेविगेशन फ्लो डायग्राम देखें' : 'View end-to-end Swasthya Path Care Navigation Flow Diagram'}
               style={{
                 padding: '6px 12px',
                 background: 'rgba(2, 132, 199, 0.25)',
@@ -304,7 +308,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <Compass size={15} style={{ color: '#38bdf8' }} />
-              <span>Care Flow</span>
+              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଚିକିତ୍ସା ପ୍ରବାହ' : lang === 'हिन्दी' ? 'केयर फ्लो' : 'Care Flow'}</span>
             </button>
           )}
 
@@ -312,11 +316,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             className="btn btn-ghost-light"
             onClick={onOpenArchitecture}
-            title="View system architecture, scalability and rural deployment model"
+            title={lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମୀଣ ସ୍ୱାସ୍ଥ୍ୟ ବ୍ୟବସ୍ଥା ଢାଞ୍ଚା ଓ ମଡେଲ୍ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'ग्रामीण स्वास्थ्य सिस्टम आर्किटेक्चर एवं मॉडल देखें' : 'View system architecture, scalability and rural deployment model'}
             style={{ padding: '6px 12px' }}
           >
             <Layers size={15} />
-            <span>Architecture</span>
+            <span>{lang === 'ଓଡ଼ିଆ' ? 'ସିଷ୍ଟମ୍ ଢାଞ୍ଚା' : lang === 'हिन्दी' ? 'आर्किटेक्चर' : 'Architecture'}</span>
           </button>
 
           {/* Logged in User Bar & Logout */}

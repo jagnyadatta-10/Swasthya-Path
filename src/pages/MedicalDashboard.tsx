@@ -129,7 +129,7 @@ const DASH_I18N: Record<string, Record<string, string>> = {
     filterLab: 'Lab Reports',
     filterXray: 'Radiology / X-Ray',
     filterReferral: 'Referral Slips',
-    disclaimerNotice: '⚠️ Laboratory results should be interpreted by a qualified healthcare professional in clinical context.',
+    disclaimerNotice: '⚠️ Laboratory results should be interpreted by a qualified healthcare professional.',
     vitalsTitle: 'Pre-Consultation Physical Vitals Intake',
     vitalsDesc: 'Record physical vital signs taken at the diagnostic collection center prior to doctor video consultation.',
     instrumentsTitle: 'Laboratory Instrumentation & Quality Calibration',

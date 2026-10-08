@@ -1226,6 +1226,17 @@ export const storage = {
     return list;
   },
 
+  updateAccountStatus(userId: string, accountStatus: ManagedUser['accountStatus']): ManagedUser[] {
+    const list = this.getManagedUsers();
+    const idx = list.findIndex(u => u.id === userId);
+    if (idx !== -1) {
+      list[idx].accountStatus = accountStatus;
+      localStorage.setItem(KEYS.MANAGED_USERS, JSON.stringify(list));
+      this.addAuditLog(`Account status for ${list[idx].name} updated to ${accountStatus}`, 'Administrator');
+    }
+    return list;
+  },
+
   // Emergency Cases (Admin Escalation Center)
   getEmergencyCases(): EmergencyCase[] {
     try {

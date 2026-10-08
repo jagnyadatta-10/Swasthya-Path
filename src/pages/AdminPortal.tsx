@@ -731,6 +731,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </div>
           </div>
 
+          {/* Governance Notice */}
+          <div style={{ padding: '12px 16px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#1e40af' }}>
+            <ShieldCheck size={18} style={{ color: '#2563eb', flexShrink: 0 }} />
+            <div>
+              <strong>Doctor & Healthcare Professional Governance Policy:</strong> Never automatically mark a doctor as verified. Administrative and state medical council (MCI/OSMC) credentials review required prior to activation.
+            </div>
+          </div>
+
           {/* Users List */}
           <div className="data-list">
             {filteredUsers.length === 0 ? (

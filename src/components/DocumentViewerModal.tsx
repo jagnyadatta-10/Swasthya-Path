@@ -428,65 +428,112 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thParameter}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thResult}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>Status</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thRefRange}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {document.parameters.map((param, pIdx) => (
-                        <tr key={pIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '6px', fontWeight: 500 }}>{param.name}</td>
-                          <td style={{
-                            padding: '6px',
-                            fontWeight: 700,
-                            color: param.isAbnormal ? '#dc2626' : '#059669'
-                          }}>
-                            {param.result} {param.unit || ''}
-                            {param.isAbnormal && (
-                              <span style={{ marginLeft: '6px', fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '1px 5px', borderRadius: '4px' }}>
-                                ABNORMAL
+                      {document.parameters.map((param, pIdx) => {
+                        const isAbnormal = param.isAbnormal;
+                        const statusText = isAbnormal ? 'ABNORMAL ⚠️' : 'NORMAL ✓';
+                        return (
+                          <tr key={pIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '8px 6px', fontWeight: 600 }}>{param.name}</td>
+                            <td style={{ padding: '8px 6px', fontWeight: 700, color: '#0f172a' }}>
+                              {param.result} {param.unit || ''}
+                            </td>
+                            <td style={{ padding: '8px 6px' }}>
+                              <span style={{
+                                fontWeight: 800,
+                                fontSize: '11px',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: isAbnormal ? '#fee2e2' : '#dcfce7',
+                                color: isAbnormal ? '#991b1b' : '#166534',
+                                border: isAbnormal ? '1.5px solid #ef4444' : '1.5px solid #22c55e'
+                              }}>
+                                {statusText}
                               </span>
-                            )}
-                          </td>
-                          <td style={{ padding: '6px', color: '#64748b' }}>{param.refRange}</td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td style={{ padding: '8px 6px', color: '#475569', fontWeight: 500 }}>{param.refRange}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '14px' }}>
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thParameter}</th>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thResult}</th>
-                        <th style={{ padding: '6px', textAlign: 'left' }}>{t.thRefRange}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thParameter}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thResult}</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>Status</th>
+                        <th style={{ padding: '8px 6px', textAlign: 'left' }}>{t.thRefRange}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px' }}>{t.haemoglobin}</td>
-                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>12.8 g/dL</td>
-                        <td style={{ padding: '6px', color: '#64748b' }}>12.0 – 15.5 g/dL</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{t.haemoglobin}</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 700, color: '#0f172a' }}>12.8 g/dL</td>
+                        <td style={{ padding: '8px 6px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: '#dcfce7', color: '#166534', border: '1.5px solid #22c55e' }}>
+                            NORMAL ✓
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 6px', color: '#475569' }}>12.0 – 15.5 g/dL</td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px' }}>{t.leukocyte}</td>
-                        <td style={{ padding: '6px', fontWeight: 700, color: '#0284c7' }}>7,400 /cumm</td>
-                        <td style={{ padding: '6px', color: '#64748b' }}>4,000 – 11,000 /cumm</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{t.leukocyte}</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 700, color: '#0f172a' }}>7,400 /cumm</td>
+                        <td style={{ padding: '8px 6px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: '#dcfce7', color: '#166534', border: '1.5px solid #22c55e' }}>
+                            NORMAL ✓
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 6px', color: '#475569' }}>4,000 – 11,000 /cumm</td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px' }}>{t.platelet}</td>
-                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>2.4 Lakhs/cumm</td>
-                        <td style={{ padding: '6px', color: '#64748b' }}>1.5 – 4.0 Lakhs/cumm</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{t.platelet}</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 700, color: '#0f172a' }}>2.4 Lakhs/cumm</td>
+                        <td style={{ padding: '8px 6px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: '#dcfce7', color: '#166534', border: '1.5px solid #22c55e' }}>
+                            NORMAL ✓
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 6px', color: '#475569' }}>1.5 – 4.0 Lakhs/cumm</td>
                       </tr>
                       <tr>
-                        <td style={{ padding: '6px' }}>{t.malariaSmear}</td>
-                        <td style={{ padding: '6px', fontWeight: 700, color: '#059669' }}>{t.negative}</td>
-                        <td style={{ padding: '6px', color: '#64748b' }}>Negative</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{t.malariaSmear}</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 700, color: '#0f172a' }}>{t.negative}</td>
+                        <td style={{ padding: '8px 6px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: '#dcfce7', color: '#166534', border: '1.5px solid #22c55e' }}>
+                            NORMAL ✓
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 6px', color: '#475569' }}>Negative</td>
                       </tr>
                     </tbody>
                   </table>
                 )}
+
+                {/* Section 11 Laboratory Disclaimer */}
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '11px',
+                  color: '#475569',
+                  marginBottom: '12px',
+                  lineHeight: 1.4
+                }}>
+                  ℹ️ <strong>Clinical Note:</strong> Reference ranges can vary by laboratory. Please discuss abnormal results with a healthcare professional. AI does not infer medical diagnoses from laboratory values.
+                </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
                   <span>{document.patientName ? `Patient: ${document.patientName} (${document.patientId || 'RHB-OD-KLH-0941'})` : 'Patient: Keshab Rout'}</span>

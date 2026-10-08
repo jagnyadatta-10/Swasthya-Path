@@ -120,7 +120,7 @@ export const DemoSimulator: React.FC<DemoSimulatorProps> = ({
                     textAlign: 'center'
                   }}
                 >
-                  {r === 'patient' ? '👤 Patient' : r === 'doctor' ? '🩺 Doctor' : r === 'pharmacy' ? '💊 Chemist' : r === 'admin' ? '🏛️ Admin' : '🔬 Lab'}
+                  {r === 'patient' ? '👤 Patient' : r === 'doctor' ? '🩺 Doctor' : r === 'pharmacy' ? '💊 Chemist' : r === 'admin' ? '🏛️ Admin' : '🔬 Pathology'}
                 </button>
               ))}
             </div>

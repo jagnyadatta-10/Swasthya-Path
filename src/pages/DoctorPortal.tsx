@@ -10,6 +10,7 @@ import {
   FileText,
   AlertOctagon,
   ArrowRight,
+  ArrowLeft,
   Check,
   Sparkles,
   User,
@@ -25,7 +26,7 @@ import {
   MapPin,
   ClipboardList,
   Edit3,
-  ArrowLeft
+  FlaskConical
 } from 'lucide-react';
 import {
   DemoUser,
@@ -34,6 +35,7 @@ import {
   AppointmentItem,
   NetworkQuality,
   DoctorItem,
+  DoctorLeave,
   FullPrescription,
   DiagnosticDocument,
   PhysiologicalVitals,
@@ -53,7 +55,6 @@ interface DoctorPortalProps {
   onNetworkChange?: (quality: NetworkQuality) => void;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
-  onBack?: () => void;
 }
 
 const DOCTOR_I18N = {
@@ -137,11 +138,95 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   networkQuality,
   onNetworkChange,
   lang,
-  onSelectLang,
-  onBack
+  onSelectLang
 }) => {
   const t = DOCTOR_I18N[lang] || DOCTOR_I18N.English;
-  const [activeTab, setActiveTab] = useState<'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history' | 'leave'>('home');
+  const [tabHistory, setTabHistory] = useState<('home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history' | 'leave')[]>(['home']);
+
+  const navigateToTab = (tab: 'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history' | 'leave') => {
+    setTabHistory(prev => (prev[prev.length - 1] === tab ? prev : [...prev, tab]));
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    if (tabHistory.length > 1) {
+      const nextHist = [...tabHistory];
+      nextHist.pop();
+      const prev = nextHist[nextHist.length - 1];
+      setTabHistory(nextHist);
+      setActiveTab(prev);
+    } else {
+      setActiveTab('home');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderBackButton = (customLabel?: string) => (
+    <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+      <button
+        type="button"
+        onClick={handleGoBack}
+        className="btn btn-secondary"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '10px',
+          background: '#ffffff',
+          border: '1.5px solid #cbd5e1',
+          color: '#0f172a',
+          fontSize: '13px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+        }}
+        title="Go back to previous page"
+      >
+        <ArrowLeft size={16} />
+        <span>
+          {customLabel || (
+            lang === 'ଓଡ଼ିଆ'
+              ? '← ପଛକୁ ଫେରନ୍ତୁ (ପୂର୍ବ ପୃଷ୍ଠା)'
+              : lang === 'हिन्दी'
+              ? '← वापस जाएं (पिछला पृष्ठ)'
+              : '← Back to Previous Page'
+          )}
+        </span>
+      </button>
+
+      {activeTab === 'evaluation' && (
+        <button
+          type="button"
+          onClick={() => navigateToTab('queue')}
+          className="btn btn-ghost-light"
+          style={{ fontSize: '13px', color: '#0284c7' }}
+        >
+          {lang === 'ଓଡ଼ିଆ' ? 'ଟ୍ରାଇଏଜ୍ କତାରକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'ट्राइएज कतार पर जाएं' : 'Return to Triage Queue'}
+        </button>
+      )}
+
+      {activeTab !== 'home' && (
+        <button
+          type="button"
+          onClick={() => navigateToTab('home')}
+          className="btn btn-ghost-light"
+          style={{
+            fontSize: '12px',
+            color: '#0284c7',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <span>{lang === 'ଓଡ଼ିଆ' ? 'ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'डैशबोर्ड पर जाएं' : 'Back to Dashboard'}</span>
+        </button>
+      )}
+    </div>
+  );
+
   const [selectedQueueItem, setSelectedQueueItem] = useState<TriageQueueItem | null>(null);
   const [doctorActionNote, setDoctorActionNote] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
@@ -163,6 +248,13 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   const [documents, setDocuments] = useState<DiagnosticDocument[]>(storage.getDocuments());
   const [vitals, setVitals] = useState<PhysiologicalVitals>(storage.getVitals());
   const [specialistRequests, setSpecialistRequests] = useState<SpecialistRequest[]>(storage.getSpecialistRequests());
+  const [doctorLeaves, setDoctorLeaves] = useState<DoctorLeave[]>(storage.getDoctorLeaves());
+  const [leaveStart, setLeaveStart] = useState('2026-10-15');
+  const [leaveEnd, setLeaveEnd] = useState('2026-10-22');
+  const [leaveReason, setLeaveReason] = useState('Academic Training & Rural Outreach Duty');
+  const [replacementDoctor, setReplacementDoctor] = useState('Dr. S. K. Patnaik');
+  const [leaveNotice, setLeaveNotice] = useState('');
+  const [queuePriorityFilter, setQueuePriorityFilter] = useState<'all' | 'emergency' | 'high' | 'routine'>('all');
   const medicines = storage.getMedicines();
 
   useEffect(() => {
@@ -172,13 +264,29 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
     setDocuments(storage.getDocuments());
     setVitals(storage.getVitals());
     setSpecialistRequests(storage.getSpecialistRequests());
+    setDoctorLeaves(storage.getDoctorLeaves());
   }, [activeTab]);
+
+  const handleSaveLeave = () => {
+    storage.saveDoctorLeave({
+      doctorId: 'doc-01',
+      doctorName: user.name,
+      startDate: leaveStart,
+      endDate: leaveEnd,
+      reason: leaveReason,
+      replacementDoctor: replacementDoctor,
+      status: 'Scheduled'
+    });
+    setDoctorLeaves(storage.getDoctorLeaves());
+    setLeaveNotice('Scheduled leave recorded! Alternative doctor routing activated for patients.');
+    setTimeout(() => setLeaveNotice(''), 3500);
+  };
 
   const handleOpenReview = (item: TriageQueueItem) => {
     setSelectedQueueItem(item);
     setDoctorActionNote(item.doctorNotes || '');
     setActionSuccess('');
-    setActiveTab('evaluation');
+    navigateToTab('evaluation');
     storage.addAuditLog(`Doctor opened patient record (${item.patientName})`, user.name);
   };
 
@@ -205,7 +313,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
     setActionSuccess(`Decision recorded! Patient status updated to ${decisionStatus.toUpperCase()}.`);
     setTimeout(() => {
       setActionSuccess('');
-      setActiveTab('queue');
+      navigateToTab('queue');
     }, 1500);
   };
 
@@ -341,133 +449,53 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       <nav className="tabs-scroll-wrap" aria-label="Doctor navigation">
         <button
           className={`tab-btn ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => setActiveTab('home')}
+          onClick={() => navigateToTab('home')}
         >
           {t.tabHome}
         </button>
         <button
           className={`tab-btn ${activeTab === 'queue' ? 'active' : ''}`}
-          onClick={() => setActiveTab('queue')}
+          onClick={() => navigateToTab('queue')}
         >
           {t.tabQueue(queue.filter((q) => q.status === 'pending' || q.status === 'escalated').length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'evaluation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('evaluation')}
+          onClick={() => navigateToTab('evaluation')}
         >
           {t.tabEval}
         </button>
         <button
           className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('schedule')}
+          onClick={() => navigateToTab('schedule')}
         >
           {t.tabSchedule(appointments.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'prescriptions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('prescriptions')}
+          onClick={() => navigateToTab('prescriptions')}
         >
           {t.tabRx(prescriptions.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'specialist' ? 'active' : ''}`}
-          onClick={() => setActiveTab('specialist')}
+          onClick={() => navigateToTab('specialist')}
         >
           {t.tabSpecialist(specialistRequests.length)}
         </button>
         <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
+          onClick={() => navigateToTab('history')}
         >
           {t.tabHistory}
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`}
+          onClick={() => navigateToTab('leave')}
+        >
+          {lang === 'ଓଡ଼ିଆ' ? `ଛୁଟି କାର୍ଯ୍ୟସୂଚୀ (${doctorLeaves.length})` : lang === 'हिन्दी' ? `छुट्टी अनुसूची (${doctorLeaves.length})` : `Scheduled Leave (${doctorLeaves.length})`}
+        </button>
       </nav>
-
-      {/* Universal Back Navigation for Doctor Tabs */}
-      {activeTab !== 'home' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '10px',
-          marginBottom: '16px',
-          padding: '10px 16px',
-          background: '#ffffff',
-          borderRadius: '12px',
-          border: '1.5px solid #e2e8f0',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('home')}
-              className="btn btn-ghost"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontWeight: 700,
-                fontSize: '13px',
-                color: '#0284c7',
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '8px',
-                padding: '7px 14px',
-                cursor: 'pointer'
-              }}
-            >
-              <ArrowLeft size={16} />
-              <span>
-                {lang === 'ଓଡ଼ିଆ' ? '← ଡାକ୍ତର ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← डॉक्टर डैशबोर्ड पर वापस जाएं' : '← Back to Doctor Dashboard'}
-              </span>
-            </button>
-
-            {activeTab === 'evaluation' && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('queue')}
-                className="btn btn-ghost"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  color: '#334155',
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  cursor: 'pointer'
-                }}
-              >
-                <span>
-                  {lang === 'ଓଡ଼ିଆ' ? '← ଟ୍ରାଇଏଜ୍ କତାରକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← ट्राइएज कतार पर वापस जाएं' : '← Back to Triage Queue'}
-                </span>
-              </button>
-            )}
-          </div>
-
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="btn btn-ghost"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '12px',
-                color: '#64748b',
-                padding: '6px 12px'
-              }}
-            >
-              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
-            </button>
-          )}
-        </div>
-      )}
 
       {/* ======================================================== */}
       {/* TAB 1: CLINICIAN DASHBOARD & TODAY'S OVERVIEW (Section 20) */}
@@ -480,7 +508,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 className="btn btn-primary"
-                onClick={() => setActiveTab('queue')}
+                onClick={() => navigateToTab('queue')}
               >
                 <Stethoscope size={16} />
                 <span>{t.openQueueBtn}</span>
@@ -565,7 +593,9 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       {/* TAB 2: TRIAGE QUEUE (Section 21) */}
       {/* ======================================================== */}
       {activeTab === 'queue' && (
-        <div className="card">
+        <div>
+          {renderBackButton()}
+          <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h2>AI-Assisted Triage Queue</h2>
@@ -574,96 +604,163 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
               </p>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
-              <span className="badge badge-red">1 Urgent Flag</span>
-              <span className="badge badge-blue">3 Routine Review</span>
+              <span className="badge badge-red">🚨 1 Emergency / Warning</span>
+              <span className="badge badge-orange">⚠️ {queue.filter(q => q.urgency === 'urgent').length} High Priority</span>
+              <span className="badge badge-blue">🟢 {queue.filter(q => q.urgency === 'routine').length} Routine Review</span>
             </div>
           </div>
 
-          <div className="data-list">
-            {queue.map((item) => (
-              <div
-                key={item.id}
-                className="data-item"
-                style={{
-                  borderLeft: item.urgency === 'urgent' ? '5px solid #b42318' : '1px solid var(--line)',
-                  background: item.urgency === 'urgent' ? '#fffbfa' : '#ffffff'
-                }}
-              >
-                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flex: 1 }}>
-                  <img
-                    src="/images/patient-feed.jpg"
-                    alt={item.patientName}
-                    style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '2px solid #0284c7',
-                      flexShrink: 0
-                    }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <strong style={{ fontSize: '16px' }}>{item.patientName}</strong>
-                    <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
-                      {item.patientId || 'RHB-OD-KLH-0941'}
-                    </span>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                      Age: {item.age} yrs • {item.gender} • {item.village}
-                    </span>
-                    <span className="badge badge-gray">Waiting: {item.waitingTimeMin} min</span>
-                  </div>
-
-                  <div style={{ fontSize: '14px', color: 'var(--ink)', marginBottom: '4px' }}>
-                    <strong>Reported Complaint:</strong> {item.symptoms} ({item.duration})
-                  </div>
-
-                  {item.warningSign !== 'None' && item.warningSign !== 'no' && item.warningSign !== 'None selected' && (
-                    <div style={{ color: '#b42318', fontSize: '13px', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <AlertOctagon size={15} />
-                      <span>Warning Sign: {item.warningSign}</span>
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: '12px', color: '#0369a1', background: '#f0f9ff', padding: '8px 12px', borderRadius: '8px', marginTop: '6px', border: '1px solid #bae6fd' }}>
-                    <strong>AI-ASSISTED PRELIMINARY SUMMARY:</strong> {item.aiSummary}
-                    <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: 700, marginTop: '2px' }}>
-                      * Doctor must verify before making a clinical decision.
-                    </div>
-                  </div>
-
-                  {item.doctorNotes && (
-                    <div style={{ fontSize: '12px', color: '#059669', marginTop: '6px', fontWeight: 600 }}>
-                      ✓ Saved Doctor Assessment: {item.doctorNotes}
-                    </div>
-                  )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                  <span
-                    className={`badge ${
-                      item.urgency === 'urgent'
-                        ? 'badge-red'
-                        : item.status === 'reviewed'
-                        ? 'badge-green'
-                        : 'badge-blue'
-                    }`}
-                  >
-                    {item.urgency === 'urgent' ? '🚨 URGENT FLAG' : item.status.toUpperCase()}
-                  </span>
-
-                  <button
-                    className={`btn ${item.urgency === 'urgent' ? 'btn-danger' : 'btn-primary'}`}
-                    onClick={() => handleOpenReview(item)}
-                    style={{ fontSize: '13px', padding: '8px 16px', fontWeight: 700 }}
-                  >
-                    {item.urgency === 'urgent' ? 'Open Urgent Patient' : 'Open Patient'}
-                  </button>
-                </div>
-              </div>
-            ))}
+          {/* Priority Queue Filter Chips */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Filter Queue:</span>
+            <button
+              type="button"
+              onClick={() => setQueuePriorityFilter('all')}
+              className={`btn ${queuePriorityFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+            >
+              All Patients ({queue.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQueuePriorityFilter('emergency')}
+              className={`btn ${queuePriorityFilter === 'emergency' ? 'btn-danger' : 'btn-secondary'}`}
+              style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+            >
+              🚨 Emergency & Warning Signs ({queue.filter(q => q.urgency === 'emergency' || (q.warningSign && q.warningSign !== 'None' && q.warningSign !== 'no' && q.warningSign !== 'None selected')).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQueuePriorityFilter('high')}
+              className={`btn ${queuePriorityFilter === 'high' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', background: queuePriorityFilter === 'high' ? '#b45309' : undefined, borderColor: queuePriorityFilter === 'high' ? '#b45309' : undefined }}
+            >
+              ⚠️ High Priority ({queue.filter(q => q.urgency === 'urgent').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQueuePriorityFilter('routine')}
+              className={`btn ${queuePriorityFilter === 'routine' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', background: queuePriorityFilter === 'routine' ? '#047857' : undefined, borderColor: queuePriorityFilter === 'routine' ? '#047857' : undefined }}
+            >
+              🟢 Routine ({queue.filter(q => q.urgency === 'routine').length})
+            </button>
           </div>
+
+          <div className="data-list">
+            {queue
+              .filter(item => {
+                if (queuePriorityFilter === 'all') return true;
+                if (queuePriorityFilter === 'emergency') {
+                  return item.urgency === 'emergency' || (item.warningSign && item.warningSign !== 'None' && item.warningSign !== 'no' && item.warningSign !== 'None selected');
+                }
+                if (queuePriorityFilter === 'high') {
+                  return item.urgency === 'urgent';
+                }
+                if (queuePriorityFilter === 'routine') {
+                  return item.urgency === 'routine';
+                }
+                return true;
+              })
+              .map((item) => {
+                const isEmergency = item.urgency === 'emergency' || (item.warningSign && item.warningSign !== 'None' && item.warningSign !== 'no' && item.warningSign !== 'None selected');
+                const isHigh = item.urgency === 'urgent';
+
+                return (
+                  <div
+                    key={item.id}
+                    className="data-item"
+                    style={{
+                      borderLeft: isEmergency ? '5px solid #b42318' : isHigh ? '5px solid #d97706' : '1px solid var(--line)',
+                      background: isEmergency ? '#fffbfa' : isHigh ? '#fffbeb' : '#ffffff'
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flex: 1 }}>
+                      <img
+                        src="/images/patient-feed.jpg"
+                        alt={item.patientName}
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: isEmergency ? '2px solid #b42318' : '2px solid #0284c7',
+                          flexShrink: 0
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '16px' }}>{item.patientName}</strong>
+                          <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
+                            {item.patientId || 'RHB-OD-KLH-0941'}
+                          </span>
+                          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                            Age: {item.age} yrs • {item.gender} • {item.village}
+                          </span>
+                          <span className="badge badge-gray">Waiting: {item.waitingTimeMin} min</span>
+                        </div>
+
+                        <div style={{ fontSize: '14px', color: 'var(--ink)', marginBottom: '4px' }}>
+                          <strong>Reported Complaint:</strong> {item.symptoms} ({item.duration})
+                        </div>
+
+                        {item.warningSign !== 'None' && item.warningSign !== 'no' && item.warningSign !== 'None selected' && (
+                          <div style={{ color: '#b42318', fontSize: '13px', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <AlertOctagon size={15} />
+                            <span>Warning Sign: {item.warningSign}</span>
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: '12px', color: '#0369a1', background: '#f0f9ff', padding: '8px 12px', borderRadius: '8px', marginTop: '6px', border: '1px solid #bae6fd' }}>
+                          <strong>AI-ASSISTED PRELIMINARY SUMMARY:</strong> {item.aiSummary}
+                          <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: 700, marginTop: '2px' }}>
+                            * Doctor must verify before making a clinical decision.
+                          </div>
+                        </div>
+
+                        {item.doctorNotes && (
+                          <div style={{ fontSize: '12px', color: '#059669', marginTop: '6px', fontWeight: 600 }}>
+                            ✓ Saved Doctor Assessment: {item.doctorNotes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      <span
+                        className={`badge ${
+                          isEmergency
+                            ? 'badge-red'
+                            : isHigh
+                            ? 'badge-orange'
+                            : item.status === 'reviewed'
+                            ? 'badge-green'
+                            : 'badge-blue'
+                        }`}
+                        style={{ fontWeight: 700 }}
+                      >
+                        {isEmergency
+                          ? '🚨 CRITICAL EMERGENCY'
+                          : isHigh
+                          ? '⚠️ HIGH PRIORITY'
+                          : item.status === 'reviewed'
+                          ? '✓ REVIEWED'
+                          : '🟢 ROUTINE REVIEW'}
+                      </span>
+
+                      <button
+                        className={`btn ${isEmergency ? 'btn-danger' : isHigh ? 'btn-primary' : 'btn-primary'}`}
+                        onClick={() => handleOpenReview(item)}
+                        style={{ fontSize: '13px', padding: '8px 16px', fontWeight: 700 }}
+                      >
+                        {isEmergency ? 'Open Urgent Patient' : 'Open Patient'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
         </div>
       )}
 
@@ -671,7 +768,9 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       {/* TAB 3: PATIENT EVALUATION SCREEN (Section 22, 23, 24) */}
       {/* ======================================================== */}
       {activeTab === 'evaluation' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)', gap: '20px' }}>
+        <div>
+          {renderBackButton()}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)', gap: '20px' }}>
           {/* Left Column: Full Patient Clinical File */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
@@ -837,6 +936,38 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => {
+                  const testChoice = prompt(
+                    'Select Diagnostic Test to Request:\n1. Complete Blood Count (CBC)\n2. Sputum TrueNat MTB / AFB\n3. Peripheral Blood Smear for Malaria (MP)\n4. Blood Glucose Panel (F & PP)\n5. Liver Function Test (LFT)\n6. Kidney Function Test (KFT)\n7. Urine Routine & Microscopic (U/R/M)\n\nEnter test name or choice:',
+                    'Complete Blood Count (CBC)'
+                  );
+                  if (testChoice) {
+                    const pName = selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout';
+                    const pId = selectedQueueItem?.patientId || 'RHB-OD-KLH-0941';
+                    storage.addLabOrder({
+                      patientId: pId,
+                      patientName: pName,
+                      patientAge: selectedQueueItem?.age || 45,
+                      patientGender: selectedQueueItem?.gender || 'Male',
+                      doctorId: (user as any).id || 'doc-1',
+                      doctorName: user.name,
+                      testId: 'test-requested',
+                      testName: testChoice.length < 3 ? 'Complete Blood Count (CBC)' : testChoice,
+                      category: 'Hematology',
+                      urgency: selectedQueueItem?.urgency === 'urgent' ? 'Urgent' : 'Routine'
+                    });
+                    setDocuments(storage.getDocuments());
+                    alert(`Diagnostic test order for "${testChoice}" created and dispatched to DHH Central Pathology Hub!`);
+                  }
+                }}
+                style={{ background: '#f5f3ff', borderColor: '#ddd6fe', color: '#6d28d9', fontWeight: 700 }}
+              >
+                <FlaskConical size={15} /> Request Pathology Lab Test
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
                   setRxModalMode('create');
                   setIsRxModalOpen(true);
                 }}
@@ -913,7 +1044,46 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Diagnostic Laboratory Reports & Released Results */}
+            <div className="card" style={{ marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>Diagnostic Lab Reports & Scans</h3>
+                <span className="badge badge-purple" style={{ fontSize: '11px' }}>{documents.length} Released</span>
+              </div>
+              <div className="data-list" style={{ marginTop: '10px' }}>
+                {documents.slice(0, 6).map((doc) => (
+                  <div key={doc.id} style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+                      <span>{doc.title}</span>
+                      <span style={{ color: doc.status === 'Critical Flag' ? '#b91c1c' : '#166534' }}>
+                        {doc.status}
+                      </span>
+                    </div>
+                    <div style={{ color: '#0369a1', marginTop: '2px' }}>
+                      Lab: {doc.labName || 'DHH Central Lab'} • Verifier: {doc.authorizedVerifier || 'Pathologist'}
+                    </div>
+                    {doc.parameters && doc.parameters.length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', background: '#f8fafc', padding: '4px 6px', borderRadius: '4px' }}>
+                        {doc.parameters.slice(0, 3).map(p => `${p.name}: ${p.result} ${p.unit} [${p.status || (p.isAbnormal ? 'High' : 'Normal')}]`).join(' • ')}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setViewingDocument(doc)}
+                        style={{ padding: '3px 8px', fontSize: '11px', color: '#7c3aed', borderColor: '#ddd6fe' }}
+                      >
+                        <Eye size={12} /> View Full Report & Scan
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+        </div>
         </div>
       )}
 
@@ -921,7 +1091,9 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       {/* TAB 4: SCHEDULE */}
       {/* ======================================================== */}
       {activeTab === 'schedule' && (
-        <div className="card">
+        <div>
+          {renderBackButton()}
+          <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h2>Today's Teleconsultation Schedule</h2>
@@ -983,13 +1155,16 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             ))}
           </div>
         </div>
+        </div>
       )}
 
       {/* ======================================================== */}
       {/* TAB 5: PRESCRIPTIONS LIST & LOCAL PHARMACY AVAILABILITY */}
       {/* ======================================================== */}
       {activeTab === 'prescriptions' && (
-        <div className="card">
+        <div>
+          {renderBackButton()}
+          <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h2>Clinician E-Prescriptions & Local Drug Availability</h2>
@@ -1068,13 +1243,16 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             ))}
           </div>
         </div>
+        </div>
       )}
 
       {/* ======================================================== */}
       {/* TAB 6: SPECIALIST REQUESTS (Doctor-to-Doctor Telemedicine) */}
       {/* ======================================================== */}
       {activeTab === 'specialist' && (
-        <div className="card">
+        <div>
+          {renderBackButton()}
+          <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h2>Doctor-to-Doctor Telemedicine Escalations</h2>
@@ -1126,13 +1304,16 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             ))}
           </div>
         </div>
+        </div>
       )}
 
       {/* ======================================================== */}
       {/* TAB 7: CONSULTATION HISTORY */}
       {/* ======================================================== */}
       {activeTab === 'history' && (
-        <div className="card">
+        <div>
+          {renderBackButton()}
+          <div className="card">
           <h2>Completed Teleconsultation History</h2>
           <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '16px' }}>
             Archived teleconsultation sessions and patient encounter notes
@@ -1163,6 +1344,253 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 </div>
               </div>
               <span className="badge badge-gray">Archived</span>
+            </div>
+          </div>
+        </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 8: SCHEDULED LEAVE MANAGEMENT (Section 12) */}
+      {/* ======================================================== */}
+      {activeTab === 'leave' && (
+        <div>
+          {renderBackButton()}
+          <div className="card" style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+              <div>
+                <h2>
+                  {lang === 'ଓଡ଼ିଆ'
+                    ? 'ଡାକ୍ତର ଛୁଟି ଏବଂ ବିକଳ୍ପ ସେବା ପରିଚାଳନା'
+                    : lang === 'हिन्दी'
+                    ? 'चिकित्सक अवकाश एवं वैकल्पिक सेवा प्रबंधन'
+                    : 'Clinician Leave & Patient Rerouting Management'}
+                </h2>
+                <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0 }}>
+                  {lang === 'ଓଡ଼ିଆ'
+                    ? 'ଛୁଟି ତାରିଖ ସେଟ୍ କରନ୍ତୁ ଯାହାଦ୍ୱାରା ରୋଗୀ ପୋର୍ଟାଲରେ ସ୍ୱୟଂଚାଳିତ ଭାବେ ଅନ୍ୟ ବିକଳ୍ପ ଡାକ୍ତର ଓ ଜରୁରୀକାଳୀନ କେନ୍ଦ୍ର ପ୍ରଦର୍ଶିତ ହେବ।'
+                    : lang === 'हिन्दी'
+                    ? 'छुट्टी की तारीख निर्धारित करें ताकि रोगी पोर्टल पर स्वचालित रूप से वैकल्पिक डॉक्टर और आपातकालीन केंद्र दिखाई दें।'
+                    : 'Record scheduled leaves so the Patient Portal immediately alerts patients, disables deadlocked bookings, and seamlessly reroutes to replacement clinicians or CHCs.'}
+                </p>
+              </div>
+              <span className="badge badge-blue">
+                {doctorLeaves.length} {doctorLeaves.length === 1 ? 'Recorded Schedule' : 'Recorded Schedules'}
+              </span>
+            </div>
+
+            {leaveNotice && (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  background: '#f0fdf4',
+                  border: '1.5px solid #86efac',
+                  color: '#166534',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <CheckCircle2 size={18} />
+                <span>{leaveNotice}</span>
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {/* Form: Record Leave */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <h3 style={{ fontSize: '16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={18} color="#0284c7" />
+                  <span>
+                    {lang === 'ଓଡ଼ିଆ'
+                      ? 'ନୂତନ ଛୁଟି ତାଲିକାଭୁକ୍ତ କରନ୍ତୁ'
+                      : lang === 'हिन्दी'
+                      ? 'नया अवकाश दर्ज करें'
+                      : 'Schedule New Leave Period'}
+                  </span>
+                </h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ଆରମ୍ଭ ତାରିଖ' : lang === 'हिन्दी' ? 'प्रारंभ तिथि' : 'Start Date'}
+                      </label>
+                      <input
+                        type="date"
+                        value={leaveStart}
+                        onChange={(e) => setLeaveStart(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ସମାପ୍ତ ତାରିଖ' : lang === 'हिन्दी' ? 'समाप्ति तिथि' : 'End Date'}
+                      </label>
+                      <input
+                        type="date"
+                        value={leaveEnd}
+                        onChange={(e) => setLeaveEnd(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ଛୁଟିର କାରଣ' : lang === 'हिन्दी' ? 'अवकाश का कारण' : 'Clinical Duty / Reason for Leave'}
+                    </label>
+                    <input
+                      type="text"
+                      value={leaveReason}
+                      onChange={(e) => setLeaveReason(e.target.value)}
+                      placeholder="e.g. Rural outreach camp, CME training, Medical emergency"
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ବିକଳ୍ପ ଡାକ୍ତର / ଦାୟିତ୍ୱରେ ଥିବା ଚିକିତ୍ସକ' : lang === 'हिन्दी' ? 'वैकल्पिक चिकित्सक / कार्यवाहक डॉक्टर' : 'Handover / Replacement Doctor'}
+                    </label>
+                    <input
+                      type="text"
+                      value={replacementDoctor}
+                      onChange={(e) => setReplacementDoctor(e.target.value)}
+                      placeholder="e.g. Dr. S. K. Patnaik, DHH Bhawanipatna"
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ background: '#e0f2fe', padding: '10px 12px', borderRadius: '8px', fontSize: '12px', color: '#0369a1' }}>
+                    <strong>Automated Safeguard:</strong> Patients seeking care during this window will be presented with the replacement clinician and PHC emergency hotline.
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveLeave}
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Save size={16} />
+                    <span>
+                      {lang === 'ଓଡ଼ିଆ'
+                        ? 'ଛୁଟି ସଂରକ୍ଷଣ କରନ୍ତୁ ଏବଂ ରୋଗୀ ମାନଙ୍କୁ ସୂଚିତ କରନ୍ତୁ'
+                        : lang === 'हिन्दी'
+                        ? 'छुट्टी सहेजें एवं रोगियों को सूचित करें'
+                        : 'Save Scheduled Leave & Activate Rerouting'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* List: Recorded Leaves */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <h3 style={{ fontSize: '16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={18} color="#059669" />
+                  <span>
+                    {lang === 'ଓଡ଼ିଆ'
+                      ? 'ପଞ୍ଜୀକୃତ ଛୁଟି ତାଲିକା'
+                      : lang === 'हिन्दी'
+                      ? 'पंजीकृत अवकाश सूची'
+                      : 'Active & Upcoming Leave Schedules'}
+                  </span>
+                </h3>
+
+                {doctorLeaves.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)', fontSize: '13px' }}>
+                    No scheduled leaves recorded. You are marked available for rural teleconsultations.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {doctorLeaves.map((leave, idx) => (
+                      <div
+                        key={leave.id || idx}
+                        style={{
+                          padding: '14px',
+                          borderRadius: '10px',
+                          border: '1.5px solid #cbd5e1',
+                          background: '#f8fafc'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                          <strong style={{ fontSize: '14px', color: '#0f172a' }}>
+                            {leave.doctorName || user.name}
+                          </strong>
+                          <span className="badge badge-orange" style={{ fontWeight: 700, fontSize: '11px' }}>
+                            SCHEDULED LEAVE
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '13px', color: '#334155', marginBottom: '4px' }}>
+                          📅 <strong>Period:</strong> {leave.startDate} to {leave.endDate}
+                        </div>
+
+                        <div style={{ fontSize: '13px', color: '#475569', marginBottom: '4px' }}>
+                          📝 <strong>Reason:</strong> {leave.reason}
+                        </div>
+
+                        {leave.replacementDoctor && (
+                          <div style={{ fontSize: '12px', color: '#0369a1', background: '#e0f2fe', padding: '6px 10px', borderRadius: '6px', marginTop: '6px' }}>
+                            🔄 <strong>Covering Clinician:</strong> {leave.replacementDoctor}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

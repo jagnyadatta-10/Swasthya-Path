@@ -18,6 +18,7 @@ interface HeaderProps {
   onToggleFontScale: () => void;
   onOpenArchitecture: () => void;
   onOpenCareFlow?: () => void;
+  onGoBack?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   fontScale,
   onToggleFontScale,
   onOpenArchitecture,
-  onOpenCareFlow
+  onOpenCareFlow,
+  onGoBack
 }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -68,52 +70,55 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="top-nav">
       <div className="top-nav-inner">
-        <div className="brand-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {currentUser && (
             <button
               type="button"
+              onClick={onGoBack || onLogout}
               className="btn btn-ghost-light"
-              onClick={onLogout}
-              title={lang === 'ଓଡ଼ିଆ' ? 'ମୁଖ୍ୟ ପୋର୍ଟାଲ୍ ଚୟନକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'मुख्य पोर्टल चयन पर वापस जाएं' : 'Back to Portal Selection'}
+              title={lang === 'ଓଡ଼ିଆ' ? 'ପୂର୍ବ ପୃଷ୍ଠାକୁ ଫେରନ୍ତୁ / ଭୂମିକା ବଦଳାନ୍ତୁ' : lang === 'हिन्दी' ? 'पिछले पृष्ठ पर जाएं / भूमिका बदलें' : 'Back to Previous Page / Switch Role'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 12px',
-                borderRadius: '8px',
                 background: 'rgba(25, 211, 255, 0.15)',
-                border: '1px solid rgba(25, 211, 255, 0.4)',
-                color: '#19d3ff',
-                fontWeight: 700,
+                border: '1.5px solid rgba(25, 211, 255, 0.4)',
+                borderRadius: '8px',
+                color: '#e0f2fe',
                 fontSize: '12px',
+                fontWeight: 700,
                 cursor: 'pointer'
               }}
             >
               <ArrowLeft size={15} />
-              <span>{lang === 'ଓଡ଼ିଆ' ? 'ପଛକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'पीछे जाएं' : 'Back'}</span>
+              <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପୃଷ୍ଠା' : lang === 'हिन्दी' ? '← पिछला पृष्ठ' : '← Back'}</span>
             </button>
           )}
-          <div className="brand-icon-box" title="Swasthya Path Care Bridge">
-            <Activity size={24} />
-          </div>
-          <div>
-            <div className="brand-title">
-              SWASTHYA <span>PATH</span>
+
+          <div className="brand-wrap">
+            <div className="brand-icon-box" title="Swasthya Path Care Bridge">
+              <Activity size={24} />
             </div>
-            <div className="brand-sub">
-              {getTranslation(lang, 'subTagline')}
+            <div>
+              <div className="brand-title">
+                SWASTHYA <span>PATH</span>
+              </div>
+              <div className="brand-sub">
+                {getTranslation(lang, 'subTagline')}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="top-controls">
-          {/* 3-State Network Status Pill */}
+          {/* 4-State Network Status Pill */}
           <span
             className={`status-pill ${
               networkQuality === 'good'
                 ? 'online'
                 : networkQuality === 'limited'
-                ? 'offline'
+                ? 'limited'
                 : 'offline'
             }`}
             style={{
@@ -121,27 +126,30 @@ export const Header: React.FC<HeaderProps> = ({
                 networkQuality === 'good'
                   ? 'rgba(34, 197, 94, 0.2)'
                   : networkQuality === 'limited'
-                  ? 'rgba(245, 158, 11, 0.25)'
+                  ? lowBandwidthMode ? 'rgba(234, 88, 12, 0.25)' : 'rgba(245, 158, 11, 0.25)'
                   : 'rgba(239, 68, 68, 0.25)',
               color:
                 networkQuality === 'good'
                   ? '#86efac'
                   : networkQuality === 'limited'
-                  ? '#fde047'
+                  ? lowBandwidthMode ? '#fed7aa' : '#fde047'
                   : '#fca5a5',
               borderColor:
                 networkQuality === 'good'
                   ? 'rgba(34, 197, 94, 0.4)'
                   : networkQuality === 'limited'
-                  ? 'rgba(245, 158, 11, 0.4)'
-                  : 'rgba(239, 68, 68, 0.4)'
+                  ? lowBandwidthMode ? 'rgba(234, 88, 12, 0.4)' : 'rgba(245, 158, 11, 0.4)'
+                  : 'rgba(239, 68, 68, 0.4)',
+              fontWeight: 700,
+              fontSize: '11px',
+              letterSpacing: '0.5px'
             }}
             title={
               networkQuality === 'good'
                 ? 'Good 4G/WiFi Connection (~25ms)'
                 : networkQuality === 'limited'
-                ? 'Limited 2G/Unstable Network (Audio Prioritized)'
-                : 'Offline / Cellular Dead Zone'
+                ? lowBandwidthMode ? 'Very Weak 2G Network (Text/Audio and SMS Fallback)' : 'Weak 3G Network (Audio Priority)'
+                : 'Offline / No Cellular Connectivity'
             }
             aria-live="polite"
           >
@@ -152,24 +160,31 @@ export const Header: React.FC<HeaderProps> = ({
                   networkQuality === 'good'
                     ? '#22c55e'
                     : networkQuality === 'limited'
-                    ? '#eab308'
+                    ? lowBandwidthMode ? '#f97316' : '#eab308'
                     : '#ef4444'
               }}
             ></span>
             {networkQuality === 'good' ? (
               <>
                 <Wifi size={13} />
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭଲ ନେଟୱର୍କ' : lang === 'हिन्दी' ? 'अच्छा नेटवर्क' : 'Good Network'}</span>
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଉତ୍ତମ ନେଟୱର୍କ' : lang === 'हिन्दी' ? 'अच्छा नेटवर्क' : 'GOOD CONNECTION'}</span>
               </>
             ) : networkQuality === 'limited' ? (
-              <>
-                <Signal size={13} />
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ସୀମିତ 2G' : lang === 'हिन्दी' ? 'सीमित 2G' : 'Limited 2G'}</span>
-              </>
+              lowBandwidthMode ? (
+                <>
+                  <Signal size={13} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅତ୍ୟନ୍ତ ଦୁର୍ବଳ (2G)' : lang === 'हिन्दी' ? 'अत्यंत कमजोर (2G)' : 'VERY WEAK CONNECTION'}</span>
+                </>
+              ) : (
+                <>
+                  <Signal size={13} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? 'ଦୁର୍ବଳ ନେଟୱର୍କ (3G)' : lang === 'हिन्दी' ? 'कमजोर नेटवर्क (3G)' : 'WEAK CONNECTION'}</span>
+                </>
+              )
             ) : (
               <>
                 <WifiOff size={13} />
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍' : lang === 'हिन्दी' ? 'ऑफ़लाइन' : 'Offline'}</span>
+                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍' : lang === 'हिन्दी' ? 'ऑफ़लाइन' : 'OFFLINE'}</span>
               </>
             )}
           </span>

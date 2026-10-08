@@ -153,7 +153,91 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     yourAppointment: 'YOUR APPOINTMENT',
     routineCare: 'Routine Care',
     doctorReviewRecommended: 'Doctor Review Recommended',
-    immediateMedicalHelp: 'Immediate Medical Help'
+    immediateMedicalHelp: 'Immediate Medical Help',
+
+    // Section 3: Auth & Registration ("Log in" NOT "Sign in", "Create account")
+    logIn: 'Log in',
+    createAccount: 'Create account',
+    enterMobile: 'Enter 10-digit mobile number',
+    sendOtp: 'Send OTP',
+    verifyOtp: 'Verify OTP',
+    enterOtp: 'Enter 6-digit OTP code',
+    otpSentMsg: 'Verification OTP sent to your phone (Demo simulated: 123456)',
+    rolePatient: 'Patient',
+    roleDoctor: 'Doctor',
+    rolePharmacy: 'Pharmacy',
+    consentCheckbox: 'May I issue and share health records with authorized clinicians in accordance with ABDM standards.',
+    privacyNotice: 'Your privacy is strictly protected. Medical data is encrypted and only shared with your explicit consent.',
+
+    // Section 4 & 5: Connectivity & SMS
+    goodConnection: 'GOOD CONNECTION',
+    weakConnection: 'WEAK CONNECTION (3G)',
+    veryWeakConnection: 'VERY WEAK CONNECTION (2G)',
+    offlineConnection: 'OFFLINE',
+    smsFallbackNotice: 'SMS Fallback Gateway Active: Updates can be received via text message.',
+    offlineNoticeFull: 'You are offline. Your saved health information is still available. Live doctor schedules and pharmacy stock will update when you reconnect.',
+
+    // Section 10: Urgency Screening
+    urgencyGreen: 'GREEN — LOW URGENCY',
+    urgencyOrange: 'ORANGE — NEEDS CLINICAL REVIEW',
+    urgencyRed: 'RED — EMERGENCY',
+    urgencyGreenDesc: 'No urgent warning flag identified by the screening. You can consult a routine doctor or monitor at home.',
+    urgencyOrangeDesc: 'Symptoms require healthcare professional review. We recommend a telehealth consultation or visiting your primary clinic.',
+    urgencyRedDesc: 'Potential emergency warning signs detected. Please seek immediate physical medical care. Do not wait for online appointments.',
+
+    // Section 11: Lab & Medical Records
+    labNormal: 'NORMAL ✓',
+    labLow: 'LOW 🔻',
+    labHigh: 'HIGH 🔺',
+    labRefRangeNotice: 'Reference ranges can vary by laboratory. Please discuss abnormal results with a healthcare professional.',
+
+    // Section 13, 14 & 18: Doctor Clinical Tools & Sync
+    clinicalNotes: 'Clinical Notes',
+    createPrescription: 'Create Prescription',
+    editPrescription: 'Edit Prescription',
+    saveDraft: 'Save Draft',
+    finalizePrescription: 'Finalize Prescription',
+    followUp: 'Follow-up',
+    referral: 'Referral',
+    endConsultation: 'End Consultation',
+    syncStatusSavedLocally: 'Saved locally',
+    syncStatusWaiting: 'Waiting to sync',
+    syncStatusSuccess: 'Synced successfully',
+    syncStatusFailed: 'Sync failed — retry',
+    scheduledLeave: 'Scheduled Leave',
+    replacementDoctor: 'Alternative Doctor',
+    leaveStart: 'Leave Start Date',
+    leaveEnd: 'Leave End Date',
+    seriousQueue: 'High Priority Triage Queue',
+
+    // Section 15: AI Audio Translator
+    aiTranslatorTitle: 'AI Real-Time Audio Translator',
+    aiTranslatorSub: 'Doctor-Patient cross-lingual speech translation assistant',
+    patientLanguage: 'PATIENT LANGUAGE',
+    doctorLanguage: 'DOCTOR LANGUAGE',
+    translatorDisclaimer: 'AI translation may contain errors. Confirm important medical information.',
+    micListening: 'Microphone Active (Listening)',
+    micPaused: 'Microphone Paused',
+    translatingText: 'Translating speech in real-time...',
+
+    // Section 16 & 17: Care Plan & Pharmacy
+    carePlanTitle: 'Clinician Care Plan & Prescription',
+    findMedicineBtn: 'Find My Medicine in Pharmacies',
+    pharmacyStatusLabel: 'Store Status',
+    pharmacyOpen: 'Open & Dispensing',
+    pharmacyClosed: 'Closed',
+    pharmacyHoliday: 'On Holiday',
+    pharmacyEmergencyClosure: 'Emergency Closure',
+
+    // Section 20: CareFlow
+    careFlowTitle: 'YOUR CARE JOURNEY',
+    careFlowStep1: 'Concern',
+    careFlowStep2: 'Symptom Check',
+    careFlowStep3: 'Urgency',
+    careFlowStep4: 'Doctor',
+    careFlowStep5: 'Care Plan',
+    careFlowStep6: 'Medicine',
+    careFlowStep7: 'Follow-up'
   },
 
   'ଓଡ଼ିଆ': {
@@ -308,7 +392,91 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     yourAppointment: 'ଆପଣଙ୍କ ଆପଏଣ୍ଟମେଣ୍ଟ',
     routineCare: 'ସାଧାରଣ ଯତ୍ନ',
     doctorReviewRecommended: 'ଡାକ୍ତର ଦେଖାଇବା ପରାମର୍ଶିତ',
-    immediateMedicalHelp: 'ତୁରନ୍ତ ଡାକ୍ତରୀ ସହାୟତା'
+    immediateMedicalHelp: 'ତୁରନ୍ତ ଡାକ୍ତରୀ ସହାୟତା',
+
+    // Section 3: Auth & Registration ("Log in" NOT "Sign in", "Create account")
+    logIn: 'ଲଗ୍ ଇନ୍ କରନ୍ତୁ',
+    createAccount: 'ନୂଆ ଖାତା ଖୋଲନ୍ତୁ',
+    enterMobile: '୧୦ ଅଙ୍କ ବିଶିଷ୍ଟ ମୋବାଇଲ୍ ନମ୍ବର ଲେଖନ୍ତୁ',
+    sendOtp: 'OTP ପଠାନ୍ତୁ',
+    verifyOtp: 'OTP ଯାଞ୍ଚ କରନ୍ତୁ',
+    enterOtp: '୬ ଅଙ୍କ ବିଶିଷ୍ଟ OTP ଲେଖନ୍ତୁ',
+    otpSentMsg: 'ଆପଣଙ୍କ ଫୋନକୁ OTP ପଠାଗଲା (ଡେମୋ ସଙ୍କେତ: 123456)',
+    rolePatient: 'ରୋଗୀ',
+    roleDoctor: 'ଡାକ୍ତର',
+    rolePharmacy: 'ଔଷଧାଳୟ (ଫାର୍ମାସୀ)',
+    consentCheckbox: 'May I issue: ମୁଁ ଅନୁମୋଦିତ ଡାକ୍ତରଙ୍କ ସହିତ ମୋର ସ୍ୱାସ୍ଥ୍ୟ ତଥ୍ୟ ଅଂଶୀଦାର କରିବାକୁ ସହମତ।',
+    privacyNotice: 'ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ତଥ୍ୟ ସମ୍ପୂର୍ଣ୍ଣ ସୁରକ୍ଷିତ। କେବଳ ଆପଣଙ୍କ ଅନୁମତିରେ ଡାକ୍ତର ଦେଖିପାରିବେ।',
+
+    // Section 4 & 5: Connectivity & SMS
+    goodConnection: 'ଉତ୍ତମ ନେଟୱର୍କ (ଅନଲାଇନ୍)',
+    weakConnection: 'ଦୁର୍ବଳ ନେଟୱର୍କ (3G)',
+    veryWeakConnection: 'ଅତ୍ୟନ୍ତ ଦୁର୍ବଳ ନେଟୱର୍କ (2G)',
+    offlineConnection: 'ଅଫଲାଇନ୍',
+    smsFallbackNotice: 'SMS ବ୍ୟବସ୍ଥା ସକ୍ରିୟ: ମେସେଜ୍ ମାଧ୍ୟମରେ ସୂଚନା ମିଳିପାରିବ।',
+    offlineNoticeFull: 'ଆପଣ ଅଫଲାଇନ୍ ଅଛନ୍ତି। ଆପଣଙ୍କ ପୁରୁଣା ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଏବେ ମଧ୍ୟ ଉପଲବ୍ଧ। ଇଣ୍ଟରନେଟ୍ ଆସିଲେ ଲାଇଭ୍ ଡାକ୍ତର ଓ ଔଷଧ ଷ୍ଟକ୍ ଅପଡେଟ୍ ହେବ।',
+
+    // Section 10: Urgency Screening
+    urgencyGreen: 'ସବୁଜ — ସାଧାରଣ (କମ୍ ଜରୁରୀ)',
+    urgencyOrange: 'କମଳା — ଡାକ୍ତର ଦେଖାଇବା ଆବଶ୍ୟକ',
+    urgencyRed: 'ନାଲି — ଜରୁରୀକାଳୀନ ବିପଦ',
+    urgencyGreenDesc: 'କୌଣସି ଜରୁରୀ ବିପଦ ଲକ୍ଷଣ ନାହିଁ। ସାଧାରଣ ଡାକ୍ତରୀ ପରାମର୍ଶ ନିଅନ୍ତୁ କିମ୍ବା ଘରେ ବିଶ୍ରାମ କରନ୍ତୁ।',
+    urgencyOrangeDesc: 'ଏହି ଲକ୍ଷଣ ପାଇଁ ଡାକ୍ତର ଦେଖାଇବା ଭଲ। ଟେଲି-ଡାକ୍ତର କଲ୍ କରନ୍ତୁ କିମ୍ବା ନିକଟସ୍ଥ କ୍ଲିନିକ୍ ଯାଆନ୍ତୁ।',
+    urgencyRedDesc: 'ଗୁରୁତର ଜରୁରୀକାଳୀନ ଲକ୍ଷଣ ଚିହ୍ନଟ ହୋଇଛି। ତୁରନ୍ତ ଡାକ୍ତରଖାନା ଯାଆନ୍ତୁ ବା ୧୦୮ କଲ୍ କରନ୍ତୁ। ଫୋନ୍ ପରାମର୍ଶ ଅପେକ୍ଷା କରନ୍ତୁ ନାହିଁ।',
+
+    // Section 11: Lab & Medical Records
+    labNormal: 'ସ୍ୱାଭାବିକ ✓',
+    labLow: 'କମ୍ 🔻',
+    labHigh: 'ଅଧିକ 🔺',
+    labRefRangeNotice: 'ଲ୍ୟାବ୍ ଅନୁଯାୟୀ ରେଫରେନ୍ସ ରେଞ୍ଜ୍ ଭିନ୍ନ ହୋଇପାରେ। ଅସ୍ୱାଭାବିକ ଫଳାଫଳ ପାଇଁ ଡାକ୍ତରଙ୍କ ସହ ଆଲୋଚନା କରନ୍ତୁ।',
+
+    // Section 13, 14 & 18: Doctor Clinical Tools & Sync
+    clinicalNotes: 'ଡାକ୍ତରୀ ଟିପ୍ପଣୀ',
+    createPrescription: 'ପ୍ରେସକ୍ରିପସନ୍ ଲେଖନ୍ତୁ',
+    editPrescription: 'ପ୍ରେସକ୍ରିପସନ୍ ସଂଶୋଧନ',
+    saveDraft: 'ଡ୍ରାଫ୍ଟ ସାଇତନ୍ତୁ',
+    finalizePrescription: 'ଚୂଡ଼ାନ୍ତ ଅନୁମୋଦନ କରନ୍ତୁ',
+    followUp: 'ପରବର୍ତ୍ତୀ ଯାଞ୍ଚ (ଫଲୋଅପ୍)',
+    referral: 'ରେଫରାଲ୍ (ଉଚ୍ଚ ଚିକିତ୍ସାଳୟ)',
+    endConsultation: 'ପରାମର୍ଶ ସମାପ୍ତ କରନ୍ତୁ',
+    syncStatusSavedLocally: 'ସ୍ଥାନୀୟ ଭାବେ ସାଇତାଗଲା',
+    syncStatusWaiting: 'ସିଙ୍କ୍ ଅପେକ୍ଷାରେ',
+    syncStatusSuccess: 'ସଫଳତାର ସହ ସିଙ୍କ୍ ହେଲା',
+    syncStatusFailed: 'ସିଙ୍କ୍ ବିଫଳ — ପୁନଃ ଚେଷ୍ଟା କରନ୍ତୁ',
+    scheduledLeave: 'ଛୁଟି ସୂଚୀ',
+    replacementDoctor: 'ବିକଳ୍ପ ଡାକ୍ତର',
+    leaveStart: 'ଛୁଟି ଆରମ୍ଭ ତାରିଖ',
+    leaveEnd: 'ଛୁଟି ସମାପ୍ତି ତାରିଖ',
+    seriousQueue: 'ଗୁରୁତର ରୋଗୀ ପ୍ରାଥମିକତା କ୍ୟୁ',
+
+    // Section 15: AI Audio Translator
+    aiTranslatorTitle: 'AI ରିଅଲ୍-ଟାଇମ୍ ଅଡିଓ ଅନୁବାଦକ',
+    aiTranslatorSub: 'ଡାକ୍ତର-ରୋଗୀ ଭାଷା ଅନୁବାଦ ସହାୟକ',
+    patientLanguage: 'ରୋଗୀଙ୍କ ଭାଷା',
+    doctorLanguage: 'ଡାକ୍ତରଙ୍କ ଭାଷା',
+    translatorDisclaimer: 'AI ଅନୁବାଦରେ ତ୍ରୁଟି ଥାଇପାରେ। ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ଚିକିତ୍ସା ସୂଚନା ନିଶ୍ଚିତ କରନ୍ତୁ।',
+    micListening: 'ମାଇକ୍ରୋଫୋନ୍ ସକ୍ରିୟ (ଶୁଣୁଛି)',
+    micPaused: 'ମାଇକ୍ରୋଫୋନ୍ ବନ୍ଦ',
+    translatingText: 'କଥାକୁ ସଙ୍ଗେ ସଙ୍ଗେ ଅନୁବାଦ କରାଯାଉଛି...',
+
+    // Section 16 & 17: Care Plan & Pharmacy
+    carePlanTitle: 'ଡାକ୍ତରଙ୍କ ଯତ୍ନ ଯୋଜନା ଓ ପ୍ରେସକ୍ରିପସନ୍',
+    findMedicineBtn: 'ଦୋକାନରେ ଔଷଧ ଖୋଜନ୍ତୁ',
+    pharmacyStatusLabel: 'ଦୋକାନ ସ୍ଥିତି',
+    pharmacyOpen: 'ଖୋଲା ଅଛି',
+    pharmacyClosed: 'ବନ୍ଦ ଅଛି',
+    pharmacyHoliday: 'ଛୁଟିରେ ଅଛି',
+    pharmacyEmergencyClosure: 'ଜରୁରୀକାଳୀନ ବନ୍ଦ',
+
+    // Section 20: CareFlow
+    careFlowTitle: 'ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ସେବା ଯାତ୍ରା',
+    careFlowStep1: 'ଅସୁବିଧା',
+    careFlowStep2: 'ଲକ୍ଷଣ ଯାଞ୍ଚ',
+    careFlowStep3: 'ଜରୁରୀତା',
+    careFlowStep4: 'ଡାକ୍ତର',
+    careFlowStep5: 'ଯତ୍ନ ଯୋଜନା',
+    careFlowStep6: 'ଔଷଧ',
+    careFlowStep7: 'ଫଲୋଅପ୍'
   },
 
   'हिन्दी': {
@@ -463,7 +631,91 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     yourAppointment: 'आपकी अपॉइंटमेंट',
     routineCare: 'सामान्य देखभाल',
     doctorReviewRecommended: 'डॉक्टर परामर्श अनुशंसित',
-    immediateMedicalHelp: 'तत्काल चिकित्सीय सहायता'
+    immediateMedicalHelp: 'तत्काल चिकित्सीय सहायता',
+
+    // Section 3: Auth & Registration ("Log in" NOT "Sign in", "Create account")
+    logIn: 'लॉग इन करें',
+    createAccount: 'नया खाता बनाएं',
+    enterMobile: '१० अंकों का मोबाइल नंबर दर्ज करें',
+    sendOtp: 'OTP भेजें',
+    verifyOtp: 'OTP सत्यापित करें',
+    enterOtp: '६ अंकों का OTP कोड दर्ज करें',
+    otpSentMsg: 'सत्यापन OTP आपके फोन पर भेजा गया (डेमो सिमुलेशन: 123456)',
+    rolePatient: 'मरीज',
+    roleDoctor: 'डॉक्टर',
+    rolePharmacy: 'दवाखाना (फार्मेसी)',
+    consentCheckbox: 'May I issue: मैं अधिकृत डॉक्टरों के साथ अपने स्वास्थ्य रिकॉर्ड साझा करने की सहमति देता/देती हूँ।',
+    privacyNotice: 'आपकी गोपनीयता सुरक्षित है। चिकित्सीय डेटा एन्क्रिप्टेड है और केवल आपकी सहमति से साझा किया जाता है।',
+
+    // Section 4 & 5: Connectivity & SMS
+    goodConnection: 'अच्छा नेटवर्क (ऑनलाइन)',
+    weakConnection: 'कमजोर नेटवर्क (3G)',
+    veryWeakConnection: 'अत्यंत कमजोर नेटवर्क (2G)',
+    offlineConnection: 'ऑफ़लाइन',
+    smsFallbackNotice: 'SMS फॉलबैक सक्रिय: टेक्स्ट मैसेज के जरिए अपडेट प्राप्त हो सकते हैं।',
+    offlineNoticeFull: 'आप ऑफ़लाइन हैं। आपके सहेजे गए स्वास्थ्य रिकॉर्ड उपलब्ध हैं। इंटरनेट आने पर लाइव डॉक्टर व दवा स्टॉक अपडेट होंगे।',
+
+    // Section 10: Urgency Screening
+    urgencyGreen: 'हरा — सामान्य (कम तात्कालिकता)',
+    urgencyOrange: 'नारंगी — चिकित्सीय समीक्षा आवश्यक',
+    urgencyRed: 'लाल — आपातकालीन स्थिति',
+    urgencyGreenDesc: 'जांच में कोई आपातकालीन लक्षण नहीं पाया गया। आप नियमित डॉक्टर से परामर्श ले सकते हैं या निगरानी कर सकते हैं।',
+    urgencyOrangeDesc: 'लक्षणों के लिए डॉक्टर की समीक्षा आवश्यक है। हम टेलीकंसल्टेशन या नजदीकी क्लिनिक जाने की सलाह देते हैं।',
+    urgencyRedDesc: 'आपातकालीन चेतावनी संकेत मिले हैं। कृपया तुरंत नजदीकी अस्पताल जाएं या 108 पर कॉल करें। ऑनलाइन प्रतीक्षा न करें।',
+
+    // Section 11: Lab & Medical Records
+    labNormal: 'सामान्य ✓',
+    labLow: 'कम 🔻',
+    labHigh: 'अधिक 🔺',
+    labRefRangeNotice: 'प्रयोगशाला के अनुसार संदर्भ सीमाएं भिन्न हो सकती हैं। कृपया असामान्य परिणामों पर डॉक्टर से चर्चा करें।',
+
+    // Section 13, 14 & 18: Doctor Clinical Tools & Sync
+    clinicalNotes: 'चिकित्सीय नोट्स',
+    createPrescription: 'पर्चा लिखें',
+    editPrescription: 'पर्चा संपादित करें',
+    saveDraft: 'ड्राफ्ट सहेजें',
+    finalizePrescription: 'अंतिम रूप दें (पुष्टि करें)',
+    followUp: 'फॉलो-अप (पुनरावलोकन)',
+    referral: 'रेफरल (उच्च अस्पताल)',
+    endConsultation: 'परामर्श समाप्त करें',
+    syncStatusSavedLocally: 'स्थानीय रूप से सहेजा गया',
+    syncStatusWaiting: 'सिंक की प्रतीक्षा में',
+    syncStatusSuccess: 'सफलतापूर्वक सिंक हुआ',
+    syncStatusFailed: 'सिंक विफल — पुनः प्रयास करें',
+    scheduledLeave: 'निर्धारित अवकाश',
+    replacementDoctor: 'वैकल्पिक डॉक्टर',
+    leaveStart: 'छुट्टी आरंभ तिथि',
+    leaveEnd: 'छुट्टी समाप्ति तिथि',
+    seriousQueue: 'गंभीर मरीज प्राथमिकता कतार',
+
+    // Section 15: AI Audio Translator
+    aiTranslatorTitle: 'AI रियल-टाइम ऑडियो अनुवादक',
+    aiTranslatorSub: 'डॉक्टर-मरीज द्विभाषी संवाद सहायक',
+    patientLanguage: 'मरीज की भाषा',
+    doctorLanguage: 'डॉक्टर की भाषा',
+    translatorDisclaimer: 'AI अनुवाद में त्रुटियां हो सकती हैं। महत्वपूर्ण चिकित्सीय जानकारी की स्वयं पुष्टि करें।',
+    micListening: 'माइक्रोफोन सक्रिय (सुन रहा है)',
+    micPaused: 'माइक्रोफोन बंद',
+    translatingText: 'आवाज का रियल-टाइम अनुवाद हो रहा है...',
+
+    // Section 16 & 17: Care Plan & Pharmacy
+    carePlanTitle: 'डॉक्टर की देखभाल योजना और पर्चा',
+    findMedicineBtn: 'दुकानों में दवा खोजें',
+    pharmacyStatusLabel: 'दुकान की स्थिति',
+    pharmacyOpen: 'खुली है (दवा उपलब्ध)',
+    pharmacyClosed: 'बंद है',
+    pharmacyHoliday: 'अवकाश पर',
+    pharmacyEmergencyClosure: 'आपातकालीन बंद',
+
+    // Section 20: CareFlow
+    careFlowTitle: 'आपकी देखभाल यात्रा',
+    careFlowStep1: 'असुविधा',
+    careFlowStep2: 'लक्षण जांच',
+    careFlowStep3: 'तात्कालिकता',
+    careFlowStep4: 'डॉक्टर',
+    careFlowStep5: 'देखभाल योजना',
+    careFlowStep6: 'दवा',
+    careFlowStep7: 'फॉलो-अप'
   }
 };
 

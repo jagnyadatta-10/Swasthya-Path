@@ -1,4 +1,4 @@
-export type Role = 'patient' | 'doctor' | 'pharmacy' | 'admin' | 'lab';
+export type Role = 'patient' | 'doctor' | 'pharmacy' | 'admin' | 'lab' | 'administrator' | 'pathology';
 
 export type Language = 'English' | 'ଓଡ଼ିଆ' | 'हिन्दी';
 
@@ -11,10 +11,11 @@ export interface DemoUser {
   email: string;
   mobile: string;
   role: Role;
-  portalTitle: string;
-  badge: string;
-  avatar: string;
+  portalTitle?: string;
+  badge?: string;
+  avatar?: string;
   location: string;
+  healthFacility?: string;
   patientId?: string; // e.g. RHB-OD-KLH-0941
   age?: number;
   gender?: string;
@@ -89,7 +90,7 @@ export interface TbTreatmentRecord {
 
 export type WarningSignId = 'no' | 'breathing' | 'chest' | 'unconscious' | 'bleeding' | 'stroke';
 
-export type UrgencyLevel = 'routine' | 'moderate' | 'urgent';
+export type UrgencyLevel = 'routine' | 'moderate' | 'urgent' | 'emergency';
 
 export interface PhysiologicalVitals {
   temperatureF?: number;
@@ -99,7 +100,7 @@ export interface PhysiologicalVitals {
   spO2Percent?: number;
   respRate?: number;
   weightKg?: number;
-  enteredBy: 'Patient-entered / manually entered' | 'Connected Device';
+  enteredBy: 'Patient-entered / manually entered' | 'Connected Device' | string;
   recordedAt: string;
 }
 
@@ -109,21 +110,37 @@ export interface DiagnosticTestParameter {
   unit?: string;
   refRange: string;
   isAbnormal?: boolean;
+  status?: 'Normal' | 'High' | 'Low' | string;
 }
 
 export interface DiagnosticDocument {
   id: string;
   title: string;
   category: 'Lab Report' | 'X-Ray' | 'CT' | 'MRI' | 'Prescription' | 'Referral';
+  testCategory?: string;
+  doctorName?: string;
+  findings?: string;
   date: string;
   provider: string;
   thumbnail?: string;
   notes?: string;
   patientId?: string;
   patientName?: string;
-  status?: 'Verified' | 'Pending Review' | 'Critical Flag';
+  status?: 'Ready' | 'Verified' | 'Pending Review' | 'Critical Flag';
+  verificationStatus?: 'Draft' | 'Under Review' | 'Verified' | 'Released' | 'Corrected' | 'Cancelled';
+  version?: number;
+  previousVersionData?: {
+    notes?: string;
+    parameters?: DiagnosticTestParameter[];
+    correctedAt?: string;
+  };
+  correctionReason?: string;
+  authorizedVerifier?: string;
+  releasedAt?: string;
   fileUrl?: string;
   sampleType?: string;
+  sampleBarcode?: string;
+  orderId?: string;
   labName?: string;
   technicianName?: string;
   doctorInCharge?: string;
@@ -147,6 +164,7 @@ export interface FullPrescription {
   prescriptionNumber: string;
   patientId: string;
   patientName: string;
+  doctorId?: string;
   doctorName: string;
   doctorHospital: string;
   date: string;
@@ -155,6 +173,10 @@ export interface FullPrescription {
   followUp: string;
   notes?: string;
   digitalSignature: string;
+  status?: 'draft' | 'finalized';
+  syncStatus?: 'synced' | 'pending' | 'offline-cached';
+  updatedAt?: string;
+  version?: number;
 }
 
 export interface ConsultationToken {
@@ -179,12 +201,105 @@ export interface SpecialistRequest {
   timestamp: string;
 }
 
+export interface DoctorLeave {
+  id: string;
+  doctorId: string;
+  doctorName: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  replacementDoctor?: string;
+  replacementDoctorId?: string;
+  replacementDoctorName?: string;
+  status: 'Active' | 'Scheduled' | 'Completed';
+  createdAt: string;
+}
+
+export interface AudioTranslationMessage {
+  id: string;
+  sender: 'patient' | 'doctor';
+  originalText: string;
+  sourceLang: Language;
+  translatedText: string;
+  targetLang: Language;
+  timestamp: string;
+  medicalTermsPreserved?: string[];
+}
+
+export interface PharmacyStoreStatus {
+  pharmacyName?: string;
+  ownerContact?: string;
+  status?: string;
+  isOpen: boolean;
+  isHoliday: boolean;
+  isEmergencyClosure: boolean;
+  operatingHours: string;
+  holidayNotice?: string;
+  lastUpdated: string;
+}
+
+export interface SMSFallbackMessage {
+  id: string;
+  toPhone?: string;
+  recipientMobile?: string;
+  category?: string;
+  type?: 'doctor_availability' | 'pharmacy_stock' | 'holiday_leave' | 'emergency';
+  body?: string;
+  content?: string;
+  sentAt?: string;
+  timestamp?: string;
+  deliveryStatus?: string;
+  isSimulated?: boolean;
+}
+
+export interface PatientRegistrationData {
+  mobile: string;
+  name: string;
+  age: number;
+  gender: string;
+  preferredLanguage: Language;
+  location: string;
+  emergencyContact: string;
+  consentGranted: boolean;
+  mayIssueNoticeConfirmed: boolean;
+}
+
+export interface DoctorRegistrationData {
+  mobile: string;
+  name: string;
+  qualification: string;
+  licenseNumber: string;
+  specialty: string;
+  hospital: string;
+  workingHours: string;
+  languages: string[];
+  emergencyAvailable: boolean;
+  leaveSchedule?: string;
+  consentGranted: boolean;
+}
+
+export interface PharmacyRegistrationData {
+  mobile: string;
+  pharmacyName: string;
+  ownerContact: string;
+  address: string;
+  block: KalahandiBlock;
+  operatingHours: string;
+  holidaySchedule: string;
+  initialStockSetup: boolean;
+  consentGranted: boolean;
+}
+
 export interface HealthRecord {
   id: string;
   patientId?: string;
-  type: 'symptom' | 'prescription' | 'stock-update' | 'consultation' | 'lab';
+  doctorId?: string;
+  type: 'symptom' | 'prescription' | 'stock-update' | 'consultation' | 'lab' | 'diagnostic';
   at: string;
   timestamp: number;
+  updatedAt?: string;
+  version?: number;
+  syncStatus?: 'synced' | 'pending' | 'offline-cached';
   symptoms?: string;
   duration?: string;
   warningSign?: string;
@@ -195,6 +310,7 @@ export interface HealthRecord {
   followUpPlan?: string;
   synced?: boolean;
   documents?: DiagnosticDocument[];
+  prescriptionData?: FullPrescription;
 }
 
 export interface DoctorItem {
@@ -202,10 +318,14 @@ export interface DoctorItem {
   name: string;
   specialty: string;
   hospital: string;
+  facility?: string;
   nextSlot: string;
   languages: string[];
   rating: number;
   available: boolean;
+  status?: string;
+  nextAvailable?: string;
+  emergencyDuty?: boolean;
   experience: string;
   fees: string;
   avatarUrl?: string;
@@ -223,6 +343,7 @@ export type KalahandiBlock =
 export interface MedicineItem {
   id: string;
   name: string;
+  genericName?: string;
   category: string;
   pharmacyName: string;
   block: KalahandiBlock;
@@ -314,3 +435,108 @@ export interface CareJourneyStage {
   status: 'completed' | 'current' | 'pending';
   detail: string;
 }
+
+export type UserVerificationStatus = 'REGISTERED' | 'VERIFICATION PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
+
+export type AccountStatus = 'Active' | 'Suspended' | 'Pending';
+
+export interface ManagedUser {
+  id: string;
+  name: string;
+  role: Role;
+  email: string;
+  mobile: string;
+  location: string;
+  verificationStatus: UserVerificationStatus;
+  accountStatus: AccountStatus;
+  documentsSubmitted?: string[];
+  specialization?: string;
+  licenseNumber?: string;
+  registeredAt: string;
+  lastActive: string;
+  facilityName?: string;
+  rejectionReason?: string;
+}
+
+export type EmergencyCaseStatus = 'NEW' | 'ACKNOWLEDGED' | 'ASSIGNED' | 'IN_PROGRESS' | 'ESCALATED' | 'RESOLVED' | 'CLOSED';
+
+export interface EmergencyCase {
+  id: string;
+  patientId: string;
+  patientName: string;
+  age: number;
+  gender: string;
+  village: string;
+  warningSigns: string;
+  symptoms: string;
+  status: EmergencyCaseStatus;
+  assignedDoctor?: string;
+  assignedFacility?: string;
+  escalatedAt: string;
+  priority: 'HIGH' | 'CRITICAL';
+  notes?: string;
+}
+
+export interface LabTestItem {
+  id: string;
+  name: string;
+  category: 'Hematology' | 'Biochemistry' | 'Microbiology' | 'Serology' | 'Pathology' | 'Radiology';
+  description: string;
+  sampleType: string;
+  preparation: string;
+  turnaroundTime: string;
+  turnaroundHours: number;
+  priceRupees: number;
+  isAvailable: boolean;
+  referenceRanges: { parameter: string; range: string; unit: string }[];
+}
+
+export type LabOrderStatus = 'Requested' | 'Accepted' | 'Sample Collected' | 'Sample Received' | 'Processing' | 'Report Verified' | 'Released' | 'Cancelled';
+
+export interface LabTestOrder {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientAge: number;
+  patientGender: string;
+  patientVillage?: string;
+  doctorId?: string;
+  doctorName?: string;
+  testId: string;
+  testName: string;
+  category: string;
+  orderDate: string;
+  status: LabOrderStatus;
+  sampleId?: string;
+  collectionTimestamp?: string;
+  receivedTimestamp?: string;
+  reportId?: string;
+  urgency: 'Routine' | 'Urgent' | 'Emergency';
+  notes?: string;
+}
+
+export type LabSampleStatus = 'Awaiting Collection' | 'Collected' | 'Received' | 'Processing' | 'Completed' | 'Rejected';
+
+export interface LabSample {
+  id: string;
+  sampleBarcode: string;
+  orderId: string;
+  patientId: string;
+  patientName: string;
+  testName: string;
+  sampleType: string;
+  status: LabSampleStatus;
+  rejectionReason?: string;
+  collectedAt?: string;
+  receivedAt?: string;
+}
+
+export interface SystemHealthItem {
+  service: string;
+  category: string;
+  status: 'Healthy' | 'Degraded' | 'Offline' | 'Simulated' | 'Checked';
+  latencyMs?: number;
+  lastChecked: string;
+  notes: string;
+}
+

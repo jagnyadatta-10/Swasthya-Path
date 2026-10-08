@@ -25,9 +25,30 @@ import {
   AlertOctagon,
   Pill,
   Store,
-  ArrowDown
+  ArrowDown,
+  Languages,
+  Edit,
+  Plus,
+  Check,
+  Play,
+  Pause,
+  RefreshCw,
+  Stethoscope,
+  Sparkles,
+  FilePlus,
+  CornerUpRight
 } from 'lucide-react';
-import { DemoUser, DoctorItem, NetworkQuality, ChatMessage, HealthRecord, Language } from '../types';
+import {
+  DemoUser,
+  DoctorItem,
+  NetworkQuality,
+  ChatMessage,
+  HealthRecord,
+  Language,
+  PrescriptionMedicine,
+  FullPrescription,
+  AudioTranslationMessage
+} from '../types';
 import { storage } from '../utils/storage';
 
 interface VideoConsultationRoomProps {
@@ -268,8 +289,225 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   const [callDuration, setCallDuration] = useState(0);
 
   // Panels
-  const [activeSidePanel, setActiveSidePanel] = useState<'none' | 'chat' | 'summary' | 'notes'>('none');
+  const [activeSidePanel, setActiveSidePanel] = useState<'none' | 'chat' | 'summary' | 'notes' | 'prescription' | 'translator'>('none');
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  // Section 13: Clinical Workspace & Prescription State
+  const [rxMedicines, setRxMedicines] = useState<PrescriptionMedicine[]>([
+    {
+      id: 'rx-med-1',
+      name: 'Tab Paracetamol',
+      strength: '500mg',
+      dosage: '1 tablet TID after meals',
+      frequency: 'Three times daily',
+      duration: '3 days',
+      instructions: 'Take for fever or body ache. Discontinue once afebrile.'
+    },
+    {
+      id: 'rx-med-2',
+      name: 'Oral Rehydration Salts (ORS WHO)',
+      strength: '21.8g Sachet',
+      dosage: '1 sachet dissolved in 1L cool boiled water',
+      frequency: 'Frequent sips',
+      duration: '3 days',
+      instructions: 'Frequent oral hydration to prevent rural dehydration.'
+    }
+  ]);
+  const [rxDiagnosis, setRxDiagnosis] = useState('Acute Viral Gastroenteritis with Mild Pyrexia');
+  const [rxFollowUpDate, setRxFollowUpDate] = useState('In 3 days (Teleconsultation Review)');
+  const [rxReferralFacility, setRxReferralFacility] = useState('');
+  const [rxStatus, setRxStatus] = useState<'draft' | 'finalized'>('draft');
+  const [rxSyncState, setRxSyncState] = useState<'saved-locally' | 'waiting' | 'synced' | 'failed'>('saved-locally');
+  const [rxFeedbackMsg, setRxFeedbackMsg] = useState('');
+  const [showAddMedForm, setShowAddMedForm] = useState(false);
+  const [newMedName, setNewMedName] = useState('');
+  const [newMedStrength, setNewMedStrength] = useState('500mg');
+  const [newMedDosage, setNewMedDosage] = useState('1 tab TID');
+  const [newMedDuration, setNewMedDuration] = useState('3 days');
+  const [newMedInstructions, setNewMedInstructions] = useState('After meals');
+
+  // Section 15: AI Real-Time Audio Translator State
+  const [patientTransLang, setPatientTransLang] = useState<Language>('ଓଡ଼ିଆ');
+  const [doctorTransLang, setDoctorTransLang] = useState<Language>('English');
+  const [isTranslatorActive, setIsTranslatorActive] = useState(false);
+  const [isTranslatorPaused, setIsTranslatorPaused] = useState(false);
+  const [transInputText, setTransInputText] = useState('');
+  const [audioTranslations, setAudioTranslations] = useState<AudioTranslationMessage[]>([
+    {
+      id: 'tr-1',
+      sender: 'patient',
+      sourceLang: 'ଓଡ଼ିଆ',
+      originalText: 'ମୋତେ ଦୁଇ ଦିନ ହେଲା ପ୍ରବଳ ଜ୍ୱର ଓ ପେଟ ଯନ୍ତ୍ରଣା ହେଉଛି।',
+      targetLang: 'English',
+      translatedText: 'I have had high fever and abdominal pain for two days.',
+      timestamp: '10:04 AM',
+      medicalTermsPreserved: ['fever (ଜ୍ୱର)', 'abdominal pain (ପେଟ ଯନ୍ତ୍ରଣା)']
+    },
+    {
+      id: 'tr-2',
+      sender: 'doctor',
+      sourceLang: 'English',
+      originalText: 'Do you have vomiting or feeling dizzy when standing up?',
+      targetLang: 'ଓଡ଼ିଆ',
+      translatedText: 'ଆପଣଙ୍କର ବାନ୍ତି ହେଉଛି କି କିମ୍ବା ଠିଆ ହେବା ବେଳେ ମୁଣ୍ଡ ବୁଲାଉଛି କି?',
+      timestamp: '10:05 AM',
+      medicalTermsPreserved: ['vomiting (ବାନ୍ତି)', 'dizziness (ମୁଣ୍ଡ ବୁଲାଇବା)']
+    }
+  ]);
+
+  // Section 13 Prescription Action Handlers
+  const handleAddMedicine = () => {
+    if (!newMedName.trim()) return;
+    const item: PrescriptionMedicine = {
+      id: `med-${Date.now()}`,
+      name: newMedName.trim(),
+      strength: newMedStrength,
+      dosage: newMedDosage,
+      frequency: newMedDosage,
+      duration: newMedDuration,
+      instructions: newMedInstructions
+    };
+    setRxMedicines((prev) => [...prev, item]);
+    setNewMedName('');
+    setShowAddMedForm(false);
+    setRxSyncState('saved-locally');
+    setRxFeedbackMsg('Medicine added to prescription draft.');
+    setTimeout(() => setRxFeedbackMsg(''), 3000);
+  };
+
+  const handleRemoveMedicine = (id: string) => {
+    setRxMedicines((prev) => prev.filter((m) => m.id !== id));
+    setRxSyncState('saved-locally');
+  };
+
+  const handleSavePrescriptionDraft = () => {
+    setRxStatus('draft');
+    setRxSyncState('saved-locally');
+    const draftRx: FullPrescription = {
+      id: `rx-draft-${patient.patientId || 'RHB-OD-KLH-0941'}`,
+      prescriptionNumber: `RX-DRAFT-${Date.now().toString().slice(-4)}`,
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      patientName: patient.name,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      doctorHospital: doctor.hospital,
+      date: new Date().toLocaleDateString('en-GB'),
+      diagnosisSummary: rxDiagnosis,
+      medicines: rxMedicines,
+      followUp: rxFollowUpDate,
+      notes: doctorNotes,
+      digitalSignature: `Draft by ${doctor.name} (Pending Clinician Finalization)`,
+      status: 'draft',
+      syncStatus: 'offline-cached',
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+    storage.savePrescription(draftRx);
+    setRxFeedbackMsg('Prescription draft saved locally.');
+    setTimeout(() => setRxFeedbackMsg(''), 3000);
+  };
+
+  const handleFinalizePrescription = () => {
+    setRxStatus('finalized');
+    setRxSyncState('waiting');
+    const finalizedRx: FullPrescription = {
+      id: `rx-KLH-${Date.now()}`,
+      prescriptionNumber: `RX-KLH-2026-${Math.floor(Math.random() * 800 + 100)}`,
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      patientName: patient.name,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      doctorHospital: doctor.hospital,
+      date: new Date().toLocaleDateString('en-GB'),
+      diagnosisSummary: rxDiagnosis,
+      medicines: rxMedicines,
+      followUp: rxFollowUpDate,
+      notes: rxReferralFacility ? `${doctorNotes} [Referral: ${rxReferralFacility}]` : doctorNotes,
+      digitalSignature: `Digitally Authorized by ${doctor.name} (Licensed Medical Officer)`,
+      status: 'finalized',
+      syncStatus: 'synced',
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+
+    // Save and explicitly synchronize to patient longitudinal health record
+    storage.savePrescription(finalizedRx);
+    setRxSyncState('synced');
+    setDoctorNotes(`Prescription ${finalizedRx.prescriptionNumber} finalized: ${rxDiagnosis}. Prescribed: ${rxMedicines.map(m => m.name).join(', ')}.`);
+    setRxFeedbackMsg(`✓ E-Prescription ${finalizedRx.prescriptionNumber} authorized & synchronized to patient records.`);
+    setTimeout(() => setRxFeedbackMsg(''), 4500);
+  };
+
+  const handleRetrySync = () => {
+    setRxSyncState('waiting');
+    setTimeout(() => {
+      setRxSyncState('synced');
+      setRxFeedbackMsg('✓ Re-synchronized successfully with patient record.');
+      setTimeout(() => setRxFeedbackMsg(''), 3000);
+    }, 800);
+  };
+
+  // Section 15 AI Translator Action Handlers
+  const handleTranslateSpeech = (customText?: string, speaker: 'patient' | 'doctor' = 'patient') => {
+    const raw = customText || transInputText.trim();
+    if (!raw) return;
+
+    let translated = '';
+    let medicalTerms: string[] = [];
+
+    if (speaker === 'patient') {
+      if (doctorTransLang === 'English') {
+        if (raw.includes('ଜ୍ୱର') || raw.includes('fever') || raw.includes('बुखार')) {
+          translated = 'Patient reports fever with chills since yesterday.';
+          medicalTerms = ['Fever (ଜ୍ୱର)', 'Chills (କମ୍ପ)'];
+        } else if (raw.includes('କାଶ') || raw.includes('cough')) {
+          translated = 'Patient has persistent dry cough and throat irritation.';
+          medicalTerms = ['Cough (କାଶ)'];
+        } else {
+          translated = `Patient states: "${raw}" (Translated via low-bandwidth AI neural engine).`;
+        }
+      } else {
+        translated = 'मरीज को पिछले दो दिनों से बुखार और बदन दर्द की समस्या है।';
+        medicalTerms = ['बुखार (Fever)'];
+      }
+    } else {
+      if (patientTransLang === 'ଓଡ଼ିଆ') {
+        if (raw.toLowerCase().includes('water') || raw.toLowerCase().includes('hydrate') || raw.toLowerCase().includes('ors')) {
+          translated = 'ଦିନକୁ ଅତି କମରେ ୨ ଲିଟର ଫୁଟା ପାଣି ଓ ORS ପିଅନ୍ତୁ।';
+          medicalTerms = ['ORS (ଓଆରଏସ୍)', 'Hydration (ପ୍ରଚୁର ପାଣି)'];
+        } else {
+          translated = `ଡାକ୍ତର ପରାମର୍ଶ ଦେଇଛନ୍ତି: "${raw}"।`;
+        }
+      } else {
+        translated = `डॉक्टर का निर्देश: "${raw}"।`;
+      }
+    }
+
+    const newTrans: AudioTranslationMessage = {
+      id: `tr-${Date.now()}`,
+      sender: speaker,
+      sourceLang: speaker === 'patient' ? patientTransLang : doctorTransLang,
+      originalText: raw,
+      targetLang: speaker === 'patient' ? doctorTransLang : patientTransLang,
+      translatedText: translated,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      medicalTermsPreserved: medicalTerms
+    };
+
+    setAudioTranslations((prev) => [...prev, newTrans]);
+    setTransInputText('');
+
+    // Trigger synthetic audio speech output if supported
+    if ('speechSynthesis' in window && !isSpeakerMuted) {
+      try {
+        const utter = new SpeechSynthesisUtterance(translated);
+        utter.rate = 0.9;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        console.warn('Speech synthesis not permitted in current frame:', e);
+      }
+    }
+  };
 
   // Chat
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -2090,6 +2328,517 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             </div>
           </aside>
         )}
+
+        {/* SECTION 13: CLINICAL PRESCRIPTION & CARE PLAN WORKSPACE */}
+        {activeSidePanel === 'prescription' && (
+          <aside
+            style={{
+              width: '400px',
+              maxWidth: '90vw',
+              background: '#091322',
+              borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              zIndex: 30,
+              overflowY: 'auto'
+            }}
+          >
+            {/* Header */}
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Stethoscope size={16} style={{ color: '#38bdf8' }} />
+                <strong style={{ fontSize: '14px', color: '#ffffff' }}>E-Prescription & Care Plan</strong>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSidePanel('none')}
+                style={{ background: 'transparent', border: 0, color: '#ffffff', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
+              {/* Sync Status Badge (Section 13 & 18 requirement) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>Sync Status:</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    background:
+                      rxSyncState === 'synced'
+                        ? 'rgba(34, 197, 94, 0.2)'
+                        : rxSyncState === 'waiting'
+                        ? 'rgba(234, 179, 8, 0.2)'
+                        : rxSyncState === 'failed'
+                        ? 'rgba(239, 68, 68, 0.2)'
+                        : 'rgba(56, 189, 248, 0.2)',
+                    color:
+                      rxSyncState === 'synced'
+                        ? '#86efac'
+                        : rxSyncState === 'waiting'
+                        ? '#fde047'
+                        : rxSyncState === 'failed'
+                        ? '#fca5a5'
+                        : '#7dd3fc',
+                    border: `1px solid ${
+                      rxSyncState === 'synced'
+                        ? '#22c55e'
+                        : rxSyncState === 'waiting'
+                        ? '#eab308'
+                        : rxSyncState === 'failed'
+                        ? '#ef4444'
+                        : '#0284c7'
+                    }`
+                  }}
+                >
+                  {rxSyncState === 'synced'
+                    ? 'Synced successfully ✓'
+                    : rxSyncState === 'waiting'
+                    ? 'Waiting to sync ⏳'
+                    : rxSyncState === 'failed'
+                    ? 'Sync failed — retry ❌'
+                    : 'Saved locally 💾'}
+                </span>
+              </div>
+
+              {rxFeedbackMsg && (
+                <div style={{ background: '#064e3b', color: '#a7f3d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={14} />
+                  <span>{rxFeedbackMsg}</span>
+                </div>
+              )}
+
+              {/* Patient Profile Snapshot */}
+              <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '10px 12px' }}>
+                <div style={{ fontWeight: 700, color: '#f8fafc' }}>{patient.name} (26 Y / M)</div>
+                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>
+                  ID: {patient.patientId || 'RHB-OD-KLH-0941'} • {patient.location}
+                </div>
+                <div style={{ color: '#fca5a5', fontSize: '11px', marginTop: '4px' }}>
+                  Allergies: {patient.allergies || 'No known drug allergies reported'}
+                </div>
+              </div>
+
+              {/* Clinical Diagnosis Input */}
+              <div className="field">
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8' }}>Clinical Diagnosis:</label>
+                <input
+                  type="text"
+                  value={rxDiagnosis}
+                  onChange={(e) => {
+                    setRxDiagnosis(e.target.value);
+                    setRxSyncState('saved-locally');
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#ffffff',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}
+                />
+              </div>
+
+              {/* Medicines List */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8' }}>
+                    Prescribed Medicines ({rxMedicines.length}):
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMedForm(!showAddMedForm)}
+                    style={{
+                      background: '#0284c7',
+                      color: '#ffffff',
+                      border: 0,
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Plus size={12} />
+                    <span>Add Medicine</span>
+                  </button>
+                </div>
+
+                {/* Add Medicine Inline Form */}
+                {showAddMedForm && (
+                  <div style={{ background: '#1e293b', padding: '10px', borderRadius: '8px', border: '1px solid #334155', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '6px', marginBottom: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder="Medicine name (e.g. Tab Amoxicillin)"
+                        value={newMedName}
+                        onChange={(e) => setNewMedName(e.target.value)}
+                        style={{ padding: '6px 8px', borderRadius: '4px', background: '#0f172a', color: '#fff', border: '1px solid #475569', fontSize: '12px' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Strength (500mg)"
+                        value={newMedStrength}
+                        onChange={(e) => setNewMedStrength(e.target.value)}
+                        style={{ padding: '6px 8px', borderRadius: '4px', background: '#0f172a', color: '#fff', border: '1px solid #475569', fontSize: '12px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder="Dosage (1 tab TID)"
+                        value={newMedDosage}
+                        onChange={(e) => setNewMedDosage(e.target.value)}
+                        style={{ padding: '6px 8px', borderRadius: '4px', background: '#0f172a', color: '#fff', border: '1px solid #475569', fontSize: '12px' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Duration (5 days)"
+                        value={newMedDuration}
+                        onChange={(e) => setNewMedDuration(e.target.value)}
+                        style={{ padding: '6px 8px', borderRadius: '4px', background: '#0f172a', color: '#fff', border: '1px solid #475569', fontSize: '12px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder="Instructions (e.g. after meals)"
+                        value={newMedInstructions}
+                        onChange={(e) => setNewMedInstructions(e.target.value)}
+                        style={{ flex: 1, padding: '6px 8px', borderRadius: '4px', background: '#0f172a', color: '#fff', border: '1px solid #475569', fontSize: '12px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddMedicine}
+                        style={{ background: '#16a34a', color: '#fff', border: 0, borderRadius: '4px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {rxMedicines.map((m) => (
+                    <div
+                      key={m.id}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start'
+                      }}
+                    >
+                      <div>
+                        <strong style={{ color: '#38bdf8' }}>{m.name}</strong> {m.strength}
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          {m.dosage} • {m.duration}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>
+                          {m.instructions}
+                        </div>
+                      </div>
+                      {userRole === 'doctor' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMedicine(m.id)}
+                          style={{ background: 'transparent', border: 0, color: '#f87171', cursor: 'pointer', padding: '2px' }}
+                          title="Remove medicine"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Follow-up & Referral options */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="field">
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>Follow-up:</label>
+                  <input
+                    type="text"
+                    value={rxFollowUpDate}
+                    onChange={(e) => {
+                      setRxFollowUpDate(e.target.value);
+                      setRxSyncState('saved-locally');
+                    }}
+                    style={{ padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', fontSize: '12px' }}
+                  />
+                </div>
+                <div className="field">
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>Referral (if any):</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. DHH Bhawanipatna"
+                    value={rxReferralFacility}
+                    onChange={(e) => {
+                      setRxReferralFacility(e.target.value);
+                      setRxSyncState('saved-locally');
+                    }}
+                    style={{ padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Actions Grid (Section 13 exact buttons) */}
+              {userRole === 'doctor' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={handleSavePrescriptionDraft}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Save Draft
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleFinalizePrescription}
+                    style={{
+                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                      color: '#ffffff',
+                      border: 0,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.35)'
+                    }}
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>Finalize Prescription</span>
+                  </button>
+                </div>
+              )}
+
+              {rxSyncState !== 'synced' && (
+                <button
+                  type="button"
+                  onClick={handleRetrySync}
+                  style={{
+                    background: 'transparent',
+                    border: '1px dashed #38bdf8',
+                    color: '#38bdf8',
+                    padding: '6px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <RefreshCw size={12} />
+                  <span>Retry Sync to Patient Health Record</span>
+                </button>
+              )}
+            </div>
+          </aside>
+        )}
+
+        {/* SECTION 15: REAL-TIME AI AUDIO TRANSLATOR */}
+        {activeSidePanel === 'translator' && (
+          <aside
+            style={{
+              width: '380px',
+              maxWidth: '90vw',
+              background: '#091322',
+              borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              zIndex: 30,
+              overflowY: 'auto'
+            }}
+          >
+            {/* Header */}
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Languages size={16} style={{ color: '#a855f7' }} />
+                <strong style={{ fontSize: '14px', color: '#ffffff' }}>AI Real-Time Audio Translator</strong>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSidePanel('none')}
+                style={{ background: 'transparent', border: 0, color: '#ffffff', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Language Configuration Bar */}
+            <div style={{ padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 800 }}>
+                    PATIENT LANGUAGE
+                  </span>
+                  <select
+                    value={patientTransLang}
+                    onChange={(e) => setPatientTransLang(e.target.value as Language)}
+                    style={{ width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', background: '#1e293b', color: '#fff', border: '1px solid #334155', fontSize: '12px' }}
+                  >
+                    <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
+                    <option value="English">English</option>
+                    <option value="हिन्दी">हिन्दी (Hindi)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a855f7', fontWeight: 800 }}>
+                    DOCTOR LANGUAGE
+                  </span>
+                  <select
+                    value={doctorTransLang}
+                    onChange={(e) => setDoctorTransLang(e.target.value as Language)}
+                    style={{ width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', background: '#1e293b', color: '#fff', border: '1px solid #334155', fontSize: '12px' }}
+                  >
+                    <option value="English">English</option>
+                    <option value="हिन्दी">हिन्दी (Hindi)</option>
+                    <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mic Status & Live Indicators */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: isTranslatorPaused ? '#fde047' : '#86efac' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isTranslatorPaused ? '#eab308' : '#22c55e', display: 'inline-block' }} />
+                  <span>{isTranslatorPaused ? 'Microphone Paused' : 'Microphone Active (Listening...)'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsTranslatorPaused(!isTranslatorPaused)}
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 0, borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    {isTranslatorPaused ? 'Resume' : 'Pause'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Translation Safety Disclaimer (Section 15 mandatory notice) */}
+            <div style={{ padding: '8px 12px', background: 'rgba(234, 179, 8, 0.1)', borderBottom: '1px solid rgba(234, 179, 8, 0.2)', fontSize: '11px', color: '#fef08a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+              <span>AI translation may contain errors. Confirm important medical information.</span>
+            </div>
+
+            {/* Translation Conversation Stream */}
+            <div style={{ flex: 1, padding: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {audioTranslations.map((at) => (
+                <div
+                  key={at.id}
+                  style={{
+                    background: at.sender === 'patient' ? 'rgba(56, 189, 248, 0.08)' : 'rgba(168, 85, 247, 0.08)',
+                    border: `1px solid ${at.sender === 'patient' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`,
+                    borderRadius: '10px',
+                    padding: '10px 12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 700, color: at.sender === 'patient' ? '#38bdf8' : '#c084fc' }}>
+                      {at.sender === 'patient' ? `${patient.name} (${at.sourceLang})` : `${doctor.name} (${at.sourceLang})`}
+                    </span>
+                    <span>{at.timestamp}</span>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '6px' }}>
+                    <em>"{at.originalText}"</em>
+                  </div>
+
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc', background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '6px' }}>
+                    ➔ {at.translatedText}
+                  </div>
+
+                  {at.medicalTermsPreserved && at.medicalTermsPreserved.length > 0 && (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
+                      {at.medicalTermsPreserved.map((term, i) => (
+                        <span key={i} style={{ fontSize: '10px', background: '#334155', color: '#7dd3fc', padding: '1px 6px', borderRadius: '4px' }}>
+                          🏥 {term}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Speech Simulator / Input Panel */}
+            <div style={{ padding: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', background: '#0a101f' }}>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
+                Quick Speech Simulation (Voice-to-Text):
+              </div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleTranslateSpeech('ମୋର ଦୁଇ ଦିନ ହେଲା ପ୍ରବଳ କାଶ ଓ କଫ ହେଉଛି।', 'patient')}
+                  style={{ background: '#1e293b', color: '#7dd3fc', border: '1px solid #334155', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}
+                >
+                  "କାଶ ଓ କଫ" (Patient)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTranslateSpeech('Drink 2L boiled water daily with ORS.', 'doctor')}
+                  style={{ background: '#1e293b', color: '#c084fc', border: '1px solid #334155', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}
+                >
+                  "Drink ORS water" (Doctor)
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  placeholder="Type or simulate speech..."
+                  value={transInputText}
+                  onChange={(e) => setTransInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleTranslateSpeech();
+                    }
+                  }}
+                  style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: '12px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleTranslateSpeech()}
+                  style={{ background: '#a855f7', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Translate
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* 3. BOTTOM CALL CONTROLS TOOLBAR */}
@@ -2241,6 +2990,48 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               <span style={{ fontSize: '13px' }}>{t.notesBtn}</span>
             </button>
           )}
+
+          <button
+            type="button"
+            className="btn"
+            id="toggle-rx-btn"
+            onClick={() => setActiveSidePanel(activeSidePanel === 'prescription' ? 'none' : 'prescription')}
+            style={{
+              background: activeSidePanel === 'prescription' ? '#16a34a' : 'rgba(255, 255, 255, 0.12)',
+              color: '#ffffff',
+              border: 0,
+              minHeight: '44px',
+              padding: '8px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="E-Prescription & Care Plan"
+          >
+            <Pill size={16} />
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>{userRole === 'doctor' ? 'Rx / Prescription' : 'View Rx'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn"
+            id="toggle-translator-btn"
+            onClick={() => setActiveSidePanel(activeSidePanel === 'translator' ? 'none' : 'translator')}
+            style={{
+              background: activeSidePanel === 'translator' ? '#7c3aed' : 'rgba(255, 255, 255, 0.12)',
+              color: '#ffffff',
+              border: 0,
+              minHeight: '44px',
+              padding: '8px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="AI Audio Translator (Odia / Hindi / English)"
+          >
+            <Languages size={16} />
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>AI Translator</span>
+          </button>
         </div>
 
         {/* Right Side: End Consultation Button */}

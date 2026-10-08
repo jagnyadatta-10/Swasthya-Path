@@ -13,6 +13,7 @@ import {
   PhoneCall,
   Search,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Video,
   MapPin,
@@ -30,13 +31,14 @@ import {
   Compass,
   Bot,
   Store,
-  ArrowLeft
+  WifiOff
 } from 'lucide-react';
 import {
   DemoUser,
   Language,
   HealthRecord,
   DoctorItem,
+  DoctorLeave,
   MedicineItem,
   WarningSignId,
   NetworkQuality,
@@ -67,7 +69,6 @@ interface PatientPortalProps {
   onToggleLowBandwidth: () => void;
   lang: Language;
   onSelectLang?: (lang: Language) => void;
-  onBack?: () => void;
 }
 
 export const PatientPortal: React.FC<PatientPortalProps> = ({
@@ -77,11 +78,89 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
   lowBandwidthMode,
   onToggleLowBandwidth,
   lang,
-  onSelectLang,
-  onBack
+  onSelectLang
 }) => {
   // Navigation Tabs: Home, Doctor, Records, Medicines, Profile (Prompt Section 8)
   const [activeTab, setActiveTab] = useState<'home' | 'symptom' | 'doctor' | 'records' | 'medicines' | 'profile'>('home');
+  const [tabHistory, setTabHistory] = useState<('home' | 'symptom' | 'doctor' | 'records' | 'medicines' | 'profile')[]>(['home']);
+
+  const navigateToTab = (newTab: 'home' | 'symptom' | 'doctor' | 'records' | 'medicines' | 'profile') => {
+    setTabHistory(prev => (prev[prev.length - 1] === newTab ? prev : [...prev, newTab]));
+    setActiveTab(newTab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    if (activeTab === 'symptom' && symptomStep > 1) {
+      setSymptomStep(symptomStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (tabHistory.length > 1) {
+      const updated = [...tabHistory];
+      updated.pop();
+      const prev = updated[updated.length - 1];
+      setTabHistory(updated);
+      setActiveTab(prev);
+    } else {
+      setActiveTab('home');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderBackButton = (customLabel?: string) => (
+    <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+      <button
+        type="button"
+        onClick={handleGoBack}
+        className="btn btn-secondary"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '10px',
+          background: '#ffffff',
+          border: '1.5px solid #cbd5e1',
+          color: '#0f172a',
+          fontSize: '13px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+        }}
+        title="Go back to previous page"
+      >
+        <ArrowLeft size={16} />
+        <span>
+          {customLabel || (
+            lang === 'ଓଡ଼ିଆ'
+              ? '← ପଛକୁ ଫେରନ୍ତୁ (ପୂର୍ବ ପୃଷ୍ଠା)'
+              : lang === 'हिन्दी'
+              ? '← वापस जाएं (पिछला पृष्ठ)'
+              : '← Back to Previous Page'
+          )}
+        </span>
+      </button>
+
+      {activeTab !== 'home' && (
+        <button
+          type="button"
+          onClick={() => navigateToTab('home')}
+          className="btn btn-ghost-light"
+          style={{
+            fontSize: '12px',
+            color: '#0284c7',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <Home size={14} />
+          <span>{lang === 'ଓଡ଼ିଆ' ? 'ମୁଖ୍ୟ ପୃଷ୍ଠାକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'मुख्य पृष्ठ पर जाएं' : 'Back to Home'}</span>
+        </button>
+      )}
+    </div>
+  );
 
   // Elderly-Friendly "Simple Mode" Toggle (Prompt Section 23)
   const [isSimpleMode, setIsSimpleMode] = useState<boolean>(false);
@@ -177,22 +256,29 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
   const [records, setRecords] = useState<HealthRecord[]>(storage.getRecords());
   const [prescriptions, setPrescriptions] = useState<FullPrescription[]>(storage.getPrescriptions());
   const [documents, setDocuments] = useState<DiagnosticDocument[]>(storage.getDocuments());
-  const medicines = storage.getMedicines();
+  const [medicines, setMedicines] = useState<MedicineItem[]>(storage.getMedicines());
+  const [allDoctors, setAllDoctors] = useState<DoctorItem[]>(storage.getDoctors());
+  const [doctorLeaves, setDoctorLeaves] = useState<DoctorLeave[]>(storage.getDoctorLeaves());
 
   // Search & Filter for medicines
   const [medicineSearch, setMedicineSearch] = useState<string>('');
   const [selectedBlock, setSelectedBlock] = useState<KalahandiBlock>('All Blocks');
   const [medicineHoldNotice, setMedicineHoldNotice] = useState<string>('');
 
+  // Search & Filter for doctors (Prompt Section 7)
+  const [doctorSearch, setDoctorSearch] = useState<string>('');
+  const [doctorLocation, setDoctorLocation] = useState<string>('All');
+
   const isConnected = networkQuality !== 'offline';
   const patientId = user.patientId || 'RHB-OD-KLH-0941';
 
-  // Primary Doctor
-  const primaryDoctor: DoctorItem = {
+  // Primary Doctor reference for direct video calls
+  const primaryDoctor: DoctorItem = allDoctors.find(d => d.id === 'doc-01') || {
     id: 'doc-01',
     name: 'Dr. Ananya Mishra',
     specialty: 'General Medicine',
     hospital: 'District Headquarters Hospital (DHH) Bhawanipatna',
+    facility: 'District Headquarters Hospital (DHH) Bhawanipatna',
     nextSlot: 'Today • Available Now',
     languages: ['English', 'ଓଡ଼ିଆ (Odia)', 'हिन्दी (Hindi)'],
     rating: 4.9,
@@ -202,41 +288,14 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     estimatedWaitMin: 10
   };
 
-  const paediatricsDoctor: DoctorItem = {
-    id: 'doc-03',
-    name: 'Dr. S. K. Patnaik',
-    specialty: 'Paediatrics (Child Doctor)',
-    hospital: 'DHH Bhawanipatna Mother & Child Wing',
-    nextSlot: 'Today • Available Now',
-    languages: ['ଓଡ଼ିଆ (Odia)', 'English'],
-    rating: 4.8,
-    available: true,
-    experience: '11 yrs exp • MD (Ped)',
-    fees: 'Free (Govt Telehealth Initiative)',
-    estimatedWaitMin: 15
-  };
-
-  const internalMedicineDoctor: DoctorItem = {
-    id: 'doc-02',
-    name: 'Dr. Demo Specialist',
-    specialty: 'Internal Medicine',
-    hospital: 'MKCG Medical College / Telehealth Sub-Center',
-    nextSlot: 'Today • 10:30 AM',
-    languages: ['English', 'ଓଡ଼ିଆ', 'हिन्दी'],
-    rating: 4.7,
-    available: false,
-    experience: '14 yrs exp • MD, FACP',
-    fees: 'Free (Govt Telehealth Initiative)',
-    estimatedWaitMin: 35
-  };
-
-  const allDoctors = [primaryDoctor, paediatricsDoctor, internalMedicineDoctor];
-
   // Refresh records and tokens when switching tabs
   useEffect(() => {
     setRecords(storage.getRecords());
     setPrescriptions(storage.getPrescriptions());
     setDocuments(storage.getDocuments());
+    setMedicines(storage.getMedicines());
+    setAllDoctors(storage.getDoctors());
+    setDoctorLeaves(storage.getDoctorLeaves());
     setToken(storage.getActiveToken());
   }, [activeTab]);
 
@@ -317,23 +376,45 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     setActiveTab('records');
   };
 
-  // Filtered medicines
+  // Filtered medicines (matching name, generic, pharmacy, block)
   const filteredMedicines = medicines.filter((m) => {
+    const q = medicineSearch.trim().toLowerCase();
     const matchesBlock = selectedBlock === 'All Blocks' || m.block === selectedBlock;
     const matchesSearch =
-      !medicineSearch ||
-      m.name.toLowerCase().includes(medicineSearch.toLowerCase()) ||
-      m.category.toLowerCase().includes(medicineSearch.toLowerCase());
+      !q ||
+      m.name.toLowerCase().includes(q) ||
+      (m.genericName && m.genericName.toLowerCase().includes(q)) ||
+      (m.pharmacyName && m.pharmacyName.toLowerCase().includes(q)) ||
+      m.category.toLowerCase().includes(q);
     return matchesBlock && matchesSearch;
   });
 
-  // Doctor filtering
+  // Doctor filtering with search, specialty, and facility location (Prompt Section 7)
   const filteredDoctors = allDoctors.filter((doc) => {
-    if (doctorCategory === 'All') return true;
-    if (doctorCategory === 'General' && doc.specialty.includes('General')) return true;
-    if (doctorCategory === 'Child' && doc.specialty.includes('Paediatrics')) return true;
-    if (doctorCategory === 'Internal' && doc.specialty.includes('Internal')) return true;
-    return true;
+    const q = doctorSearch.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      doc.name.toLowerCase().includes(q) ||
+      doc.specialty.toLowerCase().includes(q) ||
+      (doc.facility && doc.facility.toLowerCase().includes(q)) ||
+      (doc.hospital && doc.hospital.toLowerCase().includes(q));
+
+    const s = doc.specialty.toLowerCase();
+    const matchesCategory =
+      doctorCategory === 'All' ||
+      (doctorCategory === 'General' && s.includes('general')) ||
+      (doctorCategory === 'Child' && (s.includes('paediatric') || s.includes('child'))) ||
+      (doctorCategory === 'Internal' && (s.includes('obstetric') || s.includes('gynaec') || s.includes('women') || s.includes('internal'))) ||
+      (doctorCategory === 'Skin' && s.includes('derma')) ||
+      (doctorCategory === 'Mental' && (s.includes('psych') || s.includes('mental'))) ||
+      (doctorCategory === 'Other' && !s.includes('general') && !s.includes('paediatric') && !s.includes('obstetric') && !s.includes('derma') && !s.includes('psych'));
+
+    const matchesLocation =
+      doctorLocation === 'All' ||
+      (doc.facility && doc.facility.toLowerCase().includes(doctorLocation.toLowerCase())) ||
+      (doc.hospital && doc.hospital.toLowerCase().includes(doctorLocation.toLowerCase()));
+
+    return matchesSearch && matchesCategory && matchesLocation;
   });
 
   return (
@@ -580,193 +661,627 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* 2. ELDERLY-FRIENDLY "SIMPLE MODE" (Prompt Section 23)    */}
+      {/* ======================================================== */}
+      {/* 2. ELDERLY-FRIENDLY "SIMPLE MODE" (Prompt Section 6 & 8) */}
       {/* ======================================================== */}
       {isSimpleMode && (
-        <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gap: '16px', marginBottom: '24px' }}>
+          {/* Top Banner to switch back or see status */}
           <div style={{
             background: '#e0f2fe',
-            padding: '12px 16px',
-            borderRadius: '12px',
+            padding: '12px 18px',
+            borderRadius: '14px',
             color: '#0369a1',
-            fontSize: '13px',
+            fontSize: '14px',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            border: '2px solid #bae6fd'
           }}>
-            <span><strong>Simple Large View Active:</strong> Tap any large box below to get help.</span>
+            <span style={{ fontWeight: 700 }}>
+              🟢 {lang === 'ଓଡ଼ିଆ' ? 'ସରଳ ମୋଡ୍ ସକ୍ରିୟ (ବଡ଼ ଅକ୍ଷର ଓ ବଟନ୍)' : lang === 'हिन्दी' ? 'सरल मोड सक्रिय (बड़े बटन)' : 'Simple Mode Active (Large Text & Easy Buttons)'}
+            </span>
             <button
               type="button"
               onClick={() => setIsSimpleMode(false)}
-              style={{ background: '#ffffff', border: '1px solid #bae6fd', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#0284c7', cursor: 'pointer', fontWeight: 700 }}
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #0284c7',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: '#0284c7',
+                cursor: 'pointer',
+                fontWeight: 800
+              }}
             >
-              Standard View
+              {lang === 'ଓଡ଼ିଆ' ? 'ମାନକ ଦୃଶ୍ୟ' : lang === 'हिन्दी' ? 'सामान्य दृश्य' : 'Standard View'}
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+          {/* Simple Mode Back Button (when navigating away from home) */}
+          {activeTab !== 'home' && (
             <button
               type="button"
               onClick={() => {
-                setActiveTab('symptom');
-                setSymptomStep(1);
+                setActiveTab('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               style={{
+                width: '100%',
+                background: '#0284c7',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                fontSize: '18px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
+              }}
+            >
+              <ArrowLeft size={24} />
+              <span>
+                {lang === 'ଓଡ଼ିଆ'
+                  ? '⬅️ ମୁଖ୍ୟ ପୃଷ୍ଠାକୁ ଫେରନ୍ତୁ'
+                  : lang === 'हिन्दी'
+                  ? '⬅️ मुख्य पृष्ठ पर वापस जाएं'
+                  : '⬅️ BACK TO SIMPLE HOME'}
+              </span>
+            </button>
+          )}
+
+          {/* SIMPLE MODE SCREEN 1: HOME (Prompt Section 6) */}
+          {activeTab === 'home' && (
+            <div>
+              <div style={{
                 background: '#ffffff',
-                border: '3px solid #0284c7',
-                borderRadius: '18px',
-                padding: '24px 20px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(2, 132, 199, 0.12)'
-              }}
-            >
-              <div style={{ fontSize: '38px', marginBottom: '8px' }}>🩺</div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#0284c7' }}>
-                I AM NOT FEELING WELL
+                border: '2.5px solid #0284c7',
+                borderRadius: '20px',
+                padding: '24px',
+                textAlign: 'center',
+                marginBottom: '16px',
+                boxShadow: '0 4px 16px rgba(2, 132, 199, 0.1)'
+              }}>
+                <h1 style={{ fontSize: '26px', color: '#0f172a', margin: '0 0 8px', fontWeight: 900 }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ଆପଣ ଆଜି କିପରି ଅନୁଭବ କରୁଛନ୍ତି?' : lang === 'हिन्दी' ? 'आज आप कैसा महसूस कर रहे हैं?' : 'HOW ARE YOU FEELING TODAY?'}
+                </h1>
+                <p style={{ fontSize: '15px', color: '#475569', margin: 0, fontWeight: 600 }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ତଳେ ଥିବା ଯେକୌଣସି ବଡ଼ ବଟନ୍ ଦବାନ୍ତୁ:' : lang === 'हिन्दी' ? 'नीचे दिए गए किसी भी बड़े बटन को दबाएं:' : 'Tap any of the 5 large options below to get immediate help:'}
+                </p>
               </div>
-              <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-                Check what to do next in simple steps
-              </div>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('doctor')}
-              style={{
-                background: '#ffffff',
-                border: '3px solid #16a34a',
-                borderRadius: '18px',
-                padding: '24px 20px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(22, 163, 74, 0.12)'
-              }}
-            >
-              <div style={{ fontSize: '38px', marginBottom: '8px' }}>👨‍⚕️</div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#16a34a' }}>
-                TALK TO DOCTOR
-              </div>
-              <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-                Dr. Ananya Mishra at DHH Bhawanipatna
-              </div>
-            </button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                {/* 1. I'm not feeling well */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('symptom');
+                    setSymptomStep(1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{
+                    background: '#ffffff',
+                    border: '3px solid #0284c7',
+                    borderRadius: '20px',
+                    padding: '24px 20px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(2, 132, 199, 0.12)'
+                  }}
+                >
+                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>🩺</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#0284c7' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ମୋ ଦେହ ଭଲ ଲାଗୁନି' : lang === 'हिन्दी' ? 'मेरी तबीयत ठीक नहीं है' : "I'm not feeling well"}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#475569', marginTop: '6px', fontWeight: 600 }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ସରଳ ଉପାୟରେ ଲକ୍ଷଣ ଯାଞ୍ଚ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'सरल चरणों में लक्षण जांचें' : 'Check symptoms in 3 simple steps'}
+                  </div>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('medicines')}
-              style={{
-                background: '#ffffff',
-                border: '3px solid #0d70d4',
-                borderRadius: '18px',
-                padding: '24px 20px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(13, 112, 212, 0.12)'
-              }}
-            >
-              <div style={{ fontSize: '38px', marginBottom: '8px' }}>💊</div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#0d70d4' }}>
-                MEDICINE AVAILABILITY
-              </div>
-              <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-                Check if medicines are in your village store
-              </div>
-            </button>
+                {/* 2. Talk to a Doctor */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('doctor');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{
+                    background: '#ffffff',
+                    border: '3px solid #16a34a',
+                    borderRadius: '20px',
+                    padding: '24px 20px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(22, 163, 74, 0.12)'
+                  }}
+                >
+                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>👨‍⚕️</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#16a34a' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତରଙ୍କ ସହିତ କଥା ହୁଅନ୍ତୁ' : lang === 'हिन्दी' ? 'डॉक्टर से बात करें' : 'Talk to a Doctor'}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#475569', marginTop: '6px', fontWeight: 600 }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର ଅନନ୍ୟା ମିଶ୍ର, DHH ଭବାନୀପାଟଣା' : lang === 'हिन्दी' ? 'डॉ. अनन्या मिश्रा, DHH भवानीपटना' : 'Dr. Ananya Mishra at DHH Bhawanipatna'}
+                  </div>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setIsEmergencyHelpOpen(true)}
-              style={{
-                background: '#fef2f2',
-                border: '3px solid #dc2626',
-                borderRadius: '18px',
-                padding: '24px 20px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(220, 38, 38, 0.15)'
-              }}
-            >
-              <div style={{ fontSize: '38px', marginBottom: '8px' }}>🆘</div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>
-                EMERGENCY (108)
+                {/* 3. Find My Medicine */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('medicines');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{
+                    background: '#ffffff',
+                    border: '3px solid #0d70d4',
+                    borderRadius: '20px',
+                    padding: '24px 20px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(13, 112, 212, 0.12)'
+                  }}
+                >
+                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>💊</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#0d70d4' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଔଷଧ ଖୋଜନ୍ତୁ' : lang === 'हिन्दी' ? 'दवा खोजें' : 'Find My Medicine'}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#475569', marginTop: '6px', fontWeight: 600 }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଗାଁ ଦୋକାନରେ ଔଷଧ ଅଛି କି ନାହିଁ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'स्थानीय दुकान में दवा उपलब्धता जांचें' : 'Check stock before traveling 20km'}
+                  </div>
+                </button>
+
+                {/* 4. My Health Records */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('records');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{
+                    background: '#ffffff',
+                    border: '3px solid #475569',
+                    borderRadius: '20px',
+                    padding: '24px 20px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(71, 85, 105, 0.12)'
+                  }}
+                >
+                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>📋</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#334155' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ମୋର ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ' : lang === 'हिन्दी' ? 'मेरे स्वास्थ्य रिकॉर्ड' : 'My Health Records'}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#475569', marginTop: '6px', fontWeight: 600 }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ପୁରୁଣା ପ୍ରେସକ୍ରିପସନ୍ ଓ ରିପୋର୍ଟ ଅଫଲାଇନ୍ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'पुराने पर्चे और रिपोर्ट ऑफ़लाइन देखें' : 'View saved prescriptions & test reports'}
+                  </div>
+                </button>
+
+                {/* 5. Emergency Help */}
+                <button
+                  type="button"
+                  onClick={() => setIsEmergencyHelpOpen(true)}
+                  style={{
+                    background: '#fef2f2',
+                    border: '3px solid #dc2626',
+                    borderRadius: '20px',
+                    padding: '24px 20px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(220, 38, 38, 0.15)'
+                  }}
+                >
+                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>🆘</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#dc2626' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଜରୁରୀକାଳୀନ ସହାୟତା (୧୦୮)' : lang === 'हिन्दी' ? 'आपातकालीन सहायता (108)' : 'Emergency Help (108)'}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#991b1b', marginTop: '6px', fontWeight: 700 }}>
+                    {lang === 'ଓଡ଼ିଆ' ? '୧୦୮ ଆମ୍ବୁଲାନ୍ସ କିମ୍ବା ୧୦୪ ସ୍ୱାସ୍ଥ୍ୟ ହେଲ୍ପଲାଇନ୍' : lang === 'हिन्दी' ? '108 एम्बुलेंस या 104 हेल्पलाइन' : 'Immediate ambulance & hospital help'}
+                  </div>
+                </button>
               </div>
-              <div style={{ fontSize: '13px', color: '#991b1b', marginTop: '4px' }}>
-                Call 108 Ambulance or 104 Health Helpline
+            </div>
+          )}
+
+          {/* SIMPLE MODE SCREEN 2: SYMPTOM INTAKE */}
+          {activeTab === 'symptom' && (
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '2.5px solid #0284c7', padding: '24px', boxShadow: '0 6px 20px rgba(0,0,0,0.06)' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 12px', borderRadius: '999px', fontSize: '13px', fontWeight: 800 }}>
+                  STEP {symptomStep} OF 4
+                </span>
+                <h2 style={{ fontSize: '24px', color: '#0f172a', margin: '10px 0 6px', fontWeight: 900 }}>
+                  {symptomStep === 1
+                    ? (lang === 'ଓଡ଼ିଆ' ? 'ଆପଣଙ୍କର କଣ ଅସୁବିଧା ହେଉଛି?' : lang === 'हिन्दी' ? 'आपको क्या तकलीफ हो रही है?' : 'What is your main problem?')
+                    : symptomStep === 2
+                    ? (lang === 'ଓଡ଼ିଆ' ? 'ଏହି ସମସ୍ୟା କେତେ ଦିନରୁ ହେଉଛି?' : lang === 'हिन्दी' ? 'यह समस्या कितने दिनों से है?' : 'How long have you had this problem?')
+                    : symptomStep === 3
+                    ? (lang === 'ଓଡ଼ିଆ' ? 'କଷ୍ଟ ବା ଯନ୍ତ୍ରଣା କିପରି ଲାଗୁଛି?' : lang === 'हिन्दी' ? 'तकलीफ कितनी ज्यादा महसूस हो रही है?' : 'How severe is your discomfort?')
+                    : (lang === 'ଓଡ଼ିଆ' ? 'ଏବେ ଆପଣଙ୍କୁ କଣ କରିବାକୁ ହେବ' : lang === 'हिन्दी' ? 'अब आपको क्या करना चाहिए' : 'Here is what you should do next')}
+                </h2>
               </div>
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Universal Back Navigation for Patient Tabs */}
-      {!isSimpleMode && activeTab !== 'home' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '10px',
-          marginBottom: '18px',
-          padding: '10px 16px',
-          background: '#ffffff',
-          borderRadius: '12px',
-          border: '1.5px solid #e2e8f0',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-        }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('home')}
-            className="btn btn-ghost"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: 700,
-              fontSize: '13px',
-              color: '#0284c7',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: '8px',
-              padding: '7px 14px',
-              cursor: 'pointer'
-            }}
-          >
-            <ArrowLeft size={16} />
-            <span>
-              {lang === 'ଓଡ଼ିଆ' ? '← ରୋଗୀ ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? '← रोगी डैशबोर्ड पर वापस जाएं' : '← Back to Patient Dashboard'}
-            </span>
-          </button>
+              {symptomStep === 1 && (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '18px' }}>
+                    {[
+                      { name: 'Fever', icon: '🤒', odia: 'ଜ୍ୱର', hindi: 'बुखार' },
+                      { name: 'Cold / Cough', icon: '🤧', odia: 'ଥଣ୍ଡା / କାଶ', hindi: 'सर्दी / खांसी' },
+                      { name: 'Pain', icon: '🤕', odia: 'ଦେହ ବିନ୍ଧା', hindi: 'बदन दर्द' },
+                      { name: 'Breathing problem', icon: '😮‍💨', odia: 'ଶ୍ୱାସକ୍ରିୟା କଷ୍ଟ', hindi: 'सांस लेने में दिक्कत' },
+                      { name: 'Vomiting', icon: '🤢', odia: 'ବାନ୍ତି', hindi: 'उल्टी' },
+                      { name: 'Loose motion', icon: '💧', odia: 'ଝାଡ଼ା (ତରଳ)', hindi: 'दस्त' },
+                      { name: 'Weakness', icon: '💪', odia: 'ଦୁର୍ବଳତା', hindi: 'कमजोरी' },
+                      { name: 'Something else', icon: '➕', odia: 'ଅନ୍ୟାନ୍ୟ', hindi: 'कुछ और' }
+                    ].map((s) => (
+                      <button
+                        key={s.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSymptom(s.name);
+                          setSelectedSymptomIcon(s.icon);
+                          setSymptomStep(2);
+                        }}
+                        style={{
+                          background: selectedSymptom === s.name ? '#0284c7' : '#f8fafc',
+                          color: selectedSymptom === s.name ? '#ffffff' : '#0f172a',
+                          border: selectedSymptom === s.name ? '3px solid #0284c7' : '2px solid #cbd5e1',
+                          borderRadius: '16px',
+                          padding: '18px 14px',
+                          fontSize: '18px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}
+                      >
+                        <span style={{ fontSize: '32px' }}>{s.icon}</span>
+                        <span>{lang === 'ଓଡ଼ିଆ' ? s.odia : lang === 'हिन्दी' ? s.hindi : s.name}</span>
+                      </button>
+                    ))}
+                  </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
-              {activeTab === 'symptom' && (lang === 'ଓଡ଼ିଆ' ? 'ଲକ୍ଷଣ ନେଭିଗେସନ୍' : lang === 'हिन्दी' ? 'लक्षण नेविगेशन' : 'Symptom Care Navigation')}
-              {activeTab === 'doctor' && (lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର ପରାମର୍ଶ' : lang === 'हिन्दी' ? 'चिकित्सक परामर्श' : 'Doctor Consultation')}
-              {activeTab === 'records' && (lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ଓ ପ୍ରେସକ୍ରିପସନ୍' : lang === 'हिन्दी' ? 'स्वास्थ्य रिकॉर्ड एवं पर्चे' : 'Health Records & Prescriptions')}
-              {activeTab === 'medicines' && (lang === 'ଓଡ଼ିଆ' ? 'ଔଷଧ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? 'दवा स्टॉक' : 'Medicine Stock')}
-              {activeTab === 'profile' && (lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ପ୍ରୋଫାଇଲ୍' : lang === 'हिन्दी' ? 'रोगी प्रोफाइल' : 'Patient Profile')}
-            </span>
+                  {/* Voice Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsVoiceOpen(true)}
+                    style={{
+                      width: '100%',
+                      background: '#eff6ff',
+                      color: '#0284c7',
+                      border: '2px dashed #0284c7',
+                      borderRadius: '16px',
+                      padding: '16px',
+                      fontSize: '17px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px'
+                    }}
+                  >
+                    <Mic size={24} />
+                    <span>{lang === 'ଓଡ଼ିଆ' ? 'କହିକି ଜଣାନ୍ତୁ (ଭଏସ୍ ଇନପୁଟ୍)' : lang === 'हिन्दी' ? 'बोलकर बताएं (आवाज रिकॉर्ड करें)' : 'Speak your symptom using voice'}</span>
+                  </button>
+                </div>
+              )}
 
-            {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="btn btn-ghost"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12px',
-                  color: '#64748b',
-                  padding: '6px 12px',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px'
-                }}
-              >
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ / ପ୍ରସ୍ଥାନ' : lang === 'हिन्दी' ? 'भूमिका चयन / बाहर निकलें' : 'Switch Role / Exit'}</span>
-              </button>
-            )}
-          </div>
+              {symptomStep === 2 && (
+                <div style={{ display: 'grid', gap: '14px' }}>
+                  {['Today', '2 to 3 days', 'More than 3 days'].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => {
+                        setSymptomDuration(dur);
+                        setSymptomStep(3);
+                      }}
+                      style={{
+                        background: '#f8fafc',
+                        border: '2px solid #cbd5e1',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        fontSize: '20px',
+                        fontWeight: 800,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {dur}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {symptomStep === 3 && (
+                <div style={{ display: 'grid', gap: '14px' }}>
+                  {[
+                    { level: 'Mild', label: 'Mild (ସାମାନ୍ୟ କଷ୍ଟ / हल्का दर्द)' },
+                    { level: 'Moderate', label: 'Moderate (ମଧ୍ୟମ କଷ୍ଟ / मध्यम)' },
+                    { level: 'Severe', label: 'Severe (ଖୁବ୍ ବେଶୀ କଷ୍ଟ / बहुत तेज दर्द)' }
+                  ].map((sev) => (
+                    <button
+                      key={sev.level}
+                      type="button"
+                      onClick={() => {
+                        setSymptomSeverity(sev.level as any);
+                        setSymptomStep(4);
+                      }}
+                      style={{
+                        background: sev.level === 'Severe' ? '#fef2f2' : '#f8fafc',
+                        border: sev.level === 'Severe' ? '3px solid #ef4444' : '2px solid #cbd5e1',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        fontSize: '19px',
+                        fontWeight: 800,
+                        color: sev.level === 'Severe' ? '#b91c1c' : '#0f172a',
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {sev.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {symptomStep === 4 && (
+                <div>
+                  {selectedSymptom.includes('Breathing') || symptomSeverity === 'Severe' ? (
+                    <div style={{ background: '#fef2f2', border: '3px solid #dc2626', borderRadius: '18px', padding: '24px', textAlign: 'center', marginBottom: '20px' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '6px' }}>🔴</div>
+                      <h3 style={{ fontSize: '24px', color: '#991b1b', margin: '0 0 8px', fontWeight: 900 }}>
+                        EMERGENCY — IMMEDIATE PHYSICAL CARE
+                      </h3>
+                      <p style={{ fontSize: '16px', color: '#7f1d1d', margin: '0 0 16px', fontWeight: 600 }}>
+                        Please seek immediate medical attention at the nearest hospital. Do not wait for an online appointment.
+                      </p>
+                      <a
+                        href="tel:108"
+                        style={{
+                          background: '#dc2626',
+                          color: '#ffffff',
+                          padding: '16px 28px',
+                          borderRadius: '14px',
+                          fontSize: '18px',
+                          fontWeight: 900,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                      >
+                        <PhoneCall size={22} /> CALL 108 AMBULANCE NOW
+                      </a>
+                    </div>
+                  ) : (
+                    <div style={{ background: '#f0fdf4', border: '3px solid #16a34a', borderRadius: '18px', padding: '24px', textAlign: 'center', marginBottom: '20px' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '6px' }}>🟢</div>
+                      <h3 style={{ fontSize: '24px', color: '#166534', margin: '0 0 8px', fontWeight: 900 }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତରଙ୍କ ସହିତ ପରାମର୍ଶ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'डॉक्टर से परामर्श करें' : 'CONSULT A DOCTOR'}
+                      </h3>
+                      <p style={{ fontSize: '16px', color: '#14532d', margin: '0 0 16px', fontWeight: 600 }}>
+                        No emergency danger signs detected. Connect with Dr. Ananya Mishra at DHH Bhawanipatna.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('doctor');
+                          handleInitiateBooking(primaryDoctor);
+                        }}
+                        style={{
+                          background: '#16a34a',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '14px',
+                          padding: '16px 28px',
+                          fontSize: '18px',
+                          fontWeight: 900,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        TALK TO DOCTOR NOW ➔
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSymptomStep(1)}
+                      style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '15px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      ↺ Check another symptom
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SIMPLE MODE SCREEN 3: DOCTOR */}
+          {activeTab === 'doctor' && (
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '2.5px solid #16a34a', padding: '24px', boxShadow: '0 6px 20px rgba(0,0,0,0.06)' }}>
+              {token ? (
+                <div style={{ textAlign: 'center', padding: '20px', background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '16px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>YOUR ACTIVE APPOINTMENT TOKEN</div>
+                  <div style={{ fontSize: '36px', fontWeight: 900, color: '#15803d', margin: '8px 0' }}>#{token.tokenNumber}</div>
+                  <div style={{ fontSize: '16px', color: '#166534', marginBottom: '18px', fontWeight: 700 }}>With Dr. {token.doctorName} • Wait: ~{token.estimatedWaitMin} mins</div>
+                  <button
+                    type="button"
+                    onClick={handleStartConsultation}
+                    style={{
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '14px',
+                      padding: '16px 32px',
+                      fontSize: '18px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)'
+                    }}
+                  >
+                    <Video size={22} />
+                    <span>START DOCTOR CALL NOW</span>
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '18px' }}>
+                    <div style={{ fontSize: '48px' }}>👨‍⚕️</div>
+                    <div>
+                      <h2 style={{ fontSize: '22px', margin: '0 0 4px', color: '#0f172a', fontWeight: 900 }}>Dr. Ananya Mishra</h2>
+                      <div style={{ fontSize: '15px', color: '#16a34a', fontWeight: 800 }}>General Medicine • Available Now</div>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>District Headquarters Hospital (DHH) Bhawanipatna</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleInitiateBooking(primaryDoctor)}
+                    style={{
+                      width: '100%',
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      fontSize: '19px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)'
+                    }}
+                  >
+                    <Video size={22} />
+                    <span>TALK TO DOCTOR (FREE GOVT SERVICE)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SIMPLE MODE SCREEN 4: MEDICINES */}
+          {activeTab === 'medicines' && (
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '2.5px solid #0d70d4', padding: '24px' }}>
+              <h2 style={{ fontSize: '22px', margin: '0 0 14px', color: '#0f172a', fontWeight: 900 }}>
+                {lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମୀଣ ଔଷଧ ଉପଲବ୍ଧତା' : lang === 'हिन्दी' ? 'ग्रामीण दवा उपलब्धता' : 'Village Medicine Stock'}
+              </h2>
+
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <Search size={22} style={{ position: 'absolute', left: '14px', top: '14px', color: '#94a3b8' }} />
+                <input
+                  type="text"
+                  value={medicineSearch}
+                  onChange={(e) => setMedicineSearch(e.target.value)}
+                  placeholder="Type medicine name (e.g. Paracetamol)..."
+                  style={{
+                    width: '100%',
+                    padding: '14px 14px 14px 44px',
+                    borderRadius: '14px',
+                    border: '2px solid #cbd5e1',
+                    fontSize: '16px',
+                    fontWeight: 600
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gap: '14px' }}>
+                {filteredMedicines.slice(0, 5).map((med) => (
+                  <div key={med.id} style={{ padding: '16px', borderRadius: '16px', border: '2px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <strong style={{ fontSize: '18px', color: '#0f172a' }}>{med.name}</strong>
+                      <div style={{ fontSize: '13px', color: '#0369a1', fontWeight: 700, marginTop: '2px' }}>
+                        {med.pharmacyName} ({med.distanceKm} km)
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        background: med.status === 'AVAILABLE' ? '#dcfce7' : med.status === 'LIMITED STOCK' ? '#fef3c7' : '#fee2e2',
+                        color: med.status === 'AVAILABLE' ? '#166534' : med.status === 'LIMITED STOCK' ? '#92400e' : '#991b1b',
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        fontSize: '12px',
+                        fontWeight: 900
+                      }}>
+                        {med.status === 'AVAILABLE' ? '🟢 AVAILABLE' : med.status === 'LIMITED STOCK' ? '🟠 LIMITED' : '🔴 OUT OF STOCK'}
+                      </span>
+                      <a href="tel:+919437012345" style={{ background: '#0284c7', color: '#ffffff', padding: '8px 14px', borderRadius: '10px', textDecoration: 'none', fontSize: '13px', fontWeight: 800 }}>
+                        📞 Call Chemist
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SIMPLE MODE SCREEN 5: HEALTH RECORDS */}
+          {activeTab === 'records' && (
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '2.5px solid #475569', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '22px', margin: 0, color: '#0f172a', fontWeight: 900 }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ମୋର ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ' : lang === 'हिन्दी' ? 'मेरे स्वास्थ्य रिकॉर्ड' : 'My Saved Health Records'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsHealthCardOpen(true)}
+                  style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  💳 Digital Health Card
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {prescriptions.map((rx) => (
+                  <div key={rx.id} style={{ padding: '16px', borderRadius: '14px', border: '2px solid #cbd5e1', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
+                      <strong style={{ fontSize: '16px', color: '#0f172a' }}>Prescription #{rx.prescriptionNumber}</strong>
+                      <div style={{ fontSize: '13px', color: '#475569' }}>{rx.diagnosisSummary}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setViewingPrescription(rx)}
+                      style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      Open Rx
+                    </button>
+                  </div>
+                ))}
+
+                {documents.map((doc) => (
+                  <div key={doc.id} style={{ padding: '16px', borderRadius: '14px', border: '2px solid #cbd5e1', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>{doc.date}</div>
+                      <strong style={{ fontSize: '16px', color: '#0f172a' }}>{doc.title}</strong>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>{doc.category}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setViewingDocument(doc)}
+                      style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      View Report
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1236,8 +1751,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       {/* ======================================================== */}
       {/* 4. TAB 2: SYMPTOM SCREEN (Prompt Section 4, 5, 10, 11)   */}
       {/* ======================================================== */}
-      {activeTab === 'symptom' && (
-        <div className="card" style={{ padding: '24px', borderRadius: '20px' }}>
+      {!isSimpleMode && activeTab === 'symptom' && (
+        <div>
+          {renderBackButton()}
+          <div className="card" style={{ padding: '24px', borderRadius: '20px' }}>
           {/* Swasthya Sathi - AI Care Navigator Header */}
           <div
             style={{
@@ -1303,33 +1820,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
 
           {/* Progress Indicator (Prompt Section 27) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {symptomStep > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setSymptomStep((prev) => (prev > 1 ? prev - 1 : 1))}
-                  style={{
-                    background: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '8px',
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#0284c7',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="Go back to previous symptom question"
-                >
-                  <ArrowLeft size={12} />
-                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପ୍ରଶ୍ନ' : lang === 'हिन्दी' ? '← पिछला सवाल' : '← Previous Question'}</span>
-                </button>
-              )}
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7' }}>
-                {symptomStep <= 4 ? `Step ${symptomStep} of 4` : 'Your Care Recommendation'}
-              </div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7' }}>
+              {symptomStep <= 4 ? `Step ${symptomStep} of 4` : 'Your Care Recommendation'}
             </div>
             <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
               YOUR SYMPTOMS: {symptomStep === 1 ? '●━━━○━━━○━━━○' : symptomStep === 2 ? '●━━━●━━━○━━━○' : symptomStep === 3 ? '●━━━●━━━●━━━○' : '●━━━●━━━●━━━●'}
@@ -1411,6 +1903,18 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   </button>
                 ))}
               </div>
+
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleGoBack}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <ArrowLeft size={15} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପଛକୁ ଫେରନ୍ତୁ (ମୁଖ୍ୟ ପୃଷ୍ଠା)' : lang === 'हिन्दी' ? '← वापस जाएं (मुख्य पृष्ठ)' : '← Back to Home'}</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -1470,8 +1974,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setSymptomStep(1)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
                 >
-                  Back
+                  <ArrowLeft size={15} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପଦକ୍ଷେପ' : lang === 'हिन्दी' ? '← पिछला चरण' : '← Previous Step'}</span>
                 </button>
                 <button
                   type="button"
@@ -1561,8 +2067,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setSymptomStep(2)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
                 >
-                  Back
+                  <ArrowLeft size={15} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପଦକ୍ଷେପ' : lang === 'हिन्दी' ? '← पिछला चरण' : '← Previous Step'}</span>
                 </button>
                 <button
                   type="button"
@@ -1834,7 +2342,16 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', marginTop: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginTop: '18px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSymptomStep(3)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <ArrowLeft size={15} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପଦକ୍ଷେପ' : lang === 'हिन्दी' ? '← पिछला चरण' : '← Previous Step'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setSymptomStep(1)}
@@ -1842,11 +2359,21 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 >
                   ↺ Check different symptoms
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => navigateToTab('home')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <Home size={15} />
+                  <span>{lang === 'ଓଡ଼ିଆ' ? 'ମୁଖ୍ୟ ପୃଷ୍ଠା' : lang === 'हिन्दी' ? 'मुख्य पृष्ठ' : 'Back to Home'}</span>
+                </button>
               </div>
             </div>
           )}
         </div>
-      )}
+      </div>
+    )}
 
       {/* ======================================================== */}
       {/* 5. TAB 3: DOCTOR & APPOINTMENT (Prompt Section 12 & 13)  */}
@@ -1854,8 +2381,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       {/* ======================================================== */}
       {/* 5. TAB 3: DOCTOR & APPOINTMENT (Prompt Section 12 & 13)  */}
       {/* ======================================================== */}
-      {activeTab === 'doctor' && (
+      {!isSimpleMode && activeTab === 'doctor' && (
         <div style={{ display: 'grid', gap: '18px' }}>
+          {renderBackButton()}
           {/* Active Appointment Clean Card (Prompt Section 13) */}
           {token && (
             <div
@@ -1935,7 +2463,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             </div>
           )}
 
-          {/* Doctor Finder (Prompt Section 12) */}
+          {/* Doctor Finder (Prompt Section 7 & 12) */}
           <div className="card" style={{ padding: '20px', borderRadius: '16px' }}>
             <h2 style={{ margin: '0 0 4px', fontSize: '20px', color: '#0f172a' }}>
               {getTranslation(lang, 'findADoctor')}
@@ -1944,7 +2472,64 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
               {getTranslation(lang, 'whatHelpNeed')}
             </p>
 
-            {/* Category Filters (Prompt Section 12) */}
+            {/* Offline Doctor Availability Notification (Prompt Section 7) */}
+            {!isConnected && (
+              <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', padding: '12px 16px', borderRadius: '12px', color: '#991b1b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <WifiOff size={20} />
+                <div>
+                  <strong style={{ fontSize: '14px' }}>Doctor availability could not be updated.</strong>
+                  <div style={{ fontSize: '12px', color: '#b91c1c' }}>
+                    Showing cached local doctor directory. Live schedules and queue tokens will update when you reconnect.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Doctor Search & Location Filtering */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#94a3b8' }} />
+                <input
+                  type="text"
+                  value={doctorSearch}
+                  onChange={(e) => setDoctorSearch(e.target.value)}
+                  placeholder="Search doctor by name, specialty, or hospital..."
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px 9px 36px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '13px'
+                  }}
+                  id="doctor-search-input"
+                />
+              </div>
+
+              <div>
+                <select
+                  value={doctorLocation}
+                  onChange={(e) => setDoctorLocation(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '13px',
+                    background: '#ffffff',
+                    color: '#334155'
+                  }}
+                  id="doctor-location-select"
+                >
+                  <option value="All">All Locations & Facilities</option>
+                  <option value="Bhawanipatna">DHH Bhawanipatna</option>
+                  <option value="Mother & Child">Mother & Child Wing</option>
+                  <option value="Junagarh">Junagarh CHC</option>
+                  <option value="Dharmagarh">Dharmagarh SDH</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Category Filters (Prompt Section 7 & 12) */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
               {[
                 { id: 'All', label: 'All Doctors' },
@@ -1975,70 +2560,109 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
               ))}
             </div>
 
-            {/* Doctor Cards (Section 12) */}
+            {/* Doctor Cards (Section 7 & 14) */}
             <div style={{ display: 'grid', gap: '14px' }}>
-              {filteredDoctors.map((doc) => (
-                <div
-                  key={doc.id}
-                  style={{
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    background: '#ffffff',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
-                      <span style={{
-                        background: doc.available ? '#f0fdf4' : '#fffbeb',
-                        color: doc.available ? '#166534' : '#92400e',
-                        border: doc.available ? '1px solid #bbf7d0' : '1px solid #fef08a',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        fontSize: '11px',
-                        fontWeight: 700
-                      }}>
-                        {doc.available ? '🟢 Available' : '🟠 Next Slot 10:30 AM'}
-                      </span>
-                    </div>
-
-                    <div style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
-                      {doc.specialty} • {doc.hospital}
-                    </div>
-
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                      Languages: {doc.languages.join(' • ')} • Est. Wait: ~{doc.estimatedWaitMin} mins
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleInitiateBooking(doc)}
+              {filteredDoctors.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', background: '#f8fafc', borderRadius: '12px' }}>
+                  No doctors found matching "{doctorSearch}". Try clearing search filters.
+                </div>
+              ) : (
+                filteredDoctors.map((doc) => {
+                  const leaveRecord = doctorLeaves.find(l => l.doctorId === doc.id);
+                  const isOnLeave = Boolean(leaveRecord || doc.status === 'On Leave');
+                  return (
+                    <div
+                      key={doc.id}
                       style={{
-                        background: '#0284c7',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '10px 18px',
-                        borderRadius: '10px',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '14px',
+                        padding: '16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                        background: '#ffffff',
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)'
                       }}
                     >
-                      Talk to Doctor
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
+                          <span style={{
+                            background: isOnLeave ? '#fef2f2' : doc.available ? '#f0fdf4' : '#fffbeb',
+                            color: isOnLeave ? '#991b1b' : doc.available ? '#166534' : '#92400e',
+                            border: isOnLeave ? '1px solid #fecaca' : doc.available ? '1px solid #bbf7d0' : '1px solid #fef08a',
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: 700
+                          }}>
+                            {isOnLeave ? '🏖️ On Scheduled Leave' : doc.available ? '🟢 Available' : '🟠 Next Slot Today'}
+                          </span>
+                        </div>
+
+                        <div style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
+                          {doc.specialty} • {doc.hospital || doc.facility}
+                        </div>
+
+                        {isOnLeave ? (
+                          <div style={{ marginTop: '6px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', color: '#92400e' }}>
+                            <strong>Doctor is unavailable from {leaveRecord?.startDate || '01 Oct'} to {leaveRecord?.endDate || '12 Oct 2026'}.</strong>
+                            <div>Reason: {leaveRecord?.reason || 'Scheduled Academic Leave'} • Alternative Doctor: <strong>{leaveRecord?.replacementDoctor || 'Dr. Ananya Mishra'}</strong></div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                            Languages: {doc.languages.join(' • ')} • Est. Wait: ~{doc.estimatedWaitMin || 15} mins
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {isOnLeave ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const replDoc = allDoctors.find(d => d.id === 'doc-01') || doc;
+                              handleInitiateBooking(replDoc);
+                            }}
+                            style={{
+                              background: '#f8fafc',
+                              color: '#0284c7',
+                              border: '1.5px solid #0284c7',
+                              padding: '9px 16px',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Consult Alternative Doctor
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleInitiateBooking(doc)}
+                            style={{
+                              background: '#0284c7',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '10px 18px',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
+                            }}
+                          >
+                            Talk to Doctor
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -2047,8 +2671,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       {/* ======================================================== */}
       {/* 6. TAB 4: HEALTH RECORDS (Prompt Section 15)             */}
       {/* ======================================================== */}
-      {activeTab === 'records' && (
+      {!isSimpleMode && activeTab === 'records' && (
         <div style={{ display: 'grid', gap: '18px' }}>
+          {renderBackButton()}
           <div className="card" style={{ padding: '20px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
@@ -2114,40 +2739,124 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
               </div>
 
               {prescriptions.map((rx) => (
-                <div key={rx.id} style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
-                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>
-                      {lang === 'ଓଡ଼ିଆ' ? `ଇ-ପ୍ରେସକ୍ରିପସନ୍ (${rx.prescriptionNumber})` : lang === 'हिन्दी' ? `ई-प्रिस्क्रिप्शन (${rx.prescriptionNumber})` : `Prescription (${rx.prescriptionNumber})`}
-                    </strong>
-                    <div style={{ fontSize: '12px', color: '#475569' }}>{rx.diagnosisSummary}</div>
+                <div key={rx.id} style={{ padding: '14px 16px', borderRadius: '12px', background: '#ffffff', border: '1.5px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
+                      <strong style={{ fontSize: '14px', color: '#0f172a' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? `ଇ-ପ୍ରେସକ୍ରିପସନ୍ (${rx.prescriptionNumber})` : lang === 'हिन्दी' ? `ई-प्रिस्क्रिप्शन (${rx.prescriptionNumber})` : `Prescription (${rx.prescriptionNumber})`}
+                      </strong>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>{rx.diagnosisSummary}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setViewingPrescription(rx)}
+                      style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
+                    >
+                      {lang === 'ଓଡ଼ିଆ' ? 'ପ୍ରେସକ୍ରିପସନ୍ ଖୋଲନ୍ତୁ' : lang === 'हिन्दी' ? 'पर्चा खोलें' : 'Open Rx'}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setViewingPrescription(rx)}
-                    style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
-                  >
-                    {lang === 'ଓଡ଼ିଆ' ? 'ପ୍ରେସକ୍ରିପସନ୍ ଖୋଲନ୍ତୁ' : lang === 'हिन्दी' ? 'पर्चा खोलें' : 'Open Rx'}
-                  </button>
+
+                  {/* Prompt Section 17: Find Medicine Directly from Doctor Prescription */}
+                  {rx.medicines && rx.medicines.length > 0 && (
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        CARE PLAN MEDICINES:
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {rx.medicines.map((med, mIdx) => (
+                          <div key={mIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', background: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                            <div>
+                              <strong style={{ fontSize: '13px', color: '#0f172a' }}>{med.name}</strong>
+                              <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px' }}>{med.dosage} • {med.duration}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMedicineSearch(med.name.split(' ')[0]);
+                                setActiveTab('medicines');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              style={{
+                                background: '#e0f2fe',
+                                color: '#0369a1',
+                                border: '1px solid #bae6fd',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                              title="Find which nearby pharmacies have this medicine in stock"
+                            >
+                              <Pill size={12} />
+                              <span>Find Medicine</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 
               {documents.map((doc) => (
-                <div key={doc.id} style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{doc.date}</div>
-                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>{doc.title}</strong>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>{doc.category}</div>
+                <div key={doc.id} style={{ padding: '14px 16px', borderRadius: '12px', background: '#ffffff', border: '1.5px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{doc.date} • {doc.labName || 'DHH Central Pathology Lab'}</div>
+                      <strong style={{ fontSize: '15px', color: '#0f172a' }}>{doc.title}</strong>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>
+                        Investigation Category: <strong>{doc.category}</strong> • Status: <span style={{ color: doc.status === 'Critical Flag' ? '#b91c1c' : '#166534', fontWeight: 700 }}>{doc.status || 'Verified'}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setViewingDocument(doc)}
+                      style={{ fontSize: '12px', padding: '6px 14px', fontWeight: 700, background: '#f5f3ff', color: '#6d28d9', borderColor: '#ddd6fe' }}
+                    >
+                      {lang === 'ଓଡ଼ିଆ' ? 'ରିପୋର୍ଟ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'रिपोर्ट देखें' : 'View Report'}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setViewingDocument(doc)}
-                    style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
-                  >
-                    {lang === 'ଓଡ଼ିଆ' ? 'ରିପୋର୍ଟ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'रिपोर्ट देखें' : 'View Report'}
-                  </button>
+
+                  {/* Measured Parameters with LOW, NORMAL, HIGH indicators */}
+                  {doc.parameters && doc.parameters.length > 0 && (
+                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        LABORATORY MEASURED VALUES:
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+                        {doc.parameters.slice(0, 4).map((p, pIdx) => (
+                          <div key={pIdx} style={{ background: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}>
+                            <div style={{ color: '#475569', fontSize: '11px' }}>{p.name}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                              <strong style={{ color: '#0f172a' }}>{p.result} {p.unit}</strong>
+                              <span style={{
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                background: p.status === 'High' ? '#fee2e2' : p.status === 'Low' ? '#fef3c7' : '#ecfdf5',
+                                color: p.status === 'High' ? '#991b1b' : p.status === 'Low' ? '#92400e' : '#047857'
+                              }}>
+                                {p.status === 'High' ? '🔺 HIGH' : p.status === 'Low' ? '🔻 LOW' : '✓ NORMAL'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Ref: {p.refRange}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: '11px', color: '#92400e', background: '#fffbeb', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fde68a' }}>
+                    ⚠️ <em>Laboratory results should be interpreted by a qualified healthcare professional.</em>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2156,10 +2865,11 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* 7. TAB 5: MEDICINE AVAILABILITY (Prompt Section 16)      */}
+      {/* 7. TAB 5: MEDICINE AVAILABILITY (Prompt Section 16 & 17) */}
       {/* ======================================================== */}
-      {activeTab === 'medicines' && (
+      {!isSimpleMode && activeTab === 'medicines' && (
         <div style={{ display: 'grid', gap: '18px' }}>
+          {renderBackButton()}
           <div className="card" style={{ padding: '20px', borderRadius: '16px' }}>
             <h2 style={{ margin: '0 0 4px', fontSize: '20px', color: '#0f172a' }}>
               {getTranslation(lang, 'whichMedicineCheck')}
@@ -2167,6 +2877,19 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '14px' }}>
               {lang === 'ଓଡ଼ିଆ' ? 'ସହରକୁ ଯିବା ପୂର୍ବରୁ ସ୍ଥାନୀୟ ଔଷଧ ଦୋକାନରେ ଉପଲବ୍ଧତା ଯାଞ୍ଚ କରନ୍ତୁ।' : lang === 'हिन्दी' ? 'शहर जाने से पहले स्थानीय मेडिकल स्टोर में दवाओं की उपलब्धता जांचें।' : 'Check if medicines are available locally before traveling to town.'}
             </p>
+
+            {/* Offline Medicine Availability Notification (Prompt Section 4 & 16) */}
+            {!isConnected && (
+              <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', padding: '12px 16px', borderRadius: '12px', color: '#991b1b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <WifiOff size={20} />
+                <div>
+                  <strong style={{ fontSize: '14px' }}>You are offline.</strong>
+                  <div style={{ fontSize: '12px', color: '#b91c1c' }}>
+                    Your saved health information is still available. Live doctor schedules and pharmacy stock will update when you reconnect.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Direct Match for Prompt Flow: Doctor Consult -> Care Advice & Medicine -> Find Medicine -> Pharmacy Availability (Store A, Store B, Store C) */}
             <div
@@ -2356,8 +3079,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       {/* ======================================================== */}
       {/* 8. TAB 6: PROFILE & HELP (Prompt Section 17 & 18)         */}
       {/* ======================================================== */}
-      {activeTab === 'profile' && (
+      {!isSimpleMode && activeTab === 'profile' && (
         <div style={{ display: 'grid', gap: '18px' }}>
+          {renderBackButton()}
           {/* Simple Profile Card (Section 17) */}
           <div className="card" style={{ padding: '20px', borderRadius: '16px' }}>
             <h2 style={{ margin: '0 0 14px', fontSize: '20px', color: '#0f172a' }}>

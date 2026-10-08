@@ -17,7 +17,18 @@ import {
   ConsentItem,
   CarePlan,
   NcdRecord,
-  TbTreatmentRecord
+  TbTreatmentRecord,
+  DoctorItem,
+  DoctorLeave,
+  PharmacyStoreStatus,
+  SMSFallbackMessage,
+  DemoUser,
+  LabTestItem,
+  LabTestOrder,
+  LabSample,
+  ManagedUser,
+  EmergencyCase,
+  SystemHealthItem
 } from '../types';
 import {
   INITIAL_RECORDS,
@@ -37,10 +48,28 @@ import {
   INITIAL_CONSENTS,
   INITIAL_CARE_PLANS,
   INITIAL_NCD,
-  INITIAL_TB
+  INITIAL_TB,
+  INITIAL_DOCTORS,
+  INITIAL_DOCTOR_LEAVES,
+  INITIAL_PHARMACY_STATUS,
+  INITIAL_SMS_LOGS,
+  DEMO_USERS,
+  INITIAL_LAB_TESTS,
+  INITIAL_LAB_ORDERS,
+  INITIAL_LAB_SAMPLES,
+  INITIAL_MANAGED_USERS,
+  INITIAL_EMERGENCY_CASES,
+  INITIAL_SYSTEM_HEALTH
 } from '../data/mockData';
 
 const KEYS = {
+  SESSION: 'swasthya_active_session_v3',
+  REGISTERED_USERS: 'swasthya_registered_users_v3',
+  DOCTORS: 'swasthya_doctors_v3',
+  DOCTOR_LEAVES: 'swasthya_doctor_leaves_v3',
+  PHARMACY_STATUS: 'swasthya_pharmacy_status_v3',
+  SMS_LOGS: 'swasthya_sms_logs_v3',
+  SYNC_QUEUE: 'swasthya_sync_queue_v3',
   RECORDS: 'swasthya_records_v3',
   MEDICINES: 'swasthya_medicines_v3',
   TRIAGE: 'swasthya_triage_queue_v3',
@@ -59,7 +88,13 @@ const KEYS = {
   CONSENTS: 'swasthya_consents_v3',
   CARE_PLANS: 'swasthya_care_plans_v3',
   NCD: 'swasthya_ncd_v3',
-  TB: 'swasthya_tb_v3'
+  TB: 'swasthya_tb_v3',
+  LAB_TESTS: 'swasthya_lab_tests_v3',
+  LAB_ORDERS: 'swasthya_lab_orders_v3',
+  LAB_SAMPLES: 'swasthya_lab_samples_v3',
+  MANAGED_USERS: 'swasthya_managed_users_v3',
+  EMERGENCY_CASES: 'swasthya_emergency_cases_v3',
+  SYSTEM_HEALTH: 'swasthya_system_health_v3'
 };
 
 export const storage = {
@@ -357,8 +392,10 @@ export const storage = {
       ? list.findIndex(p => p.prescriptionNumber === rx.prescriptionNumber) 
       : -1;
 
+    let finalRx: FullPrescription;
+
     if (existingIndex !== -1) {
-      const updatedRx: FullPrescription = {
+      finalRx = {
         ...list[existingIndex],
         ...rx,
         id: list[existingIndex].id,
@@ -368,42 +405,107 @@ export const storage = {
         diagnosisSummary: rx.diagnosisSummary !== undefined ? rx.diagnosisSummary : list[existingIndex].diagnosisSummary,
         followUp: rx.followUp !== undefined ? rx.followUp : list[existingIndex].followUp,
         notes: rx.notes !== undefined ? rx.notes : list[existingIndex].notes,
-        digitalSignature: rx.digitalSignature || `Digitally Revised by ${rx.doctorName || list[existingIndex].doctorName} (${new Date().toLocaleDateString('en-GB')})`
+        status: rx.status || 'finalized',
+        syncStatus: 'synced',
+        updatedAt: new Date().toISOString(),
+        version: (list[existingIndex].version || 1) + 1,
+        digitalSignature: rx.digitalSignature || `Digitally Authorized by ${rx.doctorName || list[existingIndex].doctorName} (${new Date().toLocaleDateString('en-GB')})`
       };
-      list[existingIndex] = updatedRx;
+      list[existingIndex] = finalRx;
       localStorage.setItem(KEYS.PRESCRIPTIONS, JSON.stringify(list));
       this.addNotification({
         title: 'E-Prescription Updated',
-        body: `E-Prescription ${updatedRx.prescriptionNumber} for ${updatedRx.patientName} was revised by ${updatedRx.doctorName}.`,
+        body: `E-Prescription ${finalRx.prescriptionNumber} for ${finalRx.patientName} was revised by ${finalRx.doctorName} and synced to records.`,
         type: 'prescription'
       });
-      this.addAuditLog(`E-Prescription ${updatedRx.prescriptionNumber} revised by ${updatedRx.doctorName}`, updatedRx.doctorName);
-      return updatedRx;
+      this.addAuditLog(`E-Prescription ${finalRx.prescriptionNumber} updated by ${finalRx.doctorName}`, finalRx.doctorName);
+    } else {
+      finalRx = {
+        ...rx,
+        id: rx.id || `rx-${Date.now()}`,
+        prescriptionNumber: rx.prescriptionNumber || `RX-KLH-2026-0${Math.floor(Math.random() * 800 + 100)}`,
+        date: rx.date || new Date().toLocaleDateString('en-GB'),
+        patientId: rx.patientId || 'RHB-OD-KLH-0941',
+        patientName: rx.patientName || 'Keshab Rout',
+        doctorName: rx.doctorName || 'Dr. Ananya Mishra',
+        doctorHospital: rx.doctorHospital || 'DHH Bhawanipatna Telehealth Unit',
+        diagnosisSummary: rx.diagnosisSummary || 'Clinical tele-consultation evaluation complete.',
+        medicines: rx.medicines || [],
+        followUp: rx.followUp || 'Follow-up teleconsultation in 3 days if symptoms persist.',
+        status: rx.status || 'finalized',
+        syncStatus: 'synced',
+        updatedAt: new Date().toISOString(),
+        version: 1,
+        digitalSignature: rx.digitalSignature || 'Digitally Authorized by Licensed Medical Officer'
+      };
+      list.unshift(finalRx);
+      localStorage.setItem(KEYS.PRESCRIPTIONS, JSON.stringify(list));
+      this.addNotification({
+        title: 'E-Prescription Available',
+        body: `E-Prescription ${finalRx.prescriptionNumber} has been issued by ${finalRx.doctorName} and synced to patient records.`,
+        type: 'prescription'
+      });
+      this.addAuditLog(`E-Prescription ${finalRx.prescriptionNumber} created`, finalRx.doctorName);
     }
 
-    const newRx: FullPrescription = {
-      ...rx,
-      id: rx.id || `rx-${Date.now()}`,
-      prescriptionNumber: rx.prescriptionNumber || `RX-KLH-2026-0${Math.floor(Math.random() * 800 + 100)}`,
-      date: rx.date || new Date().toLocaleDateString('en-GB'),
-      patientId: rx.patientId || 'RHB-OD-KLH-0941',
-      patientName: rx.patientName || 'Keshab Rout',
-      doctorName: rx.doctorName || 'Dr. Ananya Mishra',
-      doctorHospital: rx.doctorHospital || 'DHH Bhawanipatna Telehealth Unit',
-      diagnosisSummary: rx.diagnosisSummary || 'Clinical tele-consultation evaluation complete.',
-      medicines: rx.medicines || [],
-      followUp: rx.followUp || 'Follow-up teleconsultation in 3 days if symptoms persist.',
-      digitalSignature: rx.digitalSignature || 'Digitally Authorized by Licensed Clinician'
-    };
-    list.unshift(newRx);
-    localStorage.setItem(KEYS.PRESCRIPTIONS, JSON.stringify(list));
-    this.addNotification({
-      title: 'E-Prescription Available',
-      body: `Demo notification: E-Prescription ${newRx.prescriptionNumber} has been issued by ${newRx.doctorName}.`,
-      type: 'prescription'
-    });
-    this.addAuditLog(`E-Prescription ${newRx.prescriptionNumber} created`, newRx.doctorName);
-    return newRx;
+    // Explicitly synchronize into longitudinal patient health records
+    this.syncPrescriptionToPatientRecord(finalRx);
+
+    return finalRx;
+  },
+
+  syncPrescriptionToPatientRecord(rx: FullPrescription) {
+    try {
+      const records = this.getRecords();
+      const existingRecIndex = records.findIndex(
+        r => r.id === `rec-rx-${rx.id}` || (r.type === 'prescription' && r.notes?.includes(rx.prescriptionNumber))
+      );
+
+      const medSummary = rx.medicines && rx.medicines.length > 0 
+        ? rx.medicines.map(m => `${m.name} ${m.strength} (${m.dosage})`).join(', ')
+        : 'Oral hydration and supportive tele-care';
+
+      const recordEntry: HealthRecord = {
+        id: `rec-rx-${rx.id}`,
+        patientId: rx.patientId,
+        doctorId: rx.doctorId || 'doc-01',
+        doctorName: rx.doctorName,
+        type: 'prescription',
+        at: new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }),
+        timestamp: Date.now(),
+        updatedAt: new Date().toISOString(),
+        version: existingRecIndex !== -1 ? (records[existingRecIndex].version || 1) + 1 : 1,
+        syncStatus: 'synced',
+        synced: true,
+        notes: `Rx ${rx.prescriptionNumber}: ${rx.diagnosisSummary}. Prescribed: ${medSummary}.${rx.notes ? ' Clinical note: ' + rx.notes : ''}`,
+        followUpPlan: rx.followUp,
+        pathway: 'clinician care plan & e-prescription',
+        urgency: 'routine',
+        prescriptionData: rx
+      };
+
+      if (existingRecIndex !== -1) {
+        records[existingRecIndex] = { ...records[existingRecIndex], ...recordEntry };
+      } else {
+        records.unshift(recordEntry);
+      }
+      localStorage.setItem(KEYS.RECORDS, JSON.stringify(records));
+
+      // Also update Care Plan in storage so patient portal care plan matches
+      const carePlans = this.getCarePlans();
+      if (carePlans && carePlans.length > 0) {
+        const cp = { ...carePlans[0] };
+        cp.doctorName = rx.doctorName;
+        cp.diagnosis = rx.diagnosisSummary;
+        cp.instructions = rx.notes || cp.instructions;
+        cp.medicinePlan = medSummary;
+        cp.followUpDate = rx.followUp;
+        carePlans[0] = cp;
+        localStorage.setItem(KEYS.CARE_PLANS, JSON.stringify(carePlans));
+      }
+    } catch (e) {
+      console.error('Failed to sync prescription to patient record:', e);
+    }
   },
 
   // Notifications
@@ -636,6 +738,574 @@ export const storage = {
     return tb;
   },
 
+  // Active Session Persistence
+  getActiveSession(): DemoUser | null {
+    try {
+      const data = localStorage.getItem(KEYS.SESSION);
+      if (!data) return null;
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  },
+
+  setActiveSession(user: DemoUser) {
+    localStorage.setItem(KEYS.SESSION, JSON.stringify(user));
+    this.addAuditLog(`User session authenticated (${user.role}: ${user.name})`, user.name);
+  },
+
+  clearActiveSession() {
+    const sess = this.getActiveSession();
+    if (sess) {
+      this.addAuditLog(`User logged out (${sess.role}: ${sess.name})`, sess.name);
+    }
+    localStorage.removeItem(KEYS.SESSION);
+  },
+
+  // Registered Users (Patient, Doctor, Pharmacy)
+  getRegisteredUsers(): any[] {
+    try {
+      const data = localStorage.getItem(KEYS.REGISTERED_USERS);
+      if (!data) return [];
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  },
+
+  registerUser(userData: any): any {
+    const list = this.getRegisteredUsers();
+    const newUser = {
+      ...userData,
+      id: userData.id || `usr-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newUser);
+    localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(list));
+    this.addNotification({
+      title: 'Account Created',
+      body: `Welcome to Swasthya Path, ${newUser.name || newUser.pharmacyName || 'User'}!`,
+      type: 'doctor'
+    });
+    this.addAuditLog(`Registered new ${newUser.role} account`, newUser.name || 'System');
+    return newUser;
+  },
+
+  // Doctors & Directory
+  getDoctors(): DoctorItem[] {
+    try {
+      const data = localStorage.getItem(KEYS.DOCTORS);
+      if (!data) {
+        localStorage.setItem(KEYS.DOCTORS, JSON.stringify(INITIAL_DOCTORS));
+        return INITIAL_DOCTORS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_DOCTORS;
+    }
+  },
+
+  saveDoctor(doc: DoctorItem): DoctorItem {
+    const list = this.getDoctors();
+    const idx = list.findIndex(d => d.id === doc.id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...doc };
+    } else {
+      list.push(doc);
+    }
+    localStorage.setItem(KEYS.DOCTORS, JSON.stringify(list));
+    return doc;
+  },
+
+  // Doctor Scheduled Leaves
+  getDoctorLeaves(): DoctorLeave[] {
+    try {
+      const data = localStorage.getItem(KEYS.DOCTOR_LEAVES);
+      if (!data) {
+        localStorage.setItem(KEYS.DOCTOR_LEAVES, JSON.stringify(INITIAL_DOCTOR_LEAVES));
+        return INITIAL_DOCTOR_LEAVES;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_DOCTOR_LEAVES;
+    }
+  },
+
+  saveDoctorLeave(leave: Omit<DoctorLeave, 'id' | 'createdAt'> & Partial<DoctorLeave>): DoctorLeave {
+    const list = this.getDoctorLeaves();
+    const newLeave: DoctorLeave = {
+      ...leave,
+      id: leave.id || `leave-${Date.now()}`,
+      status: leave.status || 'Active',
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newLeave);
+    localStorage.setItem(KEYS.DOCTOR_LEAVES, JSON.stringify(list));
+
+    // Update doctor's availability status in doctor directory
+    const doctors = this.getDoctors();
+    const docIdx = doctors.findIndex(d => d.id === newLeave.doctorId || d.name === newLeave.doctorName);
+    if (docIdx !== -1) {
+      doctors[docIdx].status = 'On Leave';
+      doctors[docIdx].nextAvailable = newLeave.endDate;
+      localStorage.setItem(KEYS.DOCTORS, JSON.stringify(doctors));
+    }
+
+    this.addNotification({
+      title: 'Doctor Scheduled Leave',
+      body: `${newLeave.doctorName} is on leave from ${newLeave.startDate} to ${newLeave.endDate}. Alternate: ${newLeave.replacementDoctor || 'General Medical Officer on call'}.`,
+      type: 'doctor'
+    });
+    this.addAuditLog(`Scheduled leave for ${newLeave.doctorName} (${newLeave.startDate} to ${newLeave.endDate})`, newLeave.doctorName);
+
+    // Generate SMS broadcast fallback notification
+    this.sendSMS({
+      toPhone: '9861000000',
+      category: 'leave',
+      content: `[HOLIDAY/LEAVE] Doctor: ${newLeave.doctorName} | Status: On Leave (${newLeave.startDate} to ${newLeave.endDate}) | Next Available: ${newLeave.endDate} | Alternative: ${newLeave.replacementDoctor || 'DHH Bhawanipatna OPD'}`
+    });
+
+    return newLeave;
+  },
+
+  // Pharmacy Store Status
+  getPharmacyStatus(): PharmacyStoreStatus {
+    try {
+      const data = localStorage.getItem(KEYS.PHARMACY_STATUS);
+      if (!data) {
+        localStorage.setItem(KEYS.PHARMACY_STATUS, JSON.stringify(INITIAL_PHARMACY_STATUS));
+        return INITIAL_PHARMACY_STATUS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_PHARMACY_STATUS;
+    }
+  },
+
+  updatePharmacyStatus(updates: Partial<PharmacyStoreStatus>): PharmacyStoreStatus {
+    const current = this.getPharmacyStatus();
+    const updated: PharmacyStoreStatus = {
+      ...current,
+      ...updates,
+      lastUpdated: 'Just now'
+    };
+    localStorage.setItem(KEYS.PHARMACY_STATUS, JSON.stringify(updated));
+    this.addAuditLog(`Pharmacy store status updated: ${updated.status || 'Updated'}`, updated.pharmacyName || 'Pharmacy');
+    return updated;
+  },
+
+  // SMS Fallback System
+  getSMSLogs(): SMSFallbackMessage[] {
+    try {
+      const data = localStorage.getItem(KEYS.SMS_LOGS);
+      if (!data) {
+        localStorage.setItem(KEYS.SMS_LOGS, JSON.stringify(INITIAL_SMS_LOGS));
+        return INITIAL_SMS_LOGS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_SMS_LOGS;
+    }
+  },
+
+  sendSMS(msg: Omit<SMSFallbackMessage, 'id' | 'timestamp' | 'deliveryStatus'>): SMSFallbackMessage {
+    const logs = this.getSMSLogs();
+    const entry: SMSFallbackMessage = {
+      ...msg,
+      id: `sms-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      deliveryStatus: 'Sent (Simulated Cellular Gateway)'
+    };
+    logs.unshift(entry);
+    localStorage.setItem(KEYS.SMS_LOGS, JSON.stringify(logs));
+    return entry;
+  },
+
+  // Lab Tests Catalogue
+  getLabTests(): LabTestItem[] {
+    try {
+      const data = localStorage.getItem(KEYS.LAB_TESTS);
+      if (!data) {
+        localStorage.setItem(KEYS.LAB_TESTS, JSON.stringify(INITIAL_LAB_TESTS));
+        return INITIAL_LAB_TESTS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_LAB_TESTS;
+    }
+  },
+
+  saveLabTest(test: LabTestItem): LabTestItem {
+    const list = this.getLabTests();
+    const idx = list.findIndex(t => t.id === test.id);
+    if (idx !== -1) {
+      list[idx] = test;
+    } else {
+      list.push(test);
+    }
+    localStorage.setItem(KEYS.LAB_TESTS, JSON.stringify(list));
+    this.addAuditLog(`Test catalogue updated: ${test.name}`, 'Pathology Lab');
+    return test;
+  },
+
+  updateLabTest(id: string, updates: Partial<LabTestItem>): LabTestItem[] {
+    const list = this.getLabTests();
+    const idx = list.findIndex(t => t.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      localStorage.setItem(KEYS.LAB_TESTS, JSON.stringify(list));
+      this.addAuditLog(`Updated lab test item: ${list[idx].name}`, 'Pathology Lab');
+    }
+    return list;
+  },
+
+  // Lab Test Orders
+  getLabOrders(): LabTestOrder[] {
+    try {
+      const data = localStorage.getItem(KEYS.LAB_ORDERS);
+      if (!data) {
+        localStorage.setItem(KEYS.LAB_ORDERS, JSON.stringify(INITIAL_LAB_ORDERS));
+        return INITIAL_LAB_ORDERS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_LAB_ORDERS;
+    }
+  },
+
+  addLabOrder(order: Partial<LabTestOrder>): LabTestOrder {
+    const list = this.getLabOrders();
+    const newOrder: LabTestOrder = {
+      ...order,
+      id: order.id || `ord-${Date.now()}`,
+      orderDate: order.orderDate || 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: order.status || 'Requested',
+      urgency: order.urgency || 'Routine',
+      patientId: order.patientId || 'RHB-OD-KLH-0941',
+      patientName: order.patientName || 'Keshab Rout',
+      patientAge: order.patientAge || 45,
+      patientGender: order.patientGender || 'Male',
+      testId: order.testId || 'test-cbc',
+      testName: order.testName || 'Complete Blood Count (CBC)',
+      category: order.category || 'Hematology'
+    };
+    list.unshift(newOrder);
+    localStorage.setItem(KEYS.LAB_ORDERS, JSON.stringify(list));
+
+    // Also automatically create sample slot
+    const samples = this.getLabSamples();
+    const newSample: LabSample = {
+      id: `smp-${Date.now()}`,
+      sampleBarcode: `SP-KLH-${Math.floor(100000 + Math.random() * 900000)}`,
+      orderId: newOrder.id,
+      patientId: newOrder.patientId,
+      patientName: newOrder.patientName,
+      testName: newOrder.testName,
+      sampleType: 'Whole Blood (EDTA)',
+      status: 'Awaiting Collection'
+    };
+    samples.unshift(newSample);
+    localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(samples));
+
+    this.addNotification({
+      title: 'Lab Test Requested',
+      body: `Test request created for ${newOrder.patientName} (${newOrder.testName}). Sample barcode: ${newSample.sampleBarcode}.`,
+      type: 'system'
+    });
+    this.addAuditLog(`Lab test order created: ${newOrder.testName} for ${newOrder.patientName}`, newOrder.doctorName || 'Doctor');
+    return newOrder;
+  },
+
+  updateLabOrderStatus(orderId: string, status: LabTestOrder['status'], extra?: Partial<LabTestOrder>): LabTestOrder[] {
+    const list = this.getLabOrders();
+    const idx = list.findIndex(o => o.id === orderId);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], status, ...extra };
+      localStorage.setItem(KEYS.LAB_ORDERS, JSON.stringify(list));
+      this.addAuditLog(`Order ${orderId} status changed to ${status}`, 'Pathology Lab');
+
+      // Update sample status if applicable
+      const samples = this.getLabSamples();
+      const sampleIdx = samples.findIndex(s => s.orderId === orderId);
+      if (sampleIdx !== -1) {
+        if (status === 'Sample Collected') {
+          samples[sampleIdx].status = 'Collected';
+          samples[sampleIdx].collectedAt = 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (status === 'Sample Received') {
+          samples[sampleIdx].status = 'Received';
+          samples[sampleIdx].receivedAt = 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (status === 'Processing') {
+          samples[sampleIdx].status = 'Processing';
+        } else if (status === 'Released') {
+          samples[sampleIdx].status = 'Completed';
+        }
+        localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(samples));
+      }
+    }
+    return list;
+  },
+
+  // Lab Samples
+  getLabSamples(): LabSample[] {
+    try {
+      const data = localStorage.getItem(KEYS.LAB_SAMPLES);
+      if (!data) {
+        localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(INITIAL_LAB_SAMPLES));
+        return INITIAL_LAB_SAMPLES;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_LAB_SAMPLES;
+    }
+  },
+
+  saveLabSample(sample: LabSample): LabSample {
+    const list = this.getLabSamples();
+    const idx = list.findIndex(s => s.id === sample.id);
+    if (idx !== -1) {
+      list[idx] = sample;
+    } else {
+      list.unshift(sample);
+    }
+    localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(list));
+    return sample;
+  },
+
+  updateLabSampleStatus(sampleId: string, status: LabSample['status'], rejectionReason?: string): LabSample[] {
+    const list = this.getLabSamples();
+    const idx = list.findIndex(s => s.id === sampleId);
+    if (idx !== -1) {
+      list[idx].status = status;
+      if (rejectionReason) list[idx].rejectionReason = rejectionReason;
+      if (status === 'Collected' && !list[idx].collectedAt) {
+        list[idx].collectedAt = 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      if (status === 'Received' && !list[idx].receivedAt) {
+        list[idx].receivedAt = 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(list));
+      this.addAuditLog(`Sample ${list[idx].sampleBarcode} status set to ${status}${rejectionReason ? ` (${rejectionReason})` : ''}`, 'Pathology Lab');
+    }
+    return list;
+  },
+
+  // Release and Sync Lab Report
+  releaseLabReport(doc: DiagnosticDocument): DiagnosticDocument {
+    const docs = this.getDocuments();
+    const existingIndex = docs.findIndex(d => d.id === doc.id);
+
+    const releasedDoc: DiagnosticDocument = {
+      ...doc,
+      verificationStatus: 'Released',
+      status: 'Ready',
+      releasedAt: doc.releasedAt || new Date().toISOString(),
+      authorizedVerifier: doc.authorizedVerifier || 'Dr. Saroj K. Sahu, MD (Pathology)',
+      version: (doc.version || 1)
+    };
+
+    if (existingIndex !== -1) {
+      docs[existingIndex] = releasedDoc;
+    } else {
+      docs.unshift(releasedDoc);
+    }
+    localStorage.setItem(KEYS.DOCUMENTS, JSON.stringify(docs));
+
+    // Update associated order status if found
+    if (doc.orderId) {
+      this.updateLabOrderStatus(doc.orderId, 'Released', { reportId: doc.id });
+    } else {
+      // Look up by patient and test name
+      const orders = this.getLabOrders();
+      const orderMatch = orders.find(o => o.patientId === doc.patientId && (o.testName === doc.title || o.testName === doc.testCategory));
+      if (orderMatch) {
+        this.updateLabOrderStatus(orderMatch.id, 'Released', { reportId: doc.id });
+      }
+    }
+
+    // Sync to patient longitudinal health record
+    this.syncLabReportToPatientRecord(releasedDoc);
+
+    // Notify patient & doctor
+    this.addNotification({
+      title: 'Lab Report Verified & Released',
+      body: `Diagnostic Report for ${releasedDoc.patientName} (${releasedDoc.title}) is verified by ${releasedDoc.authorizedVerifier} and synced to medical records.`,
+      type: 'system'
+    });
+
+    this.addAuditLog(`Lab report verified & released: ${releasedDoc.title} for ${releasedDoc.patientName}`, releasedDoc.authorizedVerifier || 'Pathologist');
+
+    // SMS fallback alert
+    this.sendSMS({
+      toPhone: '9861000000',
+      category: 'telehealth',
+      content: `[SWASTHYA PATH LAB] Report Released: ${releasedDoc.title} for ${releasedDoc.patientName}. Verified by ${releasedDoc.authorizedVerifier}. Available on your portal.`
+    });
+
+    return releasedDoc;
+  },
+
+  syncLabReportToPatientRecord(doc: DiagnosticDocument) {
+    try {
+      const records = this.getRecords();
+      const existingRecIndex = records.findIndex(
+        r => r.id === `rec-lab-${doc.id}` || (r.type === 'diagnostic' && r.notes?.includes(doc.title))
+      );
+      const paramSummary = doc.parameters && doc.parameters.length > 0
+        ? doc.parameters.map(p => `${p.name}: ${p.result} ${p.unit || ''} [${p.status || (p.isAbnormal ? 'Abnormal' : 'Normal')}]`).join('; ')
+        : doc.findings || 'Report released by pathology lab';
+
+      const hasAbnormal = doc.parameters?.some(p => p.status === 'High' || p.status === 'Low');
+
+      const recordEntry: HealthRecord = {
+        id: `rec-lab-${doc.id}`,
+        patientId: doc.patientId || 'RHB-OD-KLH-0941',
+        at: doc.date || new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }),
+        timestamp: Date.now(),
+        type: 'diagnostic',
+        pathway: doc.testCategory || 'Diagnostic Lab Investigation',
+        urgency: hasAbnormal ? 'urgent' : 'routine',
+        doctorName: doc.doctorName || 'Dr. Ananya Mishra',
+        notes: `[LAB REPORT RELEASED] Test: ${doc.title} | Facility: ${doc.labName} | Status: Released | Verifier: ${doc.authorizedVerifier || 'Pathologist'}. Parameters: ${paramSummary}. NOTE: Laboratory results should be interpreted by a qualified healthcare professional.`,
+        followUpPlan: 'Laboratory results should be interpreted by a qualified healthcare professional during doctor consultation.',
+        synced: true
+      };
+
+      if (existingRecIndex !== -1) {
+        records[existingRecIndex] = { ...records[existingRecIndex], ...recordEntry };
+      } else {
+        records.unshift(recordEntry);
+      }
+      localStorage.setItem(KEYS.RECORDS, JSON.stringify(records));
+    } catch (err) {
+      console.error('Error syncing lab report to record:', err);
+    }
+  },
+
+  // Managed Users (Admin Portal)
+  getManagedUsers(): ManagedUser[] {
+    try {
+      const data = localStorage.getItem(KEYS.MANAGED_USERS);
+      if (!data) {
+        localStorage.setItem(KEYS.MANAGED_USERS, JSON.stringify(INITIAL_MANAGED_USERS));
+        return INITIAL_MANAGED_USERS;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_MANAGED_USERS;
+    }
+  },
+
+  saveManagedUser(user: ManagedUser): ManagedUser {
+    const list = this.getManagedUsers();
+    const idx = list.findIndex(u => u.id === user.id);
+    if (idx !== -1) {
+      list[idx] = user;
+    } else {
+      list.unshift(user);
+    }
+    localStorage.setItem(KEYS.MANAGED_USERS, JSON.stringify(list));
+    this.addAuditLog(`User profile updated: ${user.name} (${user.role})`, 'Administrator');
+    return user;
+  },
+
+  updateUserVerification(userId: string, verificationStatus: ManagedUser['verificationStatus'], accountStatus?: ManagedUser['accountStatus'], rejectionReason?: string): ManagedUser[] {
+    const list = this.getManagedUsers();
+    const idx = list.findIndex(u => u.id === userId);
+    if (idx !== -1) {
+      list[idx].verificationStatus = verificationStatus;
+      if (accountStatus) list[idx].accountStatus = accountStatus;
+      if (rejectionReason !== undefined) list[idx].rejectionReason = rejectionReason;
+      localStorage.setItem(KEYS.MANAGED_USERS, JSON.stringify(list));
+      this.addAuditLog(`User ${list[idx].name} verification changed to ${verificationStatus} (${accountStatus || list[idx].accountStatus})`, 'Administrator');
+      this.addNotification({
+        title: 'User Verification Status Updated',
+        body: `${list[idx].name}'s verification status is now ${verificationStatus}.`,
+        type: 'system'
+      });
+    }
+    return list;
+  },
+
+  // Emergency Cases (Admin Escalation Center)
+  getEmergencyCases(): EmergencyCase[] {
+    try {
+      const data = localStorage.getItem(KEYS.EMERGENCY_CASES);
+      if (!data) {
+        localStorage.setItem(KEYS.EMERGENCY_CASES, JSON.stringify(INITIAL_EMERGENCY_CASES));
+        return INITIAL_EMERGENCY_CASES;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_EMERGENCY_CASES;
+    }
+  },
+
+  addEmergencyCase(item: Omit<EmergencyCase, 'id' | 'escalatedAt'> & Partial<EmergencyCase>): EmergencyCase {
+    const list = this.getEmergencyCases();
+    const newCase: EmergencyCase = {
+      ...item,
+      id: item.id || `emg-${Date.now()}`,
+      escalatedAt: 'Today, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: item.status || 'NEW',
+      priority: item.priority || 'CRITICAL',
+      patientId: item.patientId || 'RHB-OD-KLH-9999',
+      patientName: item.patientName || 'Emergency Patient',
+      age: item.age || 40,
+      gender: item.gender || 'Unknown',
+      village: item.village || 'Kalahandi',
+      warningSigns: item.warningSigns || 'Acute red flag alert',
+      symptoms: item.symptoms || 'Severe distress'
+    };
+    list.unshift(newCase);
+    localStorage.setItem(KEYS.EMERGENCY_CASES, JSON.stringify(list));
+    this.addAuditLog(`Emergency case created: ${newCase.id} (${newCase.patientName})`, 'Emergency System');
+    this.addNotification({
+      title: '🚨 New Emergency Escalation',
+      body: `Emergency case logged for ${newCase.patientName}. Warning: ${newCase.warningSigns}.`,
+      type: 'system'
+    });
+    return newCase;
+  },
+
+  updateEmergencyCaseStatus(caseId: string, status: EmergencyCase['status'], assignedDoctor?: string, notes?: string): EmergencyCase[] {
+    const list = this.getEmergencyCases();
+    const idx = list.findIndex(c => c.id === caseId);
+    if (idx !== -1) {
+      list[idx].status = status;
+      if (assignedDoctor) list[idx].assignedDoctor = assignedDoctor;
+      if (notes) list[idx].notes = notes;
+      localStorage.setItem(KEYS.EMERGENCY_CASES, JSON.stringify(list));
+      this.addAuditLog(`Emergency case ${caseId} updated to status ${status}`, 'Administrator');
+    }
+    return list;
+  },
+
+  // System Health
+  getSystemHealth(): SystemHealthItem[] {
+    try {
+      const data = localStorage.getItem(KEYS.SYSTEM_HEALTH);
+      if (!data) {
+        localStorage.setItem(KEYS.SYSTEM_HEALTH, JSON.stringify(INITIAL_SYSTEM_HEALTH));
+        return INITIAL_SYSTEM_HEALTH;
+      }
+      return JSON.parse(data);
+    } catch {
+      return INITIAL_SYSTEM_HEALTH;
+    }
+  },
+
+  updateSystemHealth(serviceName: string, status: SystemHealthItem['status'], latencyMs?: number): SystemHealthItem[] {
+    const list = this.getSystemHealth();
+    const idx = list.findIndex(s => s.service === serviceName);
+    if (idx !== -1) {
+      list[idx].status = status;
+      if (latencyMs !== undefined) list[idx].latencyMs = latencyMs;
+      list[idx].lastChecked = 'Just now';
+      localStorage.setItem(KEYS.SYSTEM_HEALTH, JSON.stringify(list));
+    }
+    return list;
+  },
+
   // Reset all
   resetAll() {
     localStorage.setItem(KEYS.RECORDS, JSON.stringify(INITIAL_RECORDS));
@@ -656,5 +1326,17 @@ export const storage = {
     localStorage.setItem(KEYS.CARE_PLANS, JSON.stringify(INITIAL_CARE_PLANS));
     localStorage.setItem(KEYS.NCD, JSON.stringify(INITIAL_NCD));
     localStorage.setItem(KEYS.TB, JSON.stringify(INITIAL_TB));
+    localStorage.setItem(KEYS.DOCTORS, JSON.stringify(INITIAL_DOCTORS));
+    localStorage.setItem(KEYS.DOCTOR_LEAVES, JSON.stringify(INITIAL_DOCTOR_LEAVES));
+    localStorage.setItem(KEYS.PHARMACY_STATUS, JSON.stringify(INITIAL_PHARMACY_STATUS));
+    localStorage.setItem(KEYS.SMS_LOGS, JSON.stringify(INITIAL_SMS_LOGS));
+    localStorage.setItem(KEYS.LAB_TESTS, JSON.stringify(INITIAL_LAB_TESTS));
+    localStorage.setItem(KEYS.LAB_ORDERS, JSON.stringify(INITIAL_LAB_ORDERS));
+    localStorage.setItem(KEYS.LAB_SAMPLES, JSON.stringify(INITIAL_LAB_SAMPLES));
+    localStorage.setItem(KEYS.MANAGED_USERS, JSON.stringify(INITIAL_MANAGED_USERS));
+    localStorage.setItem(KEYS.EMERGENCY_CASES, JSON.stringify(INITIAL_EMERGENCY_CASES));
+    localStorage.setItem(KEYS.SYSTEM_HEALTH, JSON.stringify(INITIAL_SYSTEM_HEALTH));
+    localStorage.removeItem(KEYS.SESSION);
   }
 };
+

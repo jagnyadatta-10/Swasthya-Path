@@ -11,9 +11,12 @@ import { DoctorPortal } from './pages/DoctorPortal';
 import { PharmacyPortal } from './pages/PharmacyPortal';
 import { AdminPortal } from './pages/AdminPortal';
 import { MedicalDashboard } from './pages/MedicalDashboard';
+import { storage } from './utils/storage';
 
 export const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<DemoUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<DemoUser | null>(() => {
+    return storage.getActiveSession();
+  });
   const [networkQuality, setNetworkQuality] = useState<NetworkQuality>('good');
   const [lowBandwidthMode, setLowBandwidthMode] = useState<boolean>(true);
   const [lang, setLang] = useState<Language>('English');
@@ -25,21 +28,49 @@ export const App: React.FC = () => {
     document.documentElement.style.setProperty('--font-scale', fontScale.toString());
   }, [fontScale]);
 
-  // Cycle network Good -> Limited -> Offline -> Good
+  // Keep active session in sync with storage
+  const handleLoginSuccess = (user: DemoUser) => {
+    storage.setActiveSession(user);
+    setCurrentUser(user);
+    window.history.pushState({ portal: user.role }, '', `#${user.role}`);
+  };
+
+  const handleLogout = () => {
+    storage.clearActiveSession();
+    setCurrentUser(null);
+    window.history.pushState(null, '', window.location.pathname);
+  };
+
+  // Prevent back navigation from destroying session unexpectedly
+  useEffect(() => {
+    const handlePopState = () => {
+      const activeSession = storage.getActiveSession();
+      if (activeSession && !currentUser) {
+        setCurrentUser(activeSession);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentUser]);
+
+  // Cycle network Good -> Weak (3G) -> Very Weak (2G) -> Offline -> Good
   const handleToggleNetwork = () => {
     setNetworkQuality((prev) => {
       if (prev === 'good') return 'limited';
-      if (prev === 'limited') return 'offline';
+      if (prev === 'limited') {
+        if (!lowBandwidthMode) {
+          setLowBandwidthMode(true);
+          return 'limited';
+        }
+        return 'offline';
+      }
+      setLowBandwidthMode(false);
       return 'good';
     });
   };
 
   const handleToggleFontScale = () => {
     setFontScale((prev) => (prev > 1 ? 1 : 1.15));
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
   };
 
   return (
@@ -66,7 +97,7 @@ export const App: React.FC = () => {
 
         {/* Dynamic Route: Login or Selected Role Portal */}
         {!currentUser ? (
-          <LoginScreen onLoginSuccess={setCurrentUser} lang={lang} onSelectLang={setLang} />
+          <LoginScreen onLoginSuccess={handleLoginSuccess} lang={lang} onSelectLang={setLang} />
         ) : currentUser.role === 'patient' ? (
           <PatientPortal
             user={currentUser}
@@ -76,7 +107,6 @@ export const App: React.FC = () => {
             onToggleLowBandwidth={() => setLowBandwidthMode(!lowBandwidthMode)}
             lang={lang}
             onSelectLang={setLang}
-            onBack={handleLogout}
           />
         ) : currentUser.role === 'doctor' ? (
           <DoctorPortal
@@ -85,7 +115,6 @@ export const App: React.FC = () => {
             onNetworkChange={setNetworkQuality}
             lang={lang}
             onSelectLang={setLang}
-            onBack={handleLogout}
           />
         ) : currentUser.role === 'pharmacy' ? (
           <PharmacyPortal
@@ -93,9 +122,8 @@ export const App: React.FC = () => {
             networkQuality={networkQuality}
             lang={lang}
             onSelectLang={setLang}
-            onBack={handleLogout}
           />
-        ) : currentUser.role === 'lab' ? (
+        ) : (currentUser.role === 'lab' || currentUser.role === 'pathology') ? (
           <MedicalDashboard
             user={currentUser}
             networkQuality={networkQuality}
@@ -117,7 +145,13 @@ export const App: React.FC = () => {
       {/* Floating Demo Simulator for Evaluators */}
       <DemoSimulator
         currentRole={currentUser?.role || null}
-        onSelectRole={setCurrentUser}
+        onSelectRole={(userOrRole) => {
+          if (!userOrRole) {
+            handleLogout();
+          } else if (typeof userOrRole === 'object') {
+            handleLoginSuccess(userOrRole);
+          }
+        }}
         networkQuality={networkQuality}
         onSelectNetwork={setNetworkQuality}
         currentLang={lang}

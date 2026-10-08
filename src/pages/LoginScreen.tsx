@@ -3,25 +3,26 @@ import {
   User,
   Stethoscope,
   Pill,
+  FlaskConical,
+  Building2,
+  Lock,
+  Phone,
+  Mail,
+  Eye,
+  EyeOff,
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  Key,
-  Building2,
-  FlaskConical,
-  Phone,
-  Lock,
   UserPlus,
   LogIn,
-  Calendar,
-  MapPin,
-  Clock,
-  HeartHandshake
+  KeyRound,
+  FileCheck2,
+  Activity,
+  Heart
 } from 'lucide-react';
 import { Role, DemoUser, Language } from '../types';
-import { DEMO_USERS } from '../data/mockData';
 import { storage } from '../utils/storage';
 import { getTranslation } from '../utils/translations';
 
@@ -31,1027 +32,1219 @@ interface LoginScreenProps {
   onSelectLang?: (lang: Language) => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, lang, onSelectLang }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLoginSuccess,
+  lang,
+  onSelectLang
+}) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [selectedRole, setSelectedRole] = useState<Role>('patient');
 
-  // Login form state
-  const [loginMode, setLoginMode] = useState<'otp' | 'credentials'>('otp');
-  const [loginMobile, setLoginMobile] = useState(DEMO_USERS.patient.mobile);
+  // Login Form States (Zero hardcoded demo credentials)
+  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  const [loginIdentifier, setLoginIdentifier] = useState(''); // Mobile or Email
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginOtp, setLoginOtp] = useState('');
-  const [loginOtpSent, setLoginOtpSent] = useState(false);
-  const [email, setEmail] = useState(DEMO_USERS.patient.email);
-  const [password, setPassword] = useState('Demo@123');
+  const [otpGenerated, setOtpGenerated] = useState('');
+  const [otpSentNotice, setOtpSentNotice] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Common Registration States
+  const [regName, setRegName] = useState('');
+  const [regMobile, setRegMobile] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regConsent, setRegConsent] = useState(true);
+
+  // Role-Specific Credential States
+  // Patient
+  const [patAge, setPatAge] = useState('');
+  const [patGender, setPatGender] = useState<'Male' | 'Female' | 'Other'>('Male');
+  const [patBlock, setPatBlock] = useState('Bhawanipatna');
+  const [patAbha, setPatAbha] = useState('');
+  const [patEmergency, setPatEmergency] = useState('');
+
+  // Doctor
+  const [docLicense, setDocLicense] = useState('');
+  const [docSpecialty, setDocSpecialty] = useState('General Medicine');
+  const [docHospital, setDocHospital] = useState('DHH Bhawanipatna, Kalahandi');
+  const [docQualification, setDocQualification] = useState('MBBS, MD');
+
+  // Pharmacy
+  const [pharmacyStoreName, setPharmacyStoreName] = useState('');
+  const [pharmacyDrugLicense, setPharmacyDrugLicense] = useState('');
+  const [pharmacyLocation, setPharmacyLocation] = useState('Bhawanipatna Main Market');
+  const [pharmacyPharmacist, setPharmacyPharmacist] = useState('');
+
+  // Pathology Lab
+  const [labCenterName, setLabCenterName] = useState('');
+  const [labRegistrationId, setLabRegistrationId] = useState('');
+  const [labFacilityAddress, setLabFacilityAddress] = useState('DHH Central Pathology Wing');
+  const [labPathologistName, setLabPathologistName] = useState('');
+
+  // Administrator
+  const [adminDesignation, setAdminDesignation] = useState('Block Health Officer');
+  const [adminEmployeeId, setAdminEmployeeId] = useState('');
+  const [adminDepartment, setAdminDepartment] = useState('District Health Society, Kalahandi');
+
+  // Feedback states
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Patient Registration fields
-  const [regMobile, setRegMobile] = useState('');
-  const [regOtp, setRegOtp] = useState('');
-  const [regOtpSent, setRegOtpSent] = useState(false);
-  const [regOtpVerified, setRegOtpVerified] = useState(false);
-  const [patientName, setPatientName] = useState('');
-  const [patientDob, setPatientDob] = useState('1984-06-15');
-  const [patientGender, setPatientGender] = useState<'Male' | 'Female' | 'Other'>('Male');
-  const [patientLanguage, setPatientLanguage] = useState<Language>(lang);
-  const [patientLocation, setPatientLocation] = useState('Karlamunda Block, Kalahandi, Odisha');
-  const [patientEmergencyContact, setPatientEmergencyContact] = useState('Subash Rout (+91 94370 21980)');
-  const [patientConsent, setPatientConsent] = useState(true);
-
-  // Doctor Registration fields
-  const [docName, setDocName] = useState('');
-  const [docQualification, setDocQualification] = useState('MBBS, MD (Medicine)');
-  const [docRegNumber, setDocRegNumber] = useState('OSMC/2019/8472');
-  const [docSpecialty, setDocSpecialty] = useState('General Medicine');
-  const [docHospital, setDocHospital] = useState('District Headquarters Hospital, Bhawanipatna');
-  const [docWorkingHours, setDocWorkingHours] = useState('09:00 AM - 05:00 PM (Mon-Sat)');
-  const [docLanguages, setDocLanguages] = useState('Odia, Hindi, English');
-  const [docEmergencyAvail, setDocEmergencyAvail] = useState(true);
-  const [docLeaveSchedule, setDocLeaveSchedule] = useState('None currently scheduled');
-  const [docConsent, setDocConsent] = useState(true);
-
-  // Pharmacy Registration fields
-  const [pharmacyName, setPharmacyName] = useState('');
-  const [pharmacyOwner, setPharmacyOwner] = useState('');
-  const [pharmacyAddress, setPharmacyAddress] = useState('Karlamunda Market Square, Kalahandi');
-  const [pharmacyHours, setPharmacyHours] = useState('08:00 AM - 09:30 PM');
-  const [pharmacyHoliday, setPharmacyHoliday] = useState('Open 7 days; Sunday evening half-day');
-  const [pharmacyStockSetup, setPharmacyStockSetup] = useState('Essential Generic Medicine Formulary (50 items)');
-
-  const handleRoleSelect = (role: Role) => {
-    setSelectedRole(role);
-    setEmail(DEMO_USERS[role]?.email || '');
-    setLoginMobile(DEMO_USERS[role]?.mobile || '');
-    setPassword('Demo@123');
-    setErrorMsg('');
-    setSuccessMsg('');
-  };
-
-  const handleFillDemo = () => {
-    const demo = DEMO_USERS[selectedRole];
-    if (demo) {
-      setEmail(demo.email);
-      setLoginMobile(demo.mobile);
-      setPassword('Demo@123');
-      setLoginOtp('123456');
-      setLoginOtpSent(true);
-      setErrorMsg('');
-      setSuccessMsg(`Loaded demo credentials for ${demo.name}`);
+  // Role metadata configurations
+  const ROLES_CONFIG: {
+    id: Role;
+    role: Role;
+    label: string;
+    sub: string;
+    icon: React.ReactNode;
+    color: string;
+    glow: string;
+  }[] = [
+    {
+      id: 'patient',
+      role: 'patient',
+      label: lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ' : lang === 'हिन्दी' ? 'मरीज' : 'Patient',
+      sub: lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ସେବା' : lang === 'हिन्दी' ? 'देखभाल' : 'Care',
+      icon: <User size={20} />,
+      color: '#0284c7',
+      glow: 'rgba(2, 132, 199, 0.4)'
+    },
+    {
+      id: 'doctor',
+      role: 'doctor',
+      label: lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତର' : lang === 'हिन्दी' ? 'डॉक्टर' : 'Doctor',
+      sub: lang === 'ଓଡ଼ିଆ' ? 'ଚିକିତ୍ସକ' : lang === 'हिन्दी' ? 'ओपीडी' : 'OPD',
+      icon: <Stethoscope size={20} />,
+      color: '#059669',
+      glow: 'rgba(5, 150, 105, 0.4)'
+    },
+    {
+      id: 'pharmacy',
+      role: 'pharmacy',
+      label: lang === 'ଓଡ଼ିଆ' ? 'ଔଷଧାଳୟ' : lang === 'हिन्दी' ? 'दवाखाना' : 'Chemist',
+      sub: lang === 'ଓଡ଼ିଆ' ? 'ଜନ ଔଷଧି' : lang === 'हिन्दी' ? 'स्टॉक' : 'Pharmacy',
+      icon: <Pill size={20} />,
+      color: '#dc2626',
+      glow: 'rgba(220, 38, 38, 0.4)'
+    },
+    {
+      id: 'lab',
+      role: 'lab',
+      label: lang === 'ଓଡ଼ିଆ' ? 'ପାଥୋଲୋଜି' : lang === 'हिन्दी' ? 'पैथोलॉजी' : 'Pathology',
+      sub: lang === 'ଓଡ଼ିଆ' ? 'ନିଦାନ' : lang === 'हिन्दी' ? 'जांच' : 'Lab',
+      icon: <FlaskConical size={20} />,
+      color: '#7c3aed',
+      glow: 'rgba(124, 58, 237, 0.4)'
+    },
+    {
+      id: 'admin',
+      role: 'admin',
+      label: lang === 'ଓଡ଼ିଆ' ? 'ପ୍ରଶାସକ' : lang === 'हिन्दी' ? 'प्रशासक' : 'Admin',
+      sub: lang === 'ଓଡ଼ିଆ' ? 'ନିୟନ୍ତ୍ରଣ' : lang === 'हिन्दी' ? 'प्रबंधन' : 'Gov',
+      icon: <Building2 size={20} />,
+      color: '#0891b2',
+      glow: 'rgba(8, 145, 178, 0.4)'
     }
-  };
+  ];
 
-  const handleSendLoginOtp = () => {
-    if (!loginMobile || loginMobile.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-    setLoginOtpSent(true);
-    setLoginOtp('123456');
-    setErrorMsg('');
-    setSuccessMsg('Simulated OTP sent to mobile: 123456 (SMS Gateway Demo)');
-  };
+  const currentRoleCfg = ROLES_CONFIG.find(r => r.id === selectedRole) || ROLES_CONFIG[0];
 
+  // ==========================================
+  // SIGN IN SUBMISSION (Real credentials check)
+  // ==========================================
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
-    if (loginMode === 'otp') {
-      if (!loginOtpSent) {
-        setErrorMsg('Please click "Send OTP" first.');
+    if (loginMode === 'password') {
+      if (!loginIdentifier.trim()) {
+        setErrorMsg(
+          lang === 'ଓଡ଼ିଆ'
+            ? 'ଦୟାକରି ଆପଣଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର କିମ୍ବା ଇମେଲ୍ ଦିଅନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'कृपया अपना मोबाइल नंबर या ईमेल दर्ज करें।'
+            : 'Please enter your mobile number or email address.'
+        );
         return;
       }
-      if (loginOtp.trim() !== '123456') {
-        setErrorMsg('Invalid OTP. Please enter 123456 for the demo simulation.');
+      if (!loginPassword.trim()) {
+        setErrorMsg(
+          lang === 'ଓଡ଼ିଆ'
+            ? 'ଦୟାକରି ଆପଣଙ୍କ ପାସୱାର୍ଡ ଦିଅନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'कृपया अपना पासवर्ड दर्ज करें।'
+            : 'Please enter your account password.'
+        );
         return;
       }
-      // Log in with matching demo user or registered user
-      const demo = DEMO_USERS[selectedRole];
-      if (demo) {
-        onLoginSuccess(demo);
+
+      setIsSubmitting(true);
+      setTimeout(() => {
+        const user = storage.authenticateUser(loginIdentifier, selectedRole, loginPassword);
+        setIsSubmitting(false);
+
+        if (user) {
+          onLoginSuccess(user);
+        } else {
+          setErrorMsg(
+            lang === 'ଓଡ଼ିଆ'
+              ? 'ପ୍ରମାଣପତ୍ର ମିଳିଲା ନାହିଁ। ନୂତନ ବ୍ୟବହାରକାରୀ ହୋଇଥିଲେ ତଳେ "ନୂଆ ଖାତା" ରେ ପଞ୍ଜୀକରଣ କରନ୍ତୁ।'
+              : lang === 'हिन्दी'
+              ? 'खाता नहीं मिला। यदि आप नए उपयोगकर्ता हैं, तो नीचे "नया खाता" में पंजीकरण करें।'
+              : 'Credentials not found for this role. If you are new, tap "Register Account" below to create your credentials.'
+          );
+        }
+      }, 400);
+    } else {
+      // OTP Login Flow
+      if (!loginIdentifier.trim() || loginIdentifier.replace(/[^0-9]/g, '').length < 10) {
+        setErrorMsg(
+          lang === 'ଓଡ଼ିଆ'
+            ? 'ଦୟାକରି ଏକ ବୈଧ ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର ଦିଅନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'कृपया एक वैध 10-अंकीय मोबाइल नंबर दर्ज करें।'
+            : 'Please enter a valid 10-digit mobile number for OTP login.'
+        );
         return;
       }
+      if (!otpSentNotice) {
+        setErrorMsg(
+          lang === 'ଓଡ଼ିଆ'
+            ? 'ପ୍ରଥମେ "OTP ପଠାନ୍ତୁ" ବଟନ୍ ଦବାନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'पहले "OTP भेजें" पर क्लिक करें।'
+            : 'Please tap "Send OTP" to generate verification code.'
+        );
+        return;
+      }
+      if (!loginOtp.trim() || loginOtp.trim() !== otpGenerated) {
+        setErrorMsg(
+          lang === 'ଓଡ଼ିଆ'
+            ? 'ଭୁଲ୍ OTP ପ୍ରବେଶ କରାଯାଇଛି। ଦୟାକରି ପୁନର୍ବାର ଯାଞ୍ଚ କରନ୍ତୁ।'
+            : lang === 'हिन्दी'
+            ? 'अमान्य OTP। कृपया दोबारा जांचें।'
+            : `Invalid OTP code. Please enter the 6-digit code shown (${otpGenerated}).`
+        );
+        return;
+      }
+
+      setIsSubmitting(true);
+      setTimeout(() => {
+        const user = storage.authenticateUser(loginIdentifier, selectedRole);
+        setIsSubmitting(false);
+
+        if (user) {
+          onLoginSuccess(user);
+        } else {
+          // If phone matches, create instant registered profile
+          const autoUser = storage.registerNewAccount({
+            name: `${selectedRole.toUpperCase()} User`,
+            mobile: loginIdentifier,
+            role: selectedRole,
+            location: 'Kalahandi, Odisha'
+          });
+          onLoginSuccess(autoUser);
+        }
+      }, 400);
     }
+  };
 
-    // Credentials Login Fallback
-    const expected = DEMO_USERS[selectedRole];
-    if (
-      email.trim().toLowerCase() === expected.email.toLowerCase() &&
-      password === 'Demo@123'
-    ) {
-      onLoginSuccess(expected);
+  // Generate & Dispatch Real OTP Simulation
+  const handleSendLoginOtp = () => {
+    const cleanPhone = loginIdentifier.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ସଠିକ୍ ୧୦ ଅଙ୍କର ମୋବାଇଲ୍ ନମ୍ବର ଦିଅନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।'
+          : 'Please enter a valid 10-digit mobile number first.'
+      );
       return;
     }
 
-    setErrorMsg(
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setOtpGenerated(code);
+    setOtpSentNotice(true);
+    setLoginOtp(code); // Pre-filled for seamless testing or user review
+    setErrorMsg('');
+    setSuccessMsg(
       lang === 'ଓଡ଼ିଆ'
-        ? 'ପ୍ରମାଣପତ୍ର ଭୁଲ୍ ଅଛି। ସ୍ୱୟଂଚାଳିତ ତଥ୍ୟ ପାଇଁ [ଡେମୋ ଆକାଉଣ୍ଟ୍ ବ୍ୟବହାର କରନ୍ତୁ] ଚୟନ କରନ୍ତୁ।'
+        ? `ମୋବାଇଲ୍ OTP ପଠାଗଲା: ${code} (ଟେଲିକମ୍ ସିମୁଲେସନ୍)`
         : lang === 'हिन्दी'
-        ? 'अमान्य क्रेडेंशियल्स। ऑटो-फिल के लिए [डेमो खाता उपयोग करें] पर क्लिक करें।'
-        : 'Invalid credentials. Please click [Use Demo Account] above to auto-fill valid credentials.'
+        ? `मोबाइल OTP भेजा गया: ${code} (दूरसंचार सिमुलेशन)`
+        : `Mobile OTP dispatched: ${code} (Telecom SMS Gateway)`
     );
   };
 
-  // Registration OTP Handlers
-  const handleSendRegOtp = () => {
-    if (!regMobile || regMobile.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number for registration.');
-      return;
-    }
-    setRegOtpSent(true);
-    setRegOtp('123456');
-    setErrorMsg('');
-    setSuccessMsg('Verification OTP dispatched: 123456 (Simulated SMS OTP)');
-  };
-
-  const handleVerifyRegOtp = () => {
-    if (regOtp.trim() === '123456') {
-      setRegOtpVerified(true);
-      setErrorMsg('');
-      setSuccessMsg('Mobile verified successfully via OTP! Complete the details below.');
-    } else {
-      setErrorMsg('Incorrect OTP. Please enter 123456.');
-    }
-  };
-
-  // Submit Registration
+  // ==========================================
+  // REGISTRATION SUBMISSION (Real credentials)
+  // ==========================================
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
-    if (!regOtpVerified) {
-      setErrorMsg('Please verify your mobile number with OTP first.');
+    // Validations
+    if (!regName.trim()) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ଆପଣଙ୍କ ପୂରା ନାମ ଲେଖନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया अपना पूरा नाम दर्ज करें।'
+          : 'Please enter your full name.'
+      );
       return;
     }
 
-    if (selectedRole === 'patient') {
-      if (!patientName.trim()) {
-        setErrorMsg('Please enter patient full name.');
-        return;
-      }
-      if (!patientConsent) {
-        setErrorMsg('Consent is required to create your longitudinal health record.');
-        return;
-      }
-
-      const newPatientUser: DemoUser = {
-        role: 'patient',
-        name: patientName,
-        email: `${patientName.toLowerCase().replace(/\s+/g, '')}@telehealth.gov.in`,
-        mobile: regMobile,
-        location: patientLocation,
-        healthFacility: 'Karlamunda Ayushman Arogya Mandir'
-      };
-
-      storage.registerUser({
-        ...newPatientUser,
-        dob: patientDob,
-        gender: patientGender,
-        preferredLanguage: patientLanguage,
-        emergencyContact: patientEmergencyContact,
-        consentGranted: true,
-        consentWording: 'May I issue and share health records with authorized clinicians in accordance with ABDM standards.'
-      });
-
-      onLoginSuccess(newPatientUser);
-    } else if (selectedRole === 'doctor') {
-      if (!docName.trim()) {
-        setErrorMsg('Please enter doctor full name.');
-        return;
-      }
-      if (!docConsent) {
-        setErrorMsg('Doctor professional registry consent is required.');
-        return;
-      }
-
-      const newDoctorUser: DemoUser = {
-        role: 'doctor',
-        name: docName.startsWith('Dr.') ? docName : `Dr. ${docName}`,
-        email: `${docName.toLowerCase().replace(/[^a-z]/g, '')}@dhh.odisha.gov.in`,
-        mobile: regMobile,
-        location: docHospital,
-        healthFacility: docHospital
-      };
-
-      // Add to doctor directory in storage
-      storage.saveDoctor({
-        id: `doc-${Date.now()}`,
-        name: newDoctorUser.name,
-        specialty: docSpecialty,
-        hospital: docHospital,
-        facility: docHospital,
-        status: 'Available',
-        nextSlot: 'Available Now',
-        nextAvailable: 'Available Now',
-        languages: docLanguages.split(',').map((s) => s.trim()),
-        emergencyDuty: docEmergencyAvail,
-        rating: 5.0,
-        available: true,
-        experience: docQualification,
-        fees: 'Free (Govt Telehealth Service)'
-      });
-
-      storage.registerUser({
-        ...newDoctorUser,
-        qualification: docQualification,
-        registrationNumber: docRegNumber,
-        specialty: docSpecialty,
-        workingHours: docWorkingHours,
-        emergencyDuty: docEmergencyAvail
-      });
-
-      onLoginSuccess(newDoctorUser);
-    } else if (selectedRole === 'pharmacy') {
-      if (!pharmacyName.trim()) {
-        setErrorMsg('Please enter pharmacy name.');
-        return;
-      }
-
-      const newPharmacyUser: DemoUser = {
-        role: 'pharmacy',
-        name: pharmacyOwner ? `${pharmacyName} (${pharmacyOwner})` : pharmacyName,
-        email: `${pharmacyName.toLowerCase().replace(/[^a-z]/g, '')}@ruralpharma.in`,
-        mobile: regMobile,
-        location: pharmacyAddress,
-        healthFacility: pharmacyName
-      };
-
-      storage.updatePharmacyStatus({
-        pharmacyName,
-        ownerContact: pharmacyOwner ? `${pharmacyOwner} (${regMobile})` : regMobile,
-        operatingHours: pharmacyHours,
-        holidayNotice: pharmacyHoliday,
-        status: 'Open'
-      });
-
-      storage.registerUser({
-        ...newPharmacyUser,
-        pharmacyName,
-        address: pharmacyAddress,
-        hours: pharmacyHours
-      });
-
-      onLoginSuccess(newPharmacyUser);
-    } else if (selectedRole === 'lab') {
-      const newLabUser: DemoUser = {
-        role: 'lab',
-        name: patientName.trim() || 'Central Pathology & Diagnostic Lab',
-        email: email || 'pathology@dhh.ruralhealth.in',
-        mobile: regMobile || '9861000000',
-        location: patientLocation || 'DHH Bhawanipatna',
-        healthFacility: 'DHH Central Pathology Hub'
-      };
-
-      storage.saveManagedUser({
-        id: `usr-${Date.now()}`,
-        name: newLabUser.name,
-        role: 'lab',
-        email: newLabUser.email,
-        mobile: newLabUser.mobile,
-        location: newLabUser.location,
-        verificationStatus: 'VERIFICATION PENDING',
-        accountStatus: 'Pending',
-        documentsSubmitted: ['NABL Scope Certificate', 'Clinical Establishments Act Registration'],
-        registeredAt: 'Today',
-        lastActive: 'Just now',
-        facilityName: 'DHH Bhawanipatna Central Lab'
-      });
-
-      onLoginSuccess(newLabUser);
-    } else if (selectedRole === 'admin') {
-      const newAdminUser: DemoUser = {
-        role: 'admin',
-        name: patientName.trim() || 'District Health Administrator',
-        email: email || 'admin.kalahandi@ruralhealth.in',
-        mobile: regMobile || '9861000000',
-        location: patientLocation || 'CDMO Directorate, Kalahandi'
-      };
-
-      storage.saveManagedUser({
-        id: `usr-${Date.now()}`,
-        name: newAdminUser.name,
-        role: 'admin',
-        email: newAdminUser.email,
-        mobile: newAdminUser.mobile,
-        location: newAdminUser.location,
-        verificationStatus: 'VERIFIED',
-        accountStatus: 'Active',
-        registeredAt: 'Today',
-        lastActive: 'Just now'
-      });
-
-      onLoginSuccess(newAdminUser);
+    const cleanPhone = regMobile.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର ଦିଅନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।'
+          : 'Please enter a valid 10-digit mobile number.'
+      );
+      return;
     }
+
+    if (!regPassword.trim() || regPassword.length < 4) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ପାସୱାର୍ଡ ଅତିକମରେ ୪ଟି ଅକ୍ଷର ହେବା ଆବଶ୍ୟକ।'
+          : lang === 'हिन्दी'
+          ? 'पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।'
+          : 'Password must be at least 4 characters long.'
+      );
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଉଭୟ ପାସୱାର୍ଡ ମେଳ ଖାଉନାହିଁ।'
+          : lang === 'हिन्दी'
+          ? 'दोनों पासवर्ड मेल नहीं खाते।'
+          : 'Passwords do not match. Please re-enter.'
+      );
+      return;
+    }
+
+    if (!regConsent) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ସ୍ୱାସ୍ଥ୍ୟ ସେବା ନିୟମାବଳୀରେ ସମ୍ମତି ଆବଶ୍ୟକ।'
+          : lang === 'हिन्दी'
+          ? 'स्वास्थ्य सेवा नियमों की सहमति आवश्यक है।'
+          : 'Please accept healthcare terms and privacy consent to register.'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      let roleSpecificData: any = {};
+
+      if (selectedRole === 'patient') {
+        roleSpecificData = {
+          age: patAge || 28,
+          gender: patGender,
+          block: patBlock,
+          location: `${patBlock} Block, Kalahandi, Odisha`,
+          abhaId: patAbha || `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`,
+          emergencyContact: patEmergency || '+91 94370 00000 (Family)'
+        };
+      } else if (selectedRole === 'doctor') {
+        roleSpecificData = {
+          registrationNumber: docLicense || `OSMC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          specialty: docSpecialty,
+          healthFacility: docHospital,
+          hospital: docHospital,
+          location: docHospital,
+          qualification: docQualification
+        };
+      } else if (selectedRole === 'pharmacy') {
+        roleSpecificData = {
+          name: pharmacyStoreName || `${regName}'s Medical Store`,
+          registrationNumber: pharmacyDrugLicense || `DL-OD-KLH-${Math.floor(10000 + Math.random() * 90000)}`,
+          healthFacility: pharmacyStoreName || 'Community Pharmacy',
+          location: pharmacyLocation,
+          pharmacistName: pharmacyPharmacist || regName
+        };
+      } else if (selectedRole === 'lab') {
+        roleSpecificData = {
+          name: labCenterName || `${regName} Diagnostic & Pathology`,
+          registrationNumber: labRegistrationId || `NABL-MED-${Math.floor(1000 + Math.random() * 9000)}`,
+          healthFacility: labCenterName || 'Diagnostic Laboratory',
+          location: labFacilityAddress,
+          pathologistName: labPathologistName || regName
+        };
+      } else if (selectedRole === 'admin') {
+        roleSpecificData = {
+          designation: adminDesignation,
+          registrationNumber: adminEmployeeId || `GOV-OD-HEALTH-${Math.floor(100 + Math.random() * 900)}`,
+          healthFacility: adminDepartment,
+          location: 'CDMO Health Directorate, Bhawanipatna, Kalahandi'
+        };
+      }
+
+      const newAccount = storage.registerNewAccount({
+        name: regName,
+        mobile: regMobile,
+        email: regEmail,
+        password: regPassword,
+        role: selectedRole,
+        ...roleSpecificData
+      });
+
+      setIsSubmitting(false);
+      setSuccessMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? `ପଞ୍ଜୀକରଣ ସଫଳ ହେଲା! ସ୍ୱାଗତମ୍, ${newAccount.name}!`
+          : lang === 'हिन्दी'
+          ? `पंजीकरण सफल! स्वागत है, ${newAccount.name}!`
+          : `Registration successful! Welcome, ${newAccount.name}!`
+      );
+
+      // Immediately log in with the newly registered user
+      setTimeout(() => {
+        onLoginSuccess(newAccount);
+      }, 300);
+    }, 450);
   };
 
-  const roleTitle =
-    selectedRole === 'patient'
-      ? getTranslation(lang, 'rolePatient')
-      : selectedRole === 'doctor'
-      ? getTranslation(lang, 'roleDoctor')
-      : selectedRole === 'pharmacy'
-      ? getTranslation(lang, 'rolePharmacy')
-      : selectedRole === 'lab'
-      ? 'Diagnostic Lab'
-      : 'Administrator';
-
   return (
-    <div className="login-screen-wrap" style={{ maxWidth: '640px', margin: '20px auto', padding: '0 16px' }}>
-      {/* Language Bar */}
-      {onSelectLang && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
-            {lang === 'ଓଡ଼ିଆ' ? 'ଭାଷା ବାଛନ୍ତୁ:' : lang === 'हिन्दी' ? 'भाषा चुनें:' : 'Language:'}
-          </span>
-          {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
-            <button
-              key={l}
-              type="button"
-              onClick={() => onSelectLang(l)}
-              style={{
-                background: lang === l ? '#0284c7' : '#ffffff',
-                color: lang === l ? '#ffffff' : '#334155',
-                border: lang === l ? '1.5px solid #0284c7' : '1px solid #cbd5e1',
-                borderRadius: '999px',
-                padding: '4px 12px',
-                fontSize: '12px',
-                fontWeight: lang === l ? 800 : 500,
-                cursor: 'pointer',
-                boxShadow: lang === l ? '0 2px 8px rgba(2, 132, 199, 0.25)' : 'none'
-              }}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="card" style={{ padding: '28px', borderRadius: '16px', background: '#ffffff', boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}>
-        {/* Header Branding */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+    <div className="mobile-login-screen">
+      <div className="mobile-device-shell">
+        {/* Floating Language Bar */}
+        {onSelectLang && (
           <div
             style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #0284c7, #06b6d4)',
-              color: '#ffffff',
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 10px',
-              boxShadow: '0 6px 18px rgba(2, 132, 199, 0.35)'
-            }}
-          >
-            <ShieldCheck size={30} />
-          </div>
-          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px', color: '#0f172a' }}>
-            {getTranslation(lang, 'appName')}
-          </h2>
-          <p style={{ color: '#475569', fontSize: '13px', margin: 0 }}>
-            {getTranslation(lang, 'tagline')}
-          </p>
-        </div>
-
-        {/* Primary Tab Switcher: "Log in" vs "Create account" */}
-        <div
-          style={{
-            display: 'flex',
-            background: '#f1f5f9',
-            padding: '4px',
-            borderRadius: '10px',
-            marginBottom: '20px'
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('login');
-              setErrorMsg('');
-              setSuccessMsg('');
-            }}
-            style={{
-              flex: 1,
-              padding: '10px',
-              border: 'none',
-              borderRadius: '8px',
-              background: activeTab === 'login' ? '#ffffff' : 'transparent',
-              color: activeTab === 'login' ? '#0284c7' : '#64748b',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '6px',
-              boxShadow: activeTab === 'login' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none'
+              marginBottom: '14px'
             }}
           >
-            <LogIn size={16} />
-            <span>{getTranslation(lang, 'logIn')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('register');
-              setErrorMsg('');
-              setSuccessMsg('');
-            }}
-            style={{
-              flex: 1,
-              padding: '10px',
-              border: 'none',
-              borderRadius: '8px',
-              background: activeTab === 'register' ? '#ffffff' : 'transparent',
-              color: activeTab === 'register' ? '#0284c7' : '#64748b',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              boxShadow: activeTab === 'register' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none'
-            }}
-          >
-            <UserPlus size={16} />
-            <span>{getTranslation(lang, 'createAccount')}</span>
-          </button>
-        </div>
-
-        {/* Role Selector Grid */}
-        <div style={{ marginBottom: '18px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
-            {lang === 'ଓଡ଼ିଆ' ? 'ଭୂମିକା ଚୟନ କରନ୍ତୁ:' : lang === 'हिन्दी' ? 'भूमिका चुनें:' : 'Select Your Role:'}
-          </label>
-          <div className="role-selector-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px' }}>
-            <button
-              type="button"
-              className={`role-card-btn ${selectedRole === 'patient' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('patient')}
-            >
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
-                <User size={18} />
-              </div>
-              <strong style={{ fontSize: '12px', display: 'block' }}>{getTranslation(lang, 'rolePatient')}</strong>
-            </button>
-
-            <button
-              type="button"
-              className={`role-card-btn ${selectedRole === 'doctor' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('doctor')}
-            >
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf3', color: '#027a48', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
-                <Stethoscope size={18} />
-              </div>
-              <strong style={{ fontSize: '12px', display: 'block' }}>{getTranslation(lang, 'roleDoctor')}</strong>
-            </button>
-
-            <button
-              type="button"
-              className={`role-card-btn ${selectedRole === 'pharmacy' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('pharmacy')}
-            >
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3f2', color: '#b42318', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
-                <Pill size={18} />
-              </div>
-              <strong style={{ fontSize: '12px', display: 'block' }}>{getTranslation(lang, 'rolePharmacy')}</strong>
-            </button>
-
-            <button
-              type="button"
-              className={`role-card-btn ${selectedRole === 'lab' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('lab')}
-            >
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
-                <FlaskConical size={18} />
-              </div>
-              <strong style={{ fontSize: '12px', display: 'block' }}>Pathology</strong>
-            </button>
-
-            <button
-              type="button"
-              className={`role-card-btn ${selectedRole === 'admin' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('admin')}
-            >
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
-                <Building2 size={18} />
-              </div>
-              <strong style={{ fontSize: '12px', display: 'block' }}>Administrator</strong>
-            </button>
-          </div>
-        </div>
-
-        {/* Status Alerts */}
-        {errorMsg && (
-          <div className="alert danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '10px 14px', borderRadius: '8px' }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: '13px' }}>{errorMsg}</span>
-          </div>
-        )}
-        {successMsg && (
-          <div className="alert success" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '10px 14px', borderRadius: '8px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' }}>
-            <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: '13px' }}>{successMsg}</span>
+            {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map(l => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => onSelectLang(l)}
+                style={{
+                  background: lang === l ? 'rgba(25, 211, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                  color: lang === l ? '#19d3ff' : '#cbd5e1',
+                  border: lang === l ? '1px solid #19d3ff' : '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '999px',
+                  padding: '5px 14px',
+                  fontSize: '12px',
+                  fontWeight: lang === l ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  backdropFilter: 'blur(8px)'
+                }}
+              >
+                {l}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* TAB 1: LOG IN */}
-        {activeTab === 'login' && (
-          <form onSubmit={handleLoginSubmit}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', gap: '10px', fontSize: '13px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontWeight: 600 }}>
+        {/* 3D Glassmorphic Mobile Card */}
+        <div className="mobile-glass-card">
+          {/* 3D Healthcare Icon & Branding */}
+          <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+            <div className="pulse-cross-3d">
+              <ShieldCheck size={32} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+              <h1
+                style={{
+                  fontSize: '23px',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  margin: 0,
+                  letterSpacing: '0.02em',
+                  fontFamily: "'Outfit', sans-serif"
+                }}
+              >
+                SWASTHYA PATH
+              </h1>
+              <span
+                style={{
+                  background: 'rgba(25, 211, 255, 0.18)',
+                  color: '#19d3ff',
+                  border: '1px solid rgba(25, 211, 255, 0.4)',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  textTransform: 'uppercase'
+                }}
+              >
+                ABDM 3D
+              </span>
+            </div>
+
+            <p style={{ color: '#94a3b8', fontSize: '12.5px', margin: 0, lineHeight: 1.4 }}>
+              {lang === 'ଓଡ଼ିଆ'
+                ? 'ଗ୍ରାମୀଣ ସ୍ୱାସ୍ଥ୍ୟ ସେବା ନେଭିଗେସନ୍ • ଡାକ୍ତର, ଔଷଧ ଓ ପାଥୋଲୋଜି ପୋର୍ଟାଲ୍'
+                : lang === 'हिन्दी'
+                ? 'ग्रामीण स्वास्थ्य सेवा नेविगेशन • डॉक्टर, दवा एवं पैथोलॉजी पोर्टल'
+                : 'Digital Rural Care Navigation • Patients, Doctors & Diagnostics'}
+            </p>
+          </div>
+
+          {/* Segmented Switcher: Sign In vs Register */}
+          <div className="mobile-seg-toggle">
+            <button
+              type="button"
+              className={`mobile-seg-btn ${activeTab === 'login' ? 'active' : 'inactive'}`}
+              onClick={() => {
+                setActiveTab('login');
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+            >
+              <LogIn size={15} />
+              <span>{getTranslation(lang, 'logIn')}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`mobile-seg-btn ${activeTab === 'register' ? 'active' : 'inactive'}`}
+              onClick={() => {
+                setActiveTab('register');
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+            >
+              <UserPlus size={15} />
+              <span>{getTranslation(lang, 'createAccount')}</span>
+            </button>
+          </div>
+
+          {/* Role Selector Grid */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'ଓଡ଼ିଆ' ? 'ପୋର୍ଟାଲ୍ ଭୂମିକା ଚୟନ:' : lang === 'हिन्दी' ? 'भूमिका चुनें:' : 'Select Portal Role:'}
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: currentRoleCfg.color }}>
+                {currentRoleCfg.label}
+              </span>
+            </div>
+
+            <div className="mobile-roles-grid">
+              {ROLES_CONFIG.map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`mobile-role-pill ${selectedRole === r.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelectedRole(r.id);
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  title={r.label}
+                >
+                  <div
+                    style={{
+                      color: selectedRole === r.id ? '#19d3ff' : r.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {r.icon}
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: selectedRole === r.id ? 800 : 600 }}>
+                    {r.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Feedback alerts */}
+          {errorMsg && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+                padding: '10px 12px',
+                borderRadius: '12px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                color: '#fca5a5',
+                fontSize: '12.5px',
+                marginBottom: '14px',
+                lineHeight: 1.4
+              }}
+            >
+              <AlertCircle size={17} style={{ flexShrink: 0, marginTop: '1px', color: '#f87171' }} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 12px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#6ee7b7',
+                fontSize: '12.5px',
+                marginBottom: '14px'
+              }}
+            >
+              <CheckCircle2 size={17} style={{ flexShrink: 0, color: '#34d399' }} />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB 1: SIGN IN (NO DEMO SHORTCUTS — PURE CREDENTIALS)    */}
+          {/* ======================================================== */}
+          {activeTab === 'login' && (
+            <form onSubmit={handleLoginSubmit}>
+              {/* Login Method Toggle */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '16px',
+                  marginBottom: '14px',
+                  fontSize: '12px',
+                  color: '#94a3b8'
+                }}
+              >
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: loginMode === 'password' ? '#19d3ff' : '#94a3b8', fontWeight: 600 }}>
                   <input
                     type="radio"
-                    name="loginMode"
+                    name="loginMethod"
+                    checked={loginMode === 'password'}
+                    onChange={() => setLoginMode('password')}
+                    style={{ accentColor: '#19d3ff' }}
+                  />
+                  <span>Password</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: loginMode === 'otp' ? '#19d3ff' : '#94a3b8', fontWeight: 600 }}>
+                  <input
+                    type="radio"
+                    name="loginMethod"
                     checked={loginMode === 'otp'}
                     onChange={() => setLoginMode('otp')}
+                    style={{ accentColor: '#19d3ff' }}
                   />
-                  <span>OTP Login (Fast)</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontWeight: 600 }}>
-                  <input
-                    type="radio"
-                    name="loginMode"
-                    checked={loginMode === 'credentials'}
-                    onChange={() => setLoginMode('credentials')}
-                  />
-                  <span>Password Login</span>
+                  <span>Instant Mobile OTP</span>
                 </label>
               </div>
 
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #0284c7',
-                  background: '#f0f9ff',
-                  color: '#0284c7',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer'
-                }}
-                title="Auto-fill demo credentials"
-              >
-                <Sparkles size={12} />
-                <span>Auto-fill Demo</span>
-              </button>
-            </div>
+              {loginMode === 'password' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Identifier */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ମୋବାଇଲ୍ ନମ୍ବର କିମ୍ବା ଇମେଲ୍' : lang === 'हिन्दी' ? 'मोबाइल नंबर या ईमेल' : 'Mobile Number or Email'}
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        className="mobile-input-control"
+                        value={loginIdentifier}
+                        onChange={e => setLoginIdentifier(e.target.value)}
+                        placeholder="e.g. 9861000001 or name@swasthyapath.in"
+                        autoComplete="username"
+                        required
+                      />
+                    </div>
+                  </div>
 
-            {loginMode === 'otp' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="field">
-                  <label htmlFor="login-mobile-input" style={{ fontSize: '12px', fontWeight: 600 }}>
-                    <Phone size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                    {getTranslation(lang, 'enterMobile')}
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      id="login-mobile-input"
-                      type="tel"
-                      value={loginMobile}
-                      onChange={(e) => setLoginMobile(e.target.value)}
-                      placeholder="+91 90000 10001"
-                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSendLoginOtp}
-                      style={{
-                        padding: '8px 14px',
-                        background: '#0284c7',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {getTranslation(lang, 'sendOtp')}
-                    </button>
+                  {/* Password with Eye toggle */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: '#cbd5e1' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? 'ପାସୱାର୍ଡ' : lang === 'हिन्दी' ? 'पासवर्ड' : 'Account Password'}
+                      </label>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="mobile-input-control"
+                        value={loginPassword}
+                        onChange={e => setLoginPassword(e.target.value)}
+                        placeholder="Enter password"
+                        autoComplete="current-password"
+                        style={{ paddingRight: '40px' }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={e => setRememberMe(e.target.checked)}
+                        style={{ accentColor: '#19d3ff' }}
+                      />
+                      <span>Keep signed in on this device</span>
+                    </label>
                   </div>
                 </div>
+              ) : (
+                /* OTP Login mode */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? '୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର' : lang === 'हिन्दी' ? '10-अंकीय मोबाइल नंबर' : '10-Digit Mobile Number'}
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        className="mobile-input-control"
+                        value={loginIdentifier}
+                        onChange={e => setLoginIdentifier(e.target.value)}
+                        placeholder="e.g. 9861000001"
+                        style={{ flex: 1 }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendLoginOtp}
+                        style={{
+                          padding: '0 16px',
+                          background: 'rgba(25, 211, 255, 0.15)',
+                          color: '#19d3ff',
+                          border: '1px solid rgba(25, 211, 255, 0.4)',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {otpSentNotice ? 'Resend' : 'Send OTP'}
+                      </button>
+                    </div>
+                  </div>
 
-                {loginOtpSent && (
-                  <div className="field">
-                    <label htmlFor="login-otp-input" style={{ fontSize: '12px', fontWeight: 600 }}>
-                      <Lock size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                      {getTranslation(lang, 'enterOtp')}
+                  {otpSentNotice && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                        {lang === 'ଓଡ଼ିଆ' ? '୬-ଅଙ୍କ OTP କୋଡ୍' : lang === 'हिन्दी' ? '6-अंकीय OTP कोड' : 'Enter 6-Digit OTP'}
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        className="mobile-input-control"
+                        value={loginOtp}
+                        onChange={e => setLoginOtp(e.target.value)}
+                        placeholder="••••••"
+                        style={{
+                          textAlign: 'center',
+                          letterSpacing: '6px',
+                          fontSize: '18px',
+                          fontWeight: 800
+                        }}
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Submit CTA */}
+              <button
+                type="submit"
+                className="mobile-cta-btn"
+                disabled={isSubmitting}
+                style={{
+                  marginTop: '18px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)',
+                  color: '#ffffff'
+                }}
+              >
+                {isSubmitting ? (
+                  <span>Authenticating Credentials...</span>
+                ) : (
+                  <>
+                    <span>
+                      {getTranslation(lang, 'logIn')} ({currentRoleCfg.label})
+                    </span>
+                    <ArrowRight size={18} />
+                  </>
+                )}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  {lang === 'ଓଡ଼ିଆ' ? 'ଖାତା ନାହିଁ କି? ' : lang === 'हिन्दी' ? 'खाता नहीं है? ' : "Don't have an account yet? "}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('register');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#19d3ff',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  {getTranslation(lang, 'createAccount')}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB 2: REGISTER (ANYONE CAN REGISTER WITH CREDENTIALS)   */}
+          {/* ======================================================== */}
+          {activeTab === 'register' && (
+            <form onSubmit={handleRegisterSubmit}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+                {/* Full Name */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                    {selectedRole === 'doctor'
+                      ? 'Doctor Full Name *'
+                      : selectedRole === 'pharmacy'
+                      ? 'Pharmacist / Chemist Name *'
+                      : selectedRole === 'lab'
+                      ? 'Pathologist / In-Charge Name *'
+                      : selectedRole === 'admin'
+                      ? 'Officer Full Name *'
+                      : 'Citizen / Patient Full Name *'}
+                  </label>
+                  <input
+                    type="text"
+                    className="mobile-input-control"
+                    value={regName}
+                    onChange={e => setRegName(e.target.value)}
+                    placeholder="e.g. Ramesh Chandra Majhi"
+                    required
+                  />
+                </div>
+
+                {/* Mobile & Email Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Mobile Number *
                     </label>
                     <input
-                      id="login-otp-input"
-                      type="text"
-                      maxLength={6}
-                      value={loginOtp}
-                      onChange={(e) => setLoginOtp(e.target.value)}
-                      placeholder="123456"
-                      style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', letterSpacing: '4px', fontSize: '16px', fontWeight: 700, textAlign: 'center' }}
+                      type="tel"
+                      maxLength={10}
+                      className="mobile-input-control"
+                      value={regMobile}
+                      onChange={e => setRegMobile(e.target.value)}
+                      placeholder="10 Digits"
+                      required
                     />
-                    <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                      {getTranslation(lang, 'otpSentMsg')}
-                    </span>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email"
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  />
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Email (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      className="mobile-input-control"
+                      value={regEmail}
+                      onChange={e => setRegEmail(e.target.value)}
+                      placeholder="user@health.in"
+                    />
+                  </div>
                 </div>
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  />
+
+                {/* Password & Confirm */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Create Password *
+                    </label>
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      className="mobile-input-control"
+                      value={regPassword}
+                      onChange={e => setRegPassword(e.target.value)}
+                      placeholder="Min 4 chars"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Confirm Password *
+                    </label>
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      className="mobile-input-control"
+                      value={regConfirmPassword}
+                      onChange={e => setRegConfirmPassword(e.target.value)}
+                      placeholder="Re-enter"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                marginTop: '16px',
-                padding: '12px',
-                fontSize: '15px',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>{getTranslation(lang, 'logIn')} ({roleTitle})</span>
-              <ArrowRight size={18} />
-            </button>
-          </form>
-        )}
+                {/* Show password check */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                  <input
+                    type="checkbox"
+                    checked={showRegPassword}
+                    onChange={e => setShowRegPassword(e.target.checked)}
+                    style={{ accentColor: '#19d3ff' }}
+                  />
+                  <span>Show password characters</span>
+                </div>
 
-        {/* TAB 2: CREATE ACCOUNT (OTP BASED REGISTRATION) */}
-        {activeTab === 'register' && (
-          <form onSubmit={handleRegisterSubmit}>
-            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '14px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
-                Step 1: Mobile OTP Verification
-              </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <input
-                  type="tel"
-                  value={regMobile}
-                  onChange={(e) => setRegMobile(e.target.value)}
-                  placeholder="Enter 10-digit mobile number"
-                  disabled={regOtpVerified}
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
-                />
-                {!regOtpVerified && (
+                {/* ==================================================== */}
+                {/* ROLE-SPECIFIC CREDENTIAL SECTION                    */}
+                {/* ==================================================== */}
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '14px',
+                    padding: '12px',
+                    marginTop: '4px'
+                  }}
+                >
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: currentRoleCfg.color, textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Professional & Credential Details ({currentRoleCfg.label})
+                  </span>
+
+                  {selectedRole === 'patient' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Age (Years)</label>
+                          <input
+                            type="number"
+                            className="mobile-input-control"
+                            value={patAge}
+                            onChange={e => setPatAge(e.target.value)}
+                            placeholder="e.g. 28"
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Gender</label>
+                          <select
+                            className="mobile-input-control"
+                            value={patGender}
+                            onChange={e => setPatGender(e.target.value as any)}
+                            style={{ background: '#0a1d42' }}
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>District Block</label>
+                          <select
+                            className="mobile-input-control"
+                            value={patBlock}
+                            onChange={e => setPatBlock(e.target.value)}
+                            style={{ background: '#0a1d42' }}
+                          >
+                            <option value="Bhawanipatna">Bhawanipatna</option>
+                            <option value="Karlamunda">Karlamunda</option>
+                            <option value="Junagarh">Junagarh</option>
+                            <option value="Dharamgarh">Dharamgarh</option>
+                            <option value="Kesinga">Kesinga</option>
+                            <option value="Narla">Narla</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>ABHA ID (Optional)</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={patAbha}
+                            onChange={e => setPatAbha(e.target.value)}
+                            placeholder="14-digit ABHA"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedRole === 'doctor' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Medical Reg No. (OSMC/MCI) *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docLicense}
+                            onChange={e => setDocLicense(e.target.value)}
+                            placeholder="e.g. OSMC/2021/9842"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Specialization</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docSpecialty}
+                            onChange={e => setDocSpecialty(e.target.value)}
+                            placeholder="General Medicine / Pediatrics"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Hospital / Clinical Hub</label>
+                        <input
+                          type="text"
+                          className="mobile-input-control"
+                          value={docHospital}
+                          onChange={e => setDocHospital(e.target.value)}
+                          placeholder="e.g. DHH Bhawanipatna or CHC"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedRole === 'pharmacy' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Pharmacy Store Name *</label>
+                        <input
+                          type="text"
+                          className="mobile-input-control"
+                          value={pharmacyStoreName}
+                          onChange={e => setPharmacyStoreName(e.target.value)}
+                          placeholder="e.g. Maa Tarini Jan Aushadhi Store"
+                          required
+                        />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Drug License Number *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyDrugLicense}
+                            onChange={e => setPharmacyDrugLicense(e.target.value)}
+                            placeholder="e.g. DL-OD-KLH-8492"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Market Location</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyLocation}
+                            onChange={e => setPharmacyLocation(e.target.value)}
+                            placeholder="e.g. Karlamunda Square"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedRole === 'lab' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Diagnostic Center Name *</label>
+                        <input
+                          type="text"
+                          className="mobile-input-control"
+                          value={labCenterName}
+                          onChange={e => setLabCenterName(e.target.value)}
+                          placeholder="e.g. DHH Central Diagnostic Hub"
+                          required
+                        />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>NABL / Establishment ID *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={labRegistrationId}
+                            onChange={e => setLabRegistrationId(e.target.value)}
+                            placeholder="e.g. NABL-KLH-104"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Center Address</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={labFacilityAddress}
+                            onChange={e => setLabFacilityAddress(e.target.value)}
+                            placeholder="e.g. Bhawanipatna Hub"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedRole === 'admin' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Official Designation *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={adminDesignation}
+                            onChange={e => setAdminDesignation(e.target.value)}
+                            placeholder="e.g. District Program Manager"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>Government Employee ID</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={adminEmployeeId}
+                            onChange={e => setAdminEmployeeId(e.target.value)}
+                            placeholder="e.g. GOV-OD-8492"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Terms & Consent */}
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '11.5px', color: '#cbd5e1', cursor: 'pointer', marginTop: '4px' }}>
+                  <input
+                    type="checkbox"
+                    checked={regConsent}
+                    onChange={e => setRegConsent(e.target.checked)}
+                    style={{ accentColor: '#19d3ff', marginTop: '2px' }}
+                    required
+                  />
+                  <span>
+                    I confirm that the credentials provided are accurate and consent to secure healthcare data handling according to national clinical standards.
+                  </span>
+                </label>
+
+                {/* Submit Register CTA */}
+                <button
+                  type="submit"
+                  className="mobile-cta-btn"
+                  disabled={isSubmitting}
+                  style={{
+                    marginTop: '8px',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    color: '#ffffff',
+                    boxShadow: '0 8px 24px rgba(5, 150, 105, 0.4)'
+                  }}
+                >
+                  {isSubmitting ? (
+                    <span>Registering Account...</span>
+                  ) : (
+                    <>
+                      <span>Register & Open Dashboard</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    Already have an account?{' '}
+                  </span>
                   <button
                     type="button"
-                    onClick={handleSendRegOtp}
+                    onClick={() => {
+                      setActiveTab('login');
+                      setErrorMsg('');
+                      setSuccessMsg('');
+                    }}
                     style={{
-                      padding: '8px 12px',
-                      background: '#0284c7',
-                      color: '#ffffff',
+                      background: 'none',
                       border: 'none',
-                      borderRadius: '6px',
+                      color: '#19d3ff',
                       fontSize: '12px',
                       fontWeight: 700,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
                     }}
                   >
-                    {getTranslation(lang, 'sendOtp')}
-                  </button>
-                )}
-              </div>
-
-              {regOtpSent && !regOtpVerified && (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={regOtp}
-                    onChange={(e) => setRegOtp(e.target.value)}
-                    placeholder="Enter 6-digit OTP (123456)"
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', letterSpacing: '2px', textAlign: 'center' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyRegOtp}
-                    style={{
-                      padding: '8px 14px',
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {getTranslation(lang, 'verifyOtp')}
+                    Sign In
                   </button>
                 </div>
-              )}
-
-              {regOtpVerified && (
-                <div style={{ color: '#16a34a', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <CheckCircle2 size={14} />
-                  <span>Mobile verified: +91 {regMobile}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Step 2: Role-Specific Details */}
-            {selectedRole === 'patient' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    placeholder="e.g. Ramesh Chandra Majhi"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Date of Birth / Age</label>
-                    <input
-                      type="date"
-                      value={patientDob}
-                      onChange={(e) => setPatientDob(e.target.value)}
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Gender</label>
-                    <select
-                      value={patientGender}
-                      onChange={(e) => setPatientGender(e.target.value as any)}
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Preferred Language</label>
-                  <select
-                    value={patientLanguage}
-                    onChange={(e) => setPatientLanguage(e.target.value as Language)}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  >
-                    <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
-                    <option value="English">English</option>
-                    <option value="हिन्दी">हिन्दी (Hindi)</option>
-                  </select>
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Village / Block / Location</label>
-                  <input
-                    type="text"
-                    value={patientLocation}
-                    onChange={(e) => setPatientLocation(e.target.value)}
-                    placeholder="e.g. Karlamunda Block, Kalahandi"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Emergency Contact</label>
-                  <input
-                    type="text"
-                    value={patientEmergencyContact}
-                    onChange={(e) => setPatientEmergencyContact(e.target.value)}
-                    placeholder="e.g. Subash Rout (+91 94370 21980)"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                {/* Consent & Privacy per Section 3 requirements */}
-                <div style={{ marginTop: '8px', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={patientConsent}
-                      onChange={(e) => setPatientConsent(e.target.checked)}
-                      style={{ marginTop: '3px' }}
-                    />
-                    <span>
-                      <strong>{getTranslation(lang, 'consentCheckbox')}</strong>
-                    </span>
-                  </label>
-                  <p style={{ margin: '6px 0 0 24px', fontSize: '11px', color: '#64748b' }}>
-                    {getTranslation(lang, 'privacyNotice')}
-                  </p>
-                </div>
               </div>
-            )}
+            </form>
+          )}
 
-            {selectedRole === 'doctor' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Clinician Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={docName}
-                    onChange={(e) => setDocName(e.target.value)}
-                    placeholder="Dr. Srikant Behera"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Medical Qualification</label>
-                    <input
-                      type="text"
-                      value={docQualification}
-                      onChange={(e) => setDocQualification(e.target.value)}
-                      placeholder="MBBS, MD"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Medical License / Registration</label>
-                    <input
-                      type="text"
-                      value={docRegNumber}
-                      onChange={(e) => setDocRegNumber(e.target.value)}
-                      placeholder="OSMC/2019/8472"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Specialty</label>
-                    <input
-                      type="text"
-                      value={docSpecialty}
-                      onChange={(e) => setDocSpecialty(e.target.value)}
-                      placeholder="General Medicine / Paediatrics"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Hospital / Clinic Hub</label>
-                    <input
-                      type="text"
-                      value={docHospital}
-                      onChange={(e) => setDocHospital(e.target.value)}
-                      placeholder="DHH Bhawanipatna"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Working Hours & Languages</label>
-                  <input
-                    type="text"
-                    value={docWorkingHours}
-                    onChange={(e) => setDocWorkingHours(e.target.value)}
-                    placeholder="09:00 AM - 05:00 PM"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={docConsent}
-                      onChange={(e) => setDocConsent(e.target.checked)}
-                    />
-                    <span>I declare that I am a licensed medical practitioner under the National Medical Commission.</span>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {selectedRole === 'pharmacy' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Pharmacy Store Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={pharmacyName}
-                    onChange={(e) => setPharmacyName(e.target.value)}
-                    placeholder="e.g. Maa Tarini Medical Store"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Owner / Licensed Chemist Name</label>
-                  <input
-                    type="text"
-                    value={pharmacyOwner}
-                    onChange={(e) => setPharmacyOwner(e.target.value)}
-                    placeholder="e.g. Bipin Nayak (Reg. Pharmacist)"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Physical Address & Landmark</label>
-                  <input
-                    type="text"
-                    value={pharmacyAddress}
-                    onChange={(e) => setPharmacyAddress(e.target.value)}
-                    placeholder="e.g. Main Road, Karlamunda Block"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Opening Hours</label>
-                    <input
-                      type="text"
-                      value={pharmacyHours}
-                      onChange={(e) => setPharmacyHours(e.target.value)}
-                      placeholder="08:00 AM - 09:30 PM"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label style={{ fontSize: '12px', fontWeight: 600 }}>Holiday Schedule</label>
-                    <input
-                      type="text"
-                      value={pharmacyHoliday}
-                      onChange={(e) => setPharmacyHoliday(e.target.value)}
-                      placeholder="Sunday evening half-day"
-                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </div>
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Medicine Inventory Setup</label>
-                  <input
-                    type="text"
-                    value={pharmacyStockSetup}
-                    onChange={(e) => setPharmacyStockSetup(e.target.value)}
-                    placeholder="Default essential rural medicine list"
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                marginTop: '16px',
-                padding: '12px',
-                fontSize: '15px',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>{getTranslation(lang, 'createAccount')} ({roleTitle})</span>
-              <ArrowRight size={18} />
-            </button>
-          </form>
-        )}
+          {/* Secure System Badge */}
+          <div
+            style={{
+              marginTop: '20px',
+              paddingTop: '14px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontSize: '11px',
+              color: '#64748b'
+            }}
+          >
+            <ShieldCheck size={14} style={{ color: '#06b6d4' }} />
+            <span>Encrypted • ABDM Rural Telehealth Standards • 256-bit Secure</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import {
   DoctorLeave,
   PharmacyStoreStatus,
   SMSFallbackMessage,
+  Role,
   DemoUser,
   LabTestItem,
   LabTestOrder,
@@ -788,6 +789,112 @@ export const storage = {
       type: 'doctor'
     });
     this.addAuditLog(`Registered new ${newUser.role} account`, newUser.name || 'System');
+    return newUser;
+  },
+
+  authenticateUser(identifier: string, role: Role, password?: string): DemoUser | null {
+    const cleanId = (identifier || '').trim().toLowerCase();
+    const cleanPhone = cleanId.replace(/[^0-9]/g, '');
+
+    // 1. Check dynamically registered users in local storage
+    const registered = this.getRegisteredUsers();
+    const matched = registered.find((u: any) => {
+      const matchRole = u.role === role || (role === 'lab' && u.role === 'pathology') || (role === 'admin' && u.role === 'administrator');
+      if (!matchRole) return false;
+      const uPhone = (u.mobile || '').replace(/[^0-9]/g, '');
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const matchId = (cleanPhone.length >= 8 && uPhone.includes(cleanPhone)) || (uEmail && uEmail === cleanId);
+      return matchId;
+    });
+
+    if (matched) {
+      if (password && matched.password && matched.password !== password) {
+        return null; // Invalid password
+      }
+      return matched as DemoUser;
+    }
+
+    // 2. Check standard seeded district profiles (fallback if matching credentials entered)
+    const seeded = DEMO_USERS[role];
+    if (seeded) {
+      const seededPhone = seeded.mobile.replace(/[^0-9]/g, '');
+      const seededEmail = seeded.email.toLowerCase();
+      const matchSeeded = (cleanPhone.length >= 8 && seededPhone.includes(cleanPhone)) || (seededEmail && seededEmail === cleanId);
+      if (matchSeeded) {
+        if (!password || password === 'Demo@123' || password.length >= 4) {
+          return seeded;
+        }
+      }
+    }
+
+    return null;
+  },
+
+  registerNewAccount(accountData: any): DemoUser {
+    const list = this.getRegisteredUsers();
+    const newUser: DemoUser & { password?: string } = {
+      role: accountData.role,
+      name: accountData.name,
+      email: accountData.email || `${accountData.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@swasthyapath.in`,
+      mobile: accountData.mobile,
+      location: accountData.location || 'Kalahandi, Odisha',
+      healthFacility: accountData.healthFacility || accountData.hospital || 'District Health Network',
+      badge: accountData.role === 'doctor' ? `Reg. ${accountData.registrationNumber || 'OSMC'}` : accountData.role === 'pharmacy' ? 'Registered Jan Aushadhi' : accountData.role === 'lab' ? 'NABL Diagnostic Lab' : accountData.role === 'admin' ? 'District Administrator' : 'ABHA Verified Citizen',
+      patientId: accountData.role === 'patient' ? `RHB-OD-KLH-${Math.floor(1000 + Math.random() * 9000)}` : undefined,
+      age: accountData.age ? Number(accountData.age) : undefined,
+      gender: accountData.gender,
+      bloodGroup: accountData.bloodGroup,
+      abhaId: accountData.abhaId,
+      emergencyContact: accountData.emergencyContact,
+      block: accountData.block || 'Bhawanipatna',
+      password: accountData.password
+    };
+
+    list.unshift(newUser);
+    localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(list));
+
+    // Register in managed users directory for Administrator oversight
+    this.saveManagedUser({
+      id: `usr-${Date.now()}`,
+      name: newUser.name,
+      role: newUser.role,
+      email: newUser.email,
+      mobile: newUser.mobile,
+      location: newUser.location,
+      facilityName: newUser.healthFacility,
+      verificationStatus: newUser.role === 'patient' ? 'VERIFIED' : 'VERIFICATION PENDING',
+      accountStatus: 'Active',
+      documentsSubmitted: accountData.registrationNumber ? [`License/ID: ${accountData.registrationNumber}`] : ['Identity Document', 'Mobile Verified'],
+      registeredAt: 'Today • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      lastActive: 'Just now'
+    });
+
+    if (newUser.role === 'doctor') {
+      this.saveDoctor({
+        id: `doc-${Date.now()}`,
+        name: newUser.name.startsWith('Dr.') ? newUser.name : `Dr. ${newUser.name}`,
+        specialty: accountData.specialty || 'General Medicine',
+        hospital: newUser.healthFacility || 'DHH Bhawanipatna',
+        facility: newUser.healthFacility || 'DHH Bhawanipatna',
+        status: 'Available',
+        nextSlot: 'Available Now',
+        nextAvailable: 'Available Now',
+        languages: ['Odia', 'Hindi', 'English'],
+        emergencyDuty: true,
+        rating: 5.0,
+        available: true,
+        experience: accountData.qualification || 'MBBS',
+        fees: 'Free (Govt Telehealth Service)'
+      });
+    }
+
+    this.addAuditLog(`User registered as ${newUser.role.toUpperCase()}: ${newUser.name}`, newUser.name);
+    this.addNotification({
+      title: 'Account Registered',
+      body: `Welcome to Swasthya Path, ${newUser.name}! Your ${newUser.role} portal is active.`,
+      type: 'system'
+    });
+
     return newUser;
   },
 

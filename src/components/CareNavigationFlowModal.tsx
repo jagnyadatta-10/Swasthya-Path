@@ -31,6 +31,7 @@ interface CareNavigationFlowModalProps {
   onSelectPath?: (pathway: 'low' | 'moderate' | 'emergency' | 'doctor' | 'pharmacy') => void;
   lang?: Language;
   currentActiveStage?: 'patient' | 'chatbot' | 'low' | 'moderate' | 'emergency' | 'doctor' | 'advice' | 'medicine' | 'pharmacy';
+  patientName?: string;
 }
 
 const FLOW_I18N: Record<Language, {
@@ -160,7 +161,8 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
   onClose,
   onSelectPath,
   lang = 'English',
-  currentActiveStage = 'chatbot'
+  currentActiveStage = 'chatbot',
+  patientName
 }) => {
   const [activeLang, setActiveLang] = useState<Language>(lang);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -431,7 +433,7 @@ export const CareNavigationFlowModal: React.FC<CareNavigationFlowModalProps> = (
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>RURAL CITIZEN</div>
-                <strong style={{ fontSize: '15px', color: '#0f172a' }}>PATIENT (Keshab Rout)</strong>
+                <strong style={{ fontSize: '15px', color: '#0f172a' }}>PATIENT {patientName ? `(${patientName})` : '(Keshab Rout)'}</strong>
               </div>
             </div>
 

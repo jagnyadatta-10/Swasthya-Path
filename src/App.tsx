@@ -176,6 +176,7 @@ export const App: React.FC = () => {
         isOpen={isCareFlowOpen}
         onClose={() => setIsCareFlowOpen(false)}
         lang={lang}
+        patientName={currentUser?.name}
       />
 
       {/* Footer (Only shown when logged in inside portal) */}

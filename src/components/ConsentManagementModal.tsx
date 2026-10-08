@@ -95,7 +95,7 @@ export const ConsentManagementModal: React.FC<ConsentManagementModalProps> = ({
   const [activeLang, setActiveLang] = useState<Language>(lang);
   const [consents, setConsents] = useState<ConsentItem[]>(storage.getConsents());
   const [abhaId, setAbhaId] = useState('98-2143-8765-1094');
-  const [abhaAddress, setAbhaAddress] = useState('keshabrout@abdm');
+  const [abhaAddress, setAbhaAddress] = useState(patientName ? `${patientName.toLowerCase().replace(/[^a-z0-9]/g, '')}@abdm` : 'keshabrout@abdm');
   const [notice, setNotice] = useState('');
 
   useEffect(() => {

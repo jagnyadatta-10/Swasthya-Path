@@ -7,6 +7,8 @@ interface EmergencyHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
   lang?: Language;
+  patientName?: string;
+  patientId?: string;
 }
 
 interface EmergencyCategoryItem {
@@ -196,7 +198,9 @@ const HELP_I18N: Record<Language, {
 export const EmergencyHelpModal: React.FC<EmergencyHelpModalProps> = ({
   isOpen,
   onClose,
-  lang = 'English'
+  lang = 'English',
+  patientName,
+  patientId
 }) => {
   const [activeLang, setActiveLang] = useState<Language>(lang);
   const [selectedIssueId, setSelectedIssueId] = useState<string>('chest');
@@ -471,7 +475,7 @@ export const EmergencyHelpModal: React.FC<EmergencyHelpModalProps> = ({
             {generatedSummary && (
               <div>
                 <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', color: '#1e293b', marginBottom: '12px', lineHeight: 1.5 }}>
-                  <div><strong>{t.patientLabel}</strong> Keshab Rout (RHB-OD-KLH-0941) • {activeLang === 'ଓଡ଼ିଆ' ? '୨୬ ବର୍ଷ • ପୁରୁଷ' : activeLang === 'हिन्दी' ? '२६ वर्ष • पुरुष' : 'Age: 26 • Male'} • B+</div>
+                  <div><strong>{t.patientLabel}</strong> {patientName ? `${patientName} (${patientId || 'RHB-OD-KLH-0941'})` : 'Keshab Rout (RHB-OD-KLH-0941)'} • {activeLang === 'ଓଡ଼ିଆ' ? '୨୬ ବର୍ଷ • ପୁରୁଷ' : activeLang === 'हिन्दी' ? '२६ वर्ष • पुरुष' : 'Age: 26 • Male'} • B+</div>
                   <div><strong>{t.acuteIssueLabel}</strong> {currentIssueText}</div>
                   <div><strong>{t.locationLabel}</strong> {t.locationVal}</div>
                   <div><strong>{t.allergiesLabel}</strong> {t.allergiesVal}</div>

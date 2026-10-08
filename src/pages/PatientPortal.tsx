@@ -299,6 +299,23 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     setToken(storage.getActiveToken());
   }, [activeTab]);
 
+  // Dynamic Patient Greeting (Custom name for new users, Keshab only for demo Keshab)
+  const getPatientGreeting = () => {
+    const isKeshab = (user?.name || '').toLowerCase().includes('keshab');
+    if (isKeshab) {
+      return getTranslation(lang, 'greetingPatient'); // 'Good morning, Keshab 👋' / 'ଶୁଭ ସକାଳ, କେଶବ 👋' / 'नमस्ते, केशव 👋'
+    }
+    const cleanName = user?.name?.trim();
+    if (cleanName) {
+      if (lang === 'ଓଡ଼ିଆ') return `ଶୁଭ ସକାଳ, ${cleanName} 👋`;
+      if (lang === 'हिन्दी') return `नमस्ते, ${cleanName} 👋`;
+      return `Good morning, ${cleanName} 👋`;
+    }
+    if (lang === 'ଓଡ଼ିଆ') return 'ଶୁଭ ସକାଳ 👋';
+    if (lang === 'हिन्दी') return 'नमस्ते 👋';
+    return 'Good morning 👋';
+  };
+
   // Common Symptoms list (Section 4)
   const SYMPTOM_OPTIONS = [
     { name: 'Fever', icon: '🤒', odia: 'ଜ୍ୱର', hindi: 'बुखार' },
@@ -1307,7 +1324,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             }}
           >
             <div style={{ fontSize: '15px', color: '#93c5fd', fontWeight: 600 }}>
-              {getTranslation(lang, 'greetingPatient')}
+              {getPatientGreeting()}
             </div>
             <h1 style={{ color: '#ffffff', fontSize: '26px', margin: '6px 0 16px' }}>
               {getTranslation(lang, 'howAreYouFeeling')}
@@ -3464,6 +3481,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         isOpen={isEmergencyHelpOpen}
         onClose={() => setIsEmergencyHelpOpen(false)}
         lang={lang}
+        patientName={user.name}
+        patientId={user.patientId || patientId}
       />
 
       {/* Facility Directory Modal (Prompt Section 17) */}

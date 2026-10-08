@@ -536,7 +536,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
-                  <span>{document.patientName ? `Patient: ${document.patientName} (${document.patientId || 'RHB-OD-KLH-0941'})` : 'Patient: Keshab Rout'}</span>
+                  <span>{document.patientName ? `Patient: ${document.patientName} (${document.patientId || 'RHB-OD-KLH-0941'})` : 'Patient: Verified Citizen'}</span>
                   <span>{document.doctorInCharge ? `Sign-off: ${document.doctorInCharge}` : t.validatedBy}</span>
                 </div>
               </div>

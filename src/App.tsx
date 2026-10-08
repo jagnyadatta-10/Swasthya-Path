@@ -75,27 +75,32 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Sticky Top Header */}
-      <Header
-        networkQuality={networkQuality}
-        onToggleNetwork={handleToggleNetwork}
-        lowBandwidthMode={lowBandwidthMode}
-        onToggleLowBandwidth={() => setLowBandwidthMode(!lowBandwidthMode)}
-        lang={lang}
-        onSelectLang={setLang}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        fontScale={fontScale}
-        onToggleFontScale={handleToggleFontScale}
-        onOpenArchitecture={() => setIsArchitectureOpen(true)}
-        onOpenCareFlow={() => setIsCareFlowOpen(true)}
-      />
+      {/* Sticky Top Header (Only rendered when user is authenticated inside a portal) */}
+      {currentUser && (
+        <Header
+          networkQuality={networkQuality}
+          onToggleNetwork={handleToggleNetwork}
+          lowBandwidthMode={lowBandwidthMode}
+          onToggleLowBandwidth={() => setLowBandwidthMode(!lowBandwidthMode)}
+          lang={lang}
+          onSelectLang={setLang}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          fontScale={fontScale}
+          onToggleFontScale={handleToggleFontScale}
+          onOpenArchitecture={() => setIsArchitectureOpen(true)}
+          onOpenCareFlow={() => setIsCareFlowOpen(true)}
+        />
+      )}
 
-      <main className="app-container" style={{ flex: 1 }}>
-        {/* Universal Clinical Safety Banner */}
-        <SafetyBanner lang={lang} />
+      <main 
+        className={currentUser ? "app-container" : "login-viewport-wrapper"} 
+        style={{ flex: 1, ...(currentUser ? {} : { padding: 0, margin: 0, maxWidth: '100%' }) }}
+      >
+        {/* Universal Clinical Safety Banner (Only rendered inside clinical portals) */}
+        {currentUser && <SafetyBanner lang={lang} />}
 
-        {/* Dynamic Route: Login or Selected Role Portal */}
+        {/* Dynamic Route: Clean Login Screen or Selected Role Portal */}
         {!currentUser ? (
           <LoginScreen onLoginSuccess={handleLoginSuccess} lang={lang} onSelectLang={setLang} />
         ) : currentUser.role === 'patient' ? (
@@ -142,21 +147,23 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Demo Simulator for Evaluators */}
-      <DemoSimulator
-        currentRole={currentUser?.role || null}
-        onSelectRole={(userOrRole) => {
-          if (!userOrRole) {
-            handleLogout();
-          } else if (typeof userOrRole === 'object') {
-            handleLoginSuccess(userOrRole);
-          }
-        }}
-        networkQuality={networkQuality}
-        onSelectNetwork={setNetworkQuality}
-        currentLang={lang}
-        onSelectLang={setLang}
-      />
+      {/* Floating Demo Simulator for Evaluators (Only shown inside active portal session) */}
+      {currentUser && (
+        <DemoSimulator
+          currentRole={currentUser?.role || null}
+          onSelectRole={(userOrRole) => {
+            if (!userOrRole) {
+              handleLogout();
+            } else if (typeof userOrRole === 'object') {
+              handleLoginSuccess(userOrRole);
+            }
+          }}
+          networkQuality={networkQuality}
+          onSelectNetwork={setNetworkQuality}
+          currentLang={lang}
+          onSelectLang={setLang}
+        />
+      )}
 
       {/* Global Architecture & Scalability Modal */}
       <ArchitectureModal
@@ -171,24 +178,26 @@ export const App: React.FC = () => {
         lang={lang}
       />
 
-      {/* Footer */}
-      <footer className="app-footer">
-        <p>
-          <strong>SWASTHYA PATH</strong> •{' '}
-          {lang === 'ଓଡ଼ିଆ'
-            ? 'ବହୁଭାଷୀ ଗ୍ରାମୀଣ ଟେଲିମେଡିସିନ୍ ଓ ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ସେବା।'
-            : lang === 'हिन्दी'
-            ? 'बहुभाषी ग्रामीण टेलीमेडिसिन एवं कम बैंडविड्थ सेवा।'
-            : 'Low-bandwidth access to rural care in many languages.'}
-        </p>
-        <p style={{ marginTop: '4px', fontSize: '11px', color: 'var(--muted)' }}>
-          {lang === 'ଓଡ଼ିଆ'
-            ? 'AI କେବଳ ଲକ୍ଷଣ ତଥ୍ୟ ସଂଗ୍ରହ ଓ ମାର୍ଗଦର୍ଶନରେ ସାହାଯ୍ୟ କରେ; ଡାକ୍ତରମାନେ ହିଁ ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ନିଅନ୍ତି। AI କୌଣସି ଡାକ୍ତରୀ ନିଦାନ ପ୍ରଣାଳୀ ନୁହେଁ। ଜରୁରୀ ପରିସ୍ଥିତିରେ ତୁରନ୍ତ ୧୦୮ କୁ କଲ୍ କରନ୍ତୁ।'
-            : lang === 'हिन्दी'
-            ? 'AI केवल लक्षण संग्रह और नेविगेशन में सहायता करता है; डॉक्टर ही नैदानिक निर्णय लेते हैं। AI कोई चिकित्सा निदान प्रणाली नहीं है। आपात स्थिति में तुरंत 108 पर कॉल करें।'
-            : 'AI assists symptom intake & navigation; doctors make clinical decisions. AI is never presented as a medical diagnosis system. In emergencies, call 108 immediately.'}
-        </p>
-      </footer>
+      {/* Footer (Only shown when logged in inside portal) */}
+      {currentUser && (
+        <footer className="app-footer">
+          <p>
+            <strong>SWASTHYA PATH</strong> •{' '}
+            {lang === 'ଓଡ଼ିଆ'
+              ? 'ବହୁଭାଷୀ ଗ୍ରାମୀଣ ଟେଲିମେଡିସିନ୍ ଓ ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ସେବା।'
+              : lang === 'हिन्दी'
+              ? 'बहुभाषी ग्रामीण टेलीमेडिसिन एवं कम बैंडविड्थ सेवा।'
+              : 'Low-bandwidth access to rural care in many languages.'}
+          </p>
+          <p style={{ marginTop: '4px', fontSize: '11px', color: 'var(--muted)' }}>
+            {lang === 'ଓଡ଼ିଆ'
+              ? 'AI କେବଳ ଲକ୍ଷଣ ତଥ୍ୟ ସଂଗ୍ରହ ଓ ମାର୍ଗଦର୍ଶନରେ ସାହାଯ୍ୟ କରେ; ଡାକ୍ତରମାନେ ହିଁ ଚିକିତ୍ସା ନିଷ୍ପତ୍ତି ନିଅନ୍ତି। AI କୌଣସି ଡାକ୍ତରୀ ନିଦାନ ପ୍ରଣାଳୀ ନୁହେଁ। ଜରୁରୀ ପରିସ୍ଥିତିରେ ତୁରନ୍ତ ୧୦୮ କୁ କଲ୍ କରନ୍ତୁ।'
+              : lang === 'हिन्दी'
+              ? 'AI केवल लक्षण संग्रह और नेविगेशन में सहायता करता है; डॉक्टर ही नैदानिक निर्णय लेते हैं। AI कोई चिकित्सा निदान प्रणाली नहीं है। आपात स्थिति में तुरंत 108 पर कॉल करें।'
+              : 'AI assists symptom intake & navigation; doctors make clinical decisions. AI is never presented as a medical diagnosis system. In emergencies, call 108 immediately.'}
+          </p>
+        </footer>
+      )}
     </div>
   );
 };

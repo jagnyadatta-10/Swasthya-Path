@@ -851,10 +851,10 @@ export const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
                 {t.portalBadge}
               </span>
               <h1 style={{ margin: '4px 0 2px', fontSize: '20px', color: '#0f172a', fontWeight: 800 }}>
-                {t.centerTitle}
+                {user?.name || t.centerTitle}
               </h1>
               <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                {t.centerSubtitle}
+                {user?.location || t.centerSubtitle} • Reg: {user?.registrationNumber || 'NABL-MED-KLH-0941'}
               </p>
             </div>
           </div>

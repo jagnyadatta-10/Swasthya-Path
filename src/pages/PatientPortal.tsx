@@ -445,14 +445,18 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ margin: 0, fontSize: '22px', color: '#0f172a' }}>
-                {getTranslation(lang, 'greetingPatient')}
+                {lang === 'ଓଡ଼ିଆ' 
+                  ? `ନମସ୍କାର, ${user.name} 👋` 
+                  : lang === 'हिन्दी' 
+                  ? `नमस्ते, ${user.name} 👋` 
+                  : `Hello, ${user.name} 👋`}
               </h2>
               <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>
-                ID: {patientId}
+                ID: {user.patientId || patientId}
               </span>
             </div>
             <div style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>
-              Village Chhoriagarh • Bhawanipatna, Kalahandi
+              {user.location || (lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମ: ଛୋରିଆଗଡ଼ • ଭବାନୀପାଟଣା, କଳାହାଣ୍ଡି' : lang === 'हिन्दी' ? 'ग्राम: छोरियागढ़ • भवानीपटना, कालाहांडी' : 'Village Chhoriagarh • Bhawanipatna, Kalahandi')}
             </div>
           </div>
 
@@ -1841,7 +1845,11 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                     Swasthya Sathi
                   </div>
                   <div style={{ fontSize: '14px', color: '#14532d', fontWeight: 600 }}>
-                    {lang === 'ଓଡ଼ିଆ' ? 'ନମସ୍କାର କେଶବ! ଆଜି ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି? ଆପଣଙ୍କ ଲକ୍ଷଣ ଚୟନ କରନ୍ତୁ କିମ୍ବା କହିବାକୁ ମାଇକ୍ ବଟନ୍ ଦବାନ୍ତୁ:' : lang === 'हिन्दी' ? 'नमस्ते केशव! आज आप कैसा महसूस कर रहे हैं? कृपया अपने लक्षण चुनें या बोलने के लिए माइक दबाएं:' : 'Namaste Keshab! How are you feeling today? Tap what you are experiencing below, or use voice:'}
+                    {lang === 'ଓଡ଼ିଆ' 
+                      ? `ନମସ୍କାର ${user.name}! ଆଜି ଆପଣ କିପରି ଅନୁଭବ କରୁଛନ୍ତି? ଆପଣଙ୍କ ଲକ୍ଷଣ ଚୟନ କରନ୍ତୁ କିମ୍ବା କହିବାକୁ ମାଇକ୍ ବଟନ୍ ଦବାନ୍ତୁ:` 
+                      : lang === 'हिन्दी' 
+                      ? `नमस्ते ${user.name}! आज आप कैसा महसूस कर रहे हैं? कृपया अपने लक्षण चुनें या बोलने के लिए माइक दबाएं:` 
+                      : `Namaste ${user.name}! How are you feeling today? Tap what you are experiencing below, or use voice:`}
                   </div>
                 </div>
               </div>
@@ -3099,7 +3107,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 <span style={{ fontSize: '11px', color: '#64748b' }}>
                   {lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀ ID:' : lang === 'हिन्दी' ? 'रोगी ID:' : 'Patient ID:'}
                 </span>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>{patientId}</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>
+                  {user.patientId || patientId}
+                </div>
               </div>
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>
@@ -3112,7 +3122,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   {lang === 'ଓଡ଼ିଆ' ? 'ଠିକଣା:' : lang === 'हिन्दी' ? 'स्थान:' : 'Location:'}
                 </span>
                 <div style={{ fontSize: '14px', color: '#0f172a' }}>
-                  {lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମ: ଛୋରିଆଗଡ଼, କଳାହାଣ୍ଡି' : lang === 'हिन्दी' ? 'ग्राम: छोरियागढ़, कालाहांडी' : 'Village Chhoriagarh, Kalahandi'}
+                  {user.location || (lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମ: ଛୋରିଆଗଡ଼, କଳାହାଣ୍ଡି' : lang === 'हिन्दी' ? 'ग्राम: छोरियागढ़, कालाहांडी' : 'Village Chhoriagarh, Kalahandi')}
                 </div>
               </div>
             </div>
@@ -3122,9 +3132,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 ❤️ {lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ସୂଚନା:' : lang === 'हिन्दी' ? 'स्वास्थ्य जानकारी:' : 'Health Information:'}
               </div>
               <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-                • {lang === 'ଓଡ଼ିଆ' ? 'ରକ୍ତ ବର୍ଗ:' : lang === 'हिन्दी' ? 'रक्त समूह:' : 'Blood Group:'} <strong>B+</strong><br />
-                • {lang === 'ଓଡ଼ିଆ' ? 'ଏଲର୍ଜି:' : lang === 'हिन्दी' ? 'एलर्जी:' : 'Allergies:'} <strong>{lang === 'ଓଡ଼ିଆ' ? 'କୌଣସି ଜଣାଶୁଣା ଏଲର୍ଜି ନାହିଁ' : lang === 'हिन्दी' ? 'कोई ज्ञात दवा एलर्जी नहीं' : 'No known drug allergies'}</strong><br />
-                • {lang === 'ଓଡ଼ିଆ' ? 'ଜରୁରୀକାଳୀନ ଯୋଗାଯୋଗ:' : lang === 'हिन्दी' ? 'आपातकालीन संपर्क:' : 'Emergency Contact:'} <strong>Family (+91 94370 12345)</strong>
+                • {lang === 'ଓଡ଼ିଆ' ? 'ରକ୍ତ ବର୍ଗ:' : lang === 'हिन्दी' ? 'रक्त समूह:' : 'Blood Group:'} <strong>{user.bloodGroup || 'B+'}</strong><br />
+                • {lang === 'ଓଡ଼ିଆ' ? 'ଏଲର୍ଜି:' : lang === 'हिन्दी' ? 'एलर्जी:' : 'Allergies:'} <strong>{user.allergies || (lang === 'ଓଡ଼ିଆ' ? 'କୌଣସି ଜଣାଶୁଣା ଏଲର୍ଜି ନାହିଁ' : lang === 'हिन्दी' ? 'कोई ज्ञात दवा एलर्जी नहीं' : 'No known drug allergies')}</strong><br />
+                • {lang === 'ଓଡ଼ିଆ' ? 'ଜରୁରୀକାଳୀନ ଯୋଗାଯୋଗ:' : lang === 'हिन्दी' ? 'आपातकालीन संपर्क:' : 'Emergency Contact:'} <strong>{user.emergencyContact || 'Family (+91 94370 12345)'}</strong>
               </div>
             </div>
 

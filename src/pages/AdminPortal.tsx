@@ -416,7 +416,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               fontWeight: 800
             }}
           >
-            HA
+            {user.name.split(' ').map((n: string) => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'AD'}
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -426,10 +426,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              {t.cdmoDirectorate}
+              {user.healthFacility || t.cdmoDirectorate}
             </div>
             <span className="user-badge" style={{ background: '#ecfdf5', color: '#047857', marginTop: '2px' }}>
-              {t.districtAdminBadge}
+              {user.designation ? `${user.designation} • Swasthya Path Hub` : t.districtAdminBadge}
             </span>
           </div>
         </div>

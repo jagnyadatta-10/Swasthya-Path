@@ -388,15 +388,15 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
               fontWeight: 800
             }}
           >
-            ML
+            {user.name.split(' ').map((n: string) => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'PH'}
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '16px' }}>{user.name}</div>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              {user.location} • {t.partnerPharmacy}
+              {user.location || 'Bhawanipatna Main Market'} • {t.partnerPharmacy}
             </div>
             <span className="user-badge" style={{ background: '#fef3f2', color: '#b42318' }}>
-              {t.chemistLicense}
+              {user.registrationNumber ? `DL: ${user.registrationNumber}` : t.chemistLicense}
             </span>
           </div>
         </div>
@@ -1075,11 +1075,11 @@ export const PharmacyPortal: React.FC<PharmacyPortalProps> = ({ user, networkQua
               </div>
               <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700 }}>{t.drugLicense}</span>
-                <strong style={{ fontSize: '14px', color: '#0f172a' }}>KLH-2024-8192-RET</strong>
+                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{user.registrationNumber || 'KLH-2024-8192-RET'}</strong>
               </div>
               <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700 }}>{t.addressBlock}</span>
-                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{t.addressVal}</strong>
+                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{user.location || t.addressVal}</strong>
               </div>
               <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700 }}>{t.operatingHours}</span>

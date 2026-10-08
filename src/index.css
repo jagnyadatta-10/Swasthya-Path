@@ -812,7 +812,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ======================================================== */
-/* 3D HEALTHCARE MOBILE APP LOGIN SCREEN STYLES            */
+/* ======================================================== */
+/* eSANJEEVANI WHITE MEDICAL UI — NATIONAL TELE-OPD AESTHETIC */
 /* ======================================================== */
 
 .mobile-login-screen {
@@ -821,74 +822,116 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 12px 60px;
+  padding: 16px 12px 40px;
   position: relative;
-  background:
-    radial-gradient(circle at 50% 12%, rgba(25, 211, 255, 0.18) 0%, transparent 55%),
-    radial-gradient(circle at 85% 75%, rgba(2, 132, 199, 0.22) 0%, transparent 50%),
-    linear-gradient(180deg, rgba(3, 10, 26, 0.85) 0%, rgba(4, 15, 38, 0.94) 100%),
-    url('/images/healthcare-3d-bg.jpg') center top / cover no-repeat fixed;
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(circle at 12% 18%, rgba(2, 132, 199, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(5, 150, 105, 0.05) 0%, transparent 45%),
+    linear-gradient(180deg, #f0fdf4 0%, #f8fafc 20%, #ffffff 100%);
   overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .mobile-device-shell {
   width: 100%;
-  max-width: 450px;
+  max-width: 480px;
   margin: 0 auto;
   position: relative;
   z-index: 2;
 }
 
-.mobile-glass-card {
-  background: rgba(7, 20, 48, 0.84);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(25, 211, 255, 0.28);
-  border-radius: 26px;
-  padding: 24px 20px;
-  box-shadow:
-    0 25px 60px -15px rgba(0, 0, 0, 0.75),
-    0 0 35px rgba(6, 182, 212, 0.15),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  transition: all 0.3s ease;
+.esanjeevani-top-ribbon {
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(90deg, #ff9933 0%, #ff9933 33.33%, #ffffff 33.33%, #ffffff 66.66%, #138808 66.66%, #138808 100%);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
 }
 
-.pulse-cross-3d {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 50%, #38bdf8 100%);
+.mobile-glass-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 0 0 24px;
+  box-shadow:
+    0 20px 45px -12px rgba(15, 23, 42, 0.08),
+    0 4px 16px rgba(15, 23, 42, 0.02);
+  color: #0f172a;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-card-content {
+  padding: 20px 20px 0;
+}
+
+.esanjeevani-hero-container {
+  margin: 0 auto 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  position: relative;
+  background: #ffffff;
+  max-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
-  color: #ffffff;
-  animation: pulseCross3d 3.5s infinite ease-in-out;
 }
 
-@keyframes pulseCross3d {
-  0% {
-    transform: scale(1) translateY(0);
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    transform: scale(1.05) translateY(-2px);
-    box-shadow: 0 12px 36px rgba(25, 211, 255, 0.75), inset 0 0 18px rgba(255, 255, 255, 0.6);
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.4);
-  }
+.esanjeevani-hero-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.esanjeevani-hero-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.pulse-dot-green {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3);
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .mobile-seg-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.08);
+  background: #f1f5f9;
   padding: 4px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  margin-bottom: 20px;
+  border: 1.5px solid #e2e8f0;
+  margin-bottom: 18px;
 }
 
 .mobile-seg-btn {
@@ -896,7 +939,7 @@ input:focus, select:focus, textarea:focus {
   padding: 10px 14px;
   border-radius: 999px;
   border: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -907,18 +950,18 @@ input:focus, select:focus, textarea:focus {
 }
 
 .mobile-seg-btn.active {
-  background: linear-gradient(135deg, #0284c7, #06b6d4);
+  background: #0284c7;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
 .mobile-seg-btn.inactive {
   background: transparent;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .mobile-seg-btn.inactive:hover {
-  color: #ffffff;
+  color: #0f172a;
 }
 
 .mobile-roles-grid {
@@ -930,9 +973,9 @@ input:focus, select:focus, textarea:focus {
 
 .mobile-role-pill {
   padding: 10px 4px 8px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -940,31 +983,31 @@ input:focus, select:focus, textarea:focus {
   gap: 4px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #cbd5e1;
+  color: #475569;
 }
 
 .mobile-role-pill:hover {
-  border-color: rgba(25, 211, 255, 0.4);
-  background: rgba(255, 255, 255, 0.09);
+  border-color: #0284c7;
+  background: #f8fafc;
   transform: translateY(-2px);
 }
 
 .mobile-role-pill.selected {
-  background: rgba(2, 132, 199, 0.22);
-  border-color: #19d3ff;
-  color: #ffffff;
-  box-shadow: 0 0 16px rgba(25, 211, 255, 0.3), inset 0 0 10px rgba(25, 211, 255, 0.15);
+  background: #f0f9ff;
+  border: 2px solid #0284c7;
+  color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
   transform: translateY(-2px);
 }
 
 .mobile-input-control {
   width: 100%;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1.5px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
+  height: 46px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
   padding: 0 14px;
-  color: #ffffff;
+  color: #0f172a;
   font-size: 14px;
   font-family: inherit;
   transition: all 0.2s ease;
@@ -973,19 +1016,19 @@ input:focus, select:focus, textarea:focus {
 
 .mobile-input-control:focus {
   outline: none;
-  border-color: #19d3ff;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(25, 211, 255, 0.2);
+  border-color: #0284c7;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
 }
 
 .mobile-input-control::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .mobile-cta-btn {
   width: 100%;
-  height: 50px;
-  border-radius: 14px;
+  height: 48px;
+  border-radius: 12px;
   border: none;
   font-size: 15px;
   font-weight: 700;
@@ -995,20 +1038,23 @@ input:focus, select:focus, textarea:focus {
   gap: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.4);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.3);
 }
 
 .mobile-cta-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
 }
 
 @media (max-width: 480px) {
   .mobile-login-screen {
-    padding: 12px 8px 40px;
+    padding: 10px 8px 30px;
   }
   .mobile-glass-card {
-    padding: 20px 14px;
     border-radius: 20px;
+    padding: 0 0 20px;
+  }
+  .mobile-card-content {
+    padding: 16px 14px 0;
   }
   .mobile-roles-grid {
     gap: 4px;

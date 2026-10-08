@@ -803,7 +803,10 @@ export const storage = {
       if (!matchRole) return false;
       const uPhone = (u.mobile || '').replace(/[^0-9]/g, '');
       const uEmail = (u.email || '').trim().toLowerCase();
-      const matchId = (cleanPhone.length >= 8 && uPhone.includes(cleanPhone)) || (uEmail && uEmail === cleanId);
+      const uName = (u.name || '').trim().toLowerCase();
+      const matchId = (cleanPhone.length >= 8 && uPhone.includes(cleanPhone)) || 
+                      (uEmail && uEmail === cleanId) || 
+                      (uName && uName === cleanId);
       return matchId;
     });
 
@@ -819,7 +822,10 @@ export const storage = {
     if (seeded) {
       const seededPhone = seeded.mobile.replace(/[^0-9]/g, '');
       const seededEmail = seeded.email.toLowerCase();
-      const matchSeeded = (cleanPhone.length >= 8 && seededPhone.includes(cleanPhone)) || (seededEmail && seededEmail === cleanId);
+      const seededName = seeded.name.toLowerCase();
+      const matchSeeded = (cleanPhone.length >= 8 && seededPhone.includes(cleanPhone)) || 
+                          (seededEmail && seededEmail === cleanId) ||
+                          (seededName && seededName === cleanId);
       if (matchSeeded) {
         if (!password || password === 'Demo@123' || password.length >= 4) {
           return seeded;
@@ -832,7 +838,7 @@ export const storage = {
 
   registerNewAccount(accountData: any): DemoUser {
     const list = this.getRegisteredUsers();
-    const newUser: DemoUser & { password?: string } = {
+    const newUser: DemoUser = {
       role: accountData.role,
       name: accountData.name,
       email: accountData.email || `${accountData.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@swasthyapath.in`,
@@ -840,13 +846,17 @@ export const storage = {
       location: accountData.location || 'Kalahandi, Odisha',
       healthFacility: accountData.healthFacility || accountData.hospital || 'District Health Network',
       badge: accountData.role === 'doctor' ? `Reg. ${accountData.registrationNumber || 'OSMC'}` : accountData.role === 'pharmacy' ? 'Registered Jan Aushadhi' : accountData.role === 'lab' ? 'NABL Diagnostic Lab' : accountData.role === 'admin' ? 'District Administrator' : 'ABHA Verified Citizen',
-      patientId: accountData.role === 'patient' ? `RHB-OD-KLH-${Math.floor(1000 + Math.random() * 9000)}` : undefined,
+      patientId: accountData.role === 'patient' ? (accountData.patientId || `RHB-OD-KLH-${Math.floor(1000 + Math.random() * 9000)}`) : undefined,
       age: accountData.age ? Number(accountData.age) : undefined,
       gender: accountData.gender,
       bloodGroup: accountData.bloodGroup,
       abhaId: accountData.abhaId,
       emergencyContact: accountData.emergencyContact,
       block: accountData.block || 'Bhawanipatna',
+      registrationNumber: accountData.registrationNumber,
+      specialty: accountData.specialty,
+      qualification: accountData.qualification,
+      designation: accountData.designation,
       password: accountData.password
     };
 

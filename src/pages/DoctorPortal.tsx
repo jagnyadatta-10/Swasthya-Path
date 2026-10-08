@@ -365,13 +365,15 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
               fontWeight: 800
             }}
           >
-            AM
+            {user.name.split(' ').map((n: string) => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'DR'}
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '16px' }}>{user.name}</div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{user.location} (Telehealth Unit)</div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+              {user.healthFacility || user.location || 'DHH Bhawanipatna'} (Telehealth Unit)
+            </div>
             <span className="user-badge" style={{ background: '#ecfdf3', color: '#027a48' }}>
-              Licensed Medical Officer • Reg: OD-MED-8492
+              {user.specialty || 'Licensed Medical Officer'} • Reg: {user.registrationNumber || 'OSMC-OD-8492'}
             </span>
           </div>
         </div>

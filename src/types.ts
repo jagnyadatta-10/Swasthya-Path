@@ -25,6 +25,11 @@ export interface DemoUser {
   conditions?: string;
   emergencyContact?: string;
   block?: string;
+  registrationNumber?: string;
+  specialty?: string;
+  qualification?: string;
+  designation?: string;
+  password?: string;
 }
 
 export interface HealthFacility {

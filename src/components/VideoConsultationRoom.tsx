@@ -591,27 +591,135 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   const [isPeerConnected, setIsPeerConnected] = useState(false);
   const roomId = `room-${doctor?.id || 'doc'}-${patient?.patientId || 'pat'}`;
 
-  // Local media stream
+  // Local and Pre-call media streams
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const preCallVideoRef = useRef<HTMLVideoElement | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
-  // Initialize or request media stream
+  // Callback refs to instantly attach stream as soon as elements mount
+  const setLocalVideoRef = (el: HTMLVideoElement | null) => {
+    localVideoRef.current = el;
+    if (el && localStream) {
+      el.srcObject = localStream;
+      el.play().catch(() => {});
+    }
+  };
+
+  const setRemoteVideoRef = (el: HTMLVideoElement | null) => {
+    remoteVideoRef.current = el;
+    if (el && remoteStream) {
+      el.srcObject = remoteStream;
+      el.play().catch(() => {});
+    }
+  };
+
+  // Robust multi-tier media acquisition
   const setupMedia = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      setLocalStream(stream);
-      setCameraPermGranted(true);
-      setMicPermGranted(true);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('getUserMedia not supported in this browser context (requires HTTPS or localhost)');
+        setCameraPermGranted(false);
+        setMicPermGranted(false);
+        setIsCameraOff(true);
+        return;
       }
-    } catch {
-      // Permission denied or devices not found
+
+      // 1. Attempt standard video (front camera ideal) + audio
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          },
+          audio: true
+        });
+        setLocalStream(stream);
+        setCameraPermGranted(true);
+        setMicPermGranted(true);
+        setIsCameraOff(false);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
+        }
+        if (preCallVideoRef.current) {
+          preCallVideoRef.current.srcObject = stream;
+          preCallVideoRef.current.play().catch(() => {});
+        }
+        return;
+      } catch (videoAudioErr) {
+        console.warn('Video+Audio getUserMedia failed, trying fallback:', videoAudioErr);
+      }
+
+      // 2. Fallback: try basic video: true, audio: true without constraints
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        setLocalStream(stream);
+        setCameraPermGranted(true);
+        setMicPermGranted(true);
+        setIsCameraOff(false);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
+        }
+        if (preCallVideoRef.current) {
+          preCallVideoRef.current.srcObject = stream;
+          preCallVideoRef.current.play().catch(() => {});
+        }
+        return;
+      } catch (basicErr) {
+        console.warn('Basic Video+Audio failed, trying audio-only:', basicErr);
+      }
+
+      // 3. Fallback: Audio-only if webcam is absent or denied
+      try {
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: true
+        });
+        setLocalStream(audioStream);
+        setCameraPermGranted(false);
+        setMicPermGranted(true);
+        setIsCameraOff(true);
+        return;
+      } catch (audioErr) {
+        console.warn('Audio-only failed, trying video-only:', audioErr);
+      }
+
+      // 4. Fallback: Video-only if microphone is absent or blocked
+      try {
+        const videoOnlyStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        setLocalStream(videoOnlyStream);
+        setCameraPermGranted(true);
+        setMicPermGranted(false);
+        setIsCameraOff(false);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = videoOnlyStream;
+          localVideoRef.current.play().catch(() => {});
+        }
+        if (preCallVideoRef.current) {
+          preCallVideoRef.current.srcObject = videoOnlyStream;
+          preCallVideoRef.current.play().catch(() => {});
+        }
+        return;
+      } catch (videoOnlyErr) {
+        console.warn('All media device requests failed:', videoOnlyErr);
+      }
+
       setCameraPermGranted(false);
       setMicPermGranted(false);
+      setIsCameraOff(true);
+    } catch (err) {
+      console.error('setupMedia general error:', err);
+      setCameraPermGranted(false);
+      setMicPermGranted(false);
+      setIsCameraOff(true);
     }
   };
 
@@ -794,8 +902,32 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(() => {});
     }
   }, [remoteStream]);
+
+  // Sync local video element when localStream, preCallDone, or isCameraOff changes
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, [localStream, preCallDone, isCameraOff]);
+
+  // Sync pre-call video preview
+  useEffect(() => {
+    if (preCallVideoRef.current && localStream) {
+      preCallVideoRef.current.srcObject = localStream;
+      preCallVideoRef.current.play().catch(() => {});
+    }
+  }, [localStream, cameraPermGranted, preCallDone]);
+
+  // Clean up media when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      cleanUpMedia();
+    }
+  }, [isOpen]);
 
   // Clean up media tracks when closed
   const cleanUpMedia = () => {
@@ -837,13 +969,59 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Toggle Camera
-  const toggleCamera = () => {
-    if (localStream) {
-      const videoTracks = localStream.getVideoTracks();
-      videoTracks.forEach((t) => (t.enabled = !t.enabled));
+  // Toggle Camera with dynamic track acquisition if needed
+  const toggleCamera = async () => {
+    if (isCameraOff) {
+      // User wants to turn camera ON
+      if (localStream && localStream.getVideoTracks().length > 0) {
+        localStream.getVideoTracks().forEach((t) => (t.enabled = true));
+        setIsCameraOff(false);
+        setCameraPermGranted(true);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStream;
+          localVideoRef.current.play().catch(() => {});
+        }
+      } else {
+        // No video track exists yet, request webcam track now
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const videoStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+              }
+            });
+            const newVideoTrack = videoStream.getVideoTracks()[0];
+            if (newVideoTrack) {
+              if (localStream) {
+                localStream.addTrack(newVideoTrack);
+              } else {
+                setLocalStream(videoStream);
+              }
+              if (peerConnectionRef.current) {
+                peerConnectionRef.current.addTrack(newVideoTrack, localStream || videoStream);
+              }
+              setIsCameraOff(false);
+              setCameraPermGranted(true);
+              if (localVideoRef.current) {
+                localVideoRef.current.srcObject = localStream || videoStream;
+                localVideoRef.current.play().catch(() => {});
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Failed to enable camera track:', err);
+          alert('Could not access camera. Please verify device permissions and check if another application is using the webcam.');
+        }
+      }
+    } else {
+      // User wants to turn camera OFF
+      if (localStream) {
+        localStream.getVideoTracks().forEach((t) => (t.enabled = false));
+      }
+      setIsCameraOff(true);
     }
-    setIsCameraOff(!isCameraOff);
   };
 
   // Toggle Mic
@@ -1049,6 +1227,22 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 </span>
               </div>
 
+              {cameraPermGranted && localStream && localStream.getVideoTracks().length > 0 && (
+                <div style={{ borderRadius: '12px', overflow: 'hidden', height: '140px', background: '#091322', position: 'relative', border: '2px solid #059669', boxShadow: '0 4px 12px rgba(5, 150, 105, 0.2)' }}>
+                  <video
+                    ref={preCallVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ position: 'absolute', bottom: '8px', left: '10px', background: 'rgba(5, 150, 105, 0.85)', backdropFilter: 'blur(4px)', color: '#ffffff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff' }} />
+                    <span>Live Camera Test • Active</span>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Signal size={16} style={{ color: networkQuality === 'offline' ? '#b42318' : networkQuality === 'limited' ? '#b54708' : '#059669' }} />
@@ -1172,12 +1366,11 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             <button
               className="btn btn-primary"
               disabled={networkQuality === 'offline'}
-              onClick={() => {
+              onClick={async () => {
                 if (!localStream) {
-                  setupMedia().finally(() => setPreCallDone(true));
-                } else {
-                  setPreCallDone(true);
+                  await setupMedia();
                 }
+                setPreCallDone(true);
               }}
               style={{ fontWeight: 700, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
@@ -2150,7 +2343,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     {/* Realistic Doctor Webcam Video Stream / Live WebRTC Peer Stream */}
                     {remoteStream ? (
                       <video
-                        ref={remoteVideoRef}
+                        ref={setRemoteVideoRef}
                         autoPlay
                         playsInline
                         style={{
@@ -2273,7 +2466,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     {/* Realistic Patient Smartphone Front-Camera / Live WebRTC Peer Stream */}
                     {remoteStream ? (
                       <video
-                        ref={remoteVideoRef}
+                        ref={setRemoteVideoRef}
                         autoPlay
                         playsInline
                         style={{
@@ -2414,7 +2607,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               >
                 {/* Real local camera video feed */}
                 <video
-                  ref={localVideoRef}
+                  ref={setLocalVideoRef}
                   autoPlay
                   playsInline
                   muted

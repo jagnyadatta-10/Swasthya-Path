@@ -25,6 +25,7 @@ import {
 import { Role, DemoUser, Language } from '../types';
 import { storage } from '../utils/storage';
 import { getTranslation } from '../utils/translations';
+import { DEMO_USERS } from '../data/mockData';
 
 interface LoginScreenProps {
   onLoginSuccess: (user: DemoUser) => void;
@@ -277,13 +278,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     const cleanInput = loginIdentifier.trim();
     if (!cleanInput) {
-      setErrorMsg(
-        lang === 'ଓଡ଼ିଆ'
-          ? 'ଦୟାକରି ଆପଣଙ୍କ ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର କିମ୍ବା ABHA ID ଦିଅନ୍ତୁ।'
-          : lang === 'हिन्दी'
-          ? 'कृपया अपना 10-अंकीय मोबाइल नंबर या ABHA ID दर्ज करें।'
-          : 'Please enter your 10-digit mobile number or ABHA ID.'
-      );
+      handleQuickPatientLogin();
       return;
     }
 
@@ -293,14 +288,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       if (!user) {
         user = storage.registerNewAccount({
-          name: 'Ramesh Majhi (Citizen)',
-          mobile: cleanInput.replace(/[^0-9]/g, '').slice(0, 10) || '9861000001',
+          name: 'Keshab Rout (Citizen)',
+          mobile: cleanInput.replace(/[^0-9]/g, '').slice(0, 10) || '9000010001',
           role: 'patient',
-          location: 'Village Chhoriagarh, Kalahandi, Odisha',
+          location: 'Bhawanipatna, Kalahandi, Odisha',
           preferredLanguage: lang,
-          age: 32,
+          age: 26,
           gender: 'Male',
-          abhaId: `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`
+          bloodGroup: 'B+',
+          abhaId: `98-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`
         });
       }
 
@@ -308,7 +304,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       if (user) {
         onLoginSuccess(user);
       }
-    }, 300);
+    }, 250);
   };
 
   // 1-Tap Quick Patient Demo Access
@@ -316,17 +312,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setIsSubmitting(true);
     setErrorMsg('');
     setTimeout(() => {
-      let user = storage.authenticateUser('9861000001', 'patient');
+      let user = storage.authenticateUser('90000 10001', 'patient') || storage.authenticateUser('9861000001', 'patient') || DEMO_USERS.patient;
       if (!user) {
         user = storage.registerNewAccount({
-          name: 'Ramesh Chandra Majhi',
-          mobile: '9861000001',
+          name: 'Keshab Rout',
+          mobile: '9000010001',
           role: 'patient',
-          location: 'Village Chhoriagarh, Kalahandi, Odisha',
+          location: 'Bhawanipatna, Kalahandi, Odisha',
           preferredLanguage: lang,
-          age: 32,
+          age: 26,
           gender: 'Male',
-          abhaId: '91-4821-9921-12'
+          bloodGroup: 'B+',
+          abhaId: '98-2143-8765-1094'
         });
       }
       setIsSubmitting(false);
@@ -851,35 +848,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </p>
                   </div>
 
-                  {/* 1-Tap Quick Patient Demo Login */}
+                  {/* 1-Tap Quick Patient Instant Access */}
                   <button
                     type="button"
                     onClick={handleQuickPatientLogin}
                     disabled={isSubmitting}
                     style={{
                       width: '100%',
-                      padding: '12px 14px',
-                      background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
-                      border: '1.5px solid #38bdf8',
+                      padding: '13px 16px',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      border: 'none',
                       borderRadius: '12px',
-                      color: '#0369a1',
-                      fontSize: '13px',
+                      color: '#ffffff',
+                      fontSize: '13.5px',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
                       cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.12)'
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.28)'
                     }}
                   >
-                    <Sparkles size={16} color="#0284c7" />
+                    <Sparkles size={17} color="#ffffff" />
                     <span>
                       {lang === 'ଓଡ଼ିଆ'
-                        ? '⚡ ୧-ଟ୍ୟାପ୍ ତୁରନ୍ତ ପ୍ରବେଶ (ରମେଶ ମାଝୀ - ଛୋରିଆଗଡ଼)'
+                        ? '🟢 ୧-ଟ୍ୟାପ୍ ସିଧାସଳଖ ରୋଗୀ ପ୍ରବେଶ (କେଶବ ରାଉତ • କଳାହାଣ୍ଡି)'
                         : lang === 'हिन्दी'
-                        ? '⚡ 1-टैप त्वरित प्रवेश (रमेश माझी - छोरियागढ़)'
-                        : '⚡ 1-Tap Quick Patient Login (Ramesh Majhi • Kalahandi)'}
+                        ? '🟢 1-टैप सीधा मरीज प्रवेश (केशब राउत • कालाहांडी)'
+                        : '🟢 1-Tap Instant Patient Access (Keshab Rout • Kalahandi)'}
                     </span>
                   </button>
 

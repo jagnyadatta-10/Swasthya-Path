@@ -206,6 +206,9 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
   // Modals & Viewers
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  // Track the doctor selected for the current video consultation
+  const [selectedConsultDoctor, setSelectedConsultDoctor] = useState<DoctorItem | null>(null);
+  const [viewingDoctorProfile, setViewingDoctorProfile] = useState<DoctorItem | null>(null);
   const [isHealthCardOpen, setIsHealthCardOpen] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<DiagnosticDocument | null>(null);
   const [viewingPrescription, setViewingPrescription] = useState<FullPrescription | null>(null);
@@ -338,11 +341,14 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     setSymptomStep(2); // Move to duration
   };
 
-  // Launch Video Consultation
-  const handleStartConsultation = () => {
+  // Launch Video Consultation with a specific doctor
+  const handleStartConsultation = (doctor?: DoctorItem) => {
     if (!isConnected) {
       alert("You're offline. Live teleconsultation requires an internet connection.");
       return;
+    }
+    if (doctor) {
+      setSelectedConsultDoctor(doctor);
     }
     setIsVideoCallOpen(true);
   };
@@ -359,6 +365,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     if (!bookingDoctor) return;
     const newToken = storage.generateToken(bookingDoctor.name, bookingDoctor.specialty);
     setToken(newToken);
+    // Remember which doctor was booked so video call shows the right doctor
+    setSelectedConsultDoctor(bookingDoctor);
     setBookingSuccessNotice(getTranslation(lang, 'appointmentBookedSuccess'));
     setIsBookingModalOpen(false);
     setBookingStep(1);
@@ -429,7 +437,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     const matchesLocation =
       doctorLocation === 'All' ||
       (doc.facility && doc.facility.toLowerCase().includes(doctorLocation.toLowerCase())) ||
-      (doc.hospital && doc.hospital.toLowerCase().includes(doctorLocation.toLowerCase()));
+      (doc.hospital && doc.hospital.toLowerCase().includes(doctorLocation.toLowerCase())) ||
+      ((doctorLocation.toLowerCase().includes('dharm') || doctorLocation.toLowerCase().includes('dharam')) &&
+        ((doc.facility && (doc.facility.toLowerCase().includes('dharam') || doc.facility.toLowerCase().includes('dharm'))) ||
+         (doc.hospital && (doc.hospital.toLowerCase().includes('dharam') || doc.hospital.toLowerCase().includes('dharm')))));
 
     return matchesSearch && matchesCategory && matchesLocation;
   });
@@ -657,7 +668,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           {networkQuality === 'limited' && (
             <button
               type="button"
-              onClick={handleStartConsultation}
+              onClick={() => handleStartConsultation()}
               style={{
                 background: '#d97706',
                 color: '#ffffff',
@@ -1088,28 +1099,73 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                       <h3 style={{ fontSize: '24px', color: '#166534', margin: '0 0 8px', fontWeight: 900 }}>
                         {lang === 'ଓଡ଼ିଆ' ? 'ଡାକ୍ତରଙ୍କ ସହିତ ପରାମର୍ଶ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'डॉक्टर से परामर्श करें' : 'CONSULT A DOCTOR'}
                       </h3>
-                      <p style={{ fontSize: '16px', color: '#14532d', margin: '0 0 16px', fontWeight: 600 }}>
-                        No emergency danger signs detected. Connect with Dr. Ananya Mishra at DHH Bhawanipatna.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('doctor');
-                          handleInitiateBooking(primaryDoctor);
-                        }}
-                        style={{
-                          background: '#16a34a',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '14px',
-                          padding: '16px 28px',
-                          fontSize: '18px',
-                          fontWeight: 900,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        TALK TO DOCTOR NOW ➔
-                      </button>
+                      <div style={{ background: '#ffffff', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', textAlign: 'left' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase' }}>
+                          Preliminary Triage Summary (AI Assisted • Clinical Review Required)
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                          Reported: {selectedSymptomIcon} {selectedSymptom} • {symptomDuration} ({symptomSeverity})
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                          Safety Notice: AI assists. Doctors decide. Dr. Ananya Mishra at DHH Bhawanipatna is on OPD duty.
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            speakText('Connecting to Dr. Ananya Mishra at District Headquarters Hospital');
+                            handleStartConsultation(primaryDoctor);
+                          }}
+                          style={{
+                            background: '#16a34a',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '14px',
+                            padding: '16px 28px',
+                            fontSize: '18px',
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '10px',
+                            boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)'
+                          }}
+                        >
+                          <Video size={22} />
+                          <span>1-TAP CALL DOCTOR NOW ➔</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newToken = storage.generateToken(primaryDoctor.name, primaryDoctor.specialty);
+                            setToken(newToken);
+                            setSelectedConsultDoctor(primaryDoctor);
+                            speakText(`Token generated. Token number ${newToken.tokenNumber}. Wait time approximately ${newToken.estimatedWaitMin} minutes.`);
+                            setBookingSuccessNotice(`✓ Token #${newToken.tokenNumber} issued successfully!`);
+                            setTimeout(() => setBookingSuccessNotice(''), 4500);
+                            setActiveTab('doctor');
+                          }}
+                          style={{
+                            background: '#ffffff',
+                            color: '#0284c7',
+                            border: '2px solid #0284c7',
+                            borderRadius: '14px',
+                            padding: '14px 20px',
+                            fontSize: '16px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <Calendar size={18} />
+                          <span>GET NEXT APPOINTMENT TOKEN (NO FORMS)</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -1137,7 +1193,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   <div style={{ fontSize: '16px', color: '#166534', marginBottom: '18px', fontWeight: 700 }}>With Dr. {token.doctorName} • Wait: ~{token.estimatedWaitMin} mins</div>
                   <button
                     type="button"
-                    onClick={handleStartConsultation}
+                    onClick={() => {
+                      const tokenDoc = allDoctors.find(d => d.name === token?.doctorName) || selectedConsultDoctor || primaryDoctor;
+                      handleStartConsultation(tokenDoc);
+                    }}
                     style={{
                       background: '#16a34a',
                       color: '#ffffff',
@@ -1167,29 +1226,63 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                       <div style={{ fontSize: '13px', color: '#64748b' }}>District Headquarters Hospital (DHH) Bhawanipatna</div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleInitiateBooking(primaryDoctor)}
-                    style={{
-                      width: '100%',
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '16px',
-                      padding: '18px',
-                      fontSize: '19px',
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px',
-                      boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)'
-                    }}
-                  >
-                    <Video size={22} />
-                    <span>TALK TO DOCTOR (FREE GOVT SERVICE)</span>
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        speakText('Connecting to Dr. Ananya Mishra at District Headquarters Hospital');
+                        handleStartConsultation(primaryDoctor);
+                      }}
+                      style={{
+                        width: '100%',
+                        background: '#16a34a',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '16px',
+                        padding: '18px',
+                        fontSize: '19px',
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)'
+                      }}
+                    >
+                      <Video size={22} />
+                      <span>1-TAP CALL DOCTOR NOW (FREE GOVT SERVICE)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newToken = storage.generateToken(primaryDoctor.name, primaryDoctor.specialty);
+                        setToken(newToken);
+                        setSelectedConsultDoctor(primaryDoctor);
+                        speakText(`Your appointment token is generated. Token number ${newToken.tokenNumber}. Wait time approximately ${newToken.estimatedWaitMin} minutes.`);
+                        setBookingSuccessNotice(`✓ Token #${newToken.tokenNumber} issued successfully!`);
+                        setTimeout(() => setBookingSuccessNotice(''), 4500);
+                      }}
+                      style={{
+                        width: '100%',
+                        background: '#ffffff',
+                        color: '#0284c7',
+                        border: '2.5px solid #0284c7',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        fontSize: '17px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <Calendar size={20} />
+                      <span>GET NEXT APPOINTMENT TOKEN (NO FORMS)</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1268,19 +1361,59 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
 
               <div style={{ display: 'grid', gap: '12px' }}>
                 {prescriptions.map((rx) => (
-                  <div key={rx.id} style={{ padding: '16px', borderRadius: '14px', border: '2px solid #cbd5e1', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
-                      <strong style={{ fontSize: '16px', color: '#0f172a' }}>Prescription #{rx.prescriptionNumber}</strong>
-                      <div style={{ fontSize: '13px', color: '#475569' }}>{rx.diagnosisSummary}</div>
+                  <div key={rx.id} style={{ padding: '16px', borderRadius: '14px', border: '2px solid #cbd5e1', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>{rx.date}</div>
+                        <strong style={{ fontSize: '16px', color: '#0f172a' }}>Prescription #{rx.prescriptionNumber}</strong>
+                        <div style={{ fontSize: '13px', color: '#475569' }}>{rx.diagnosisSummary}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setViewingPrescription(rx)}
+                        style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        Open Rx
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setViewingPrescription(rx)}
-                      style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
-                    >
-                      Open Rx
-                    </button>
+
+                    {rx.medicines && rx.medicines.length > 0 && (
+                      <div style={{ marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+                          Prescribed Medicines & Village Pharmacy Availability:
+                        </div>
+                        {rx.medicines.map((m, mIdx) => (
+                          <div key={mIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '8px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                              💊 {m.name} ({m.strength}) • {m.frequency}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMedicineSearch(m.name);
+                                setActiveTab('medicines');
+                                speakText(`Checking medicine availability for ${m.name}`);
+                              }}
+                              style={{
+                                background: '#0284c7',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              🔍 Find Medicine
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
 
@@ -1568,7 +1701,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
 
               <button
                 type="button"
-                onClick={handleStartConsultation}
+                onClick={() => {
+                  const tokenDoc = allDoctors.find(d => d.name === token?.doctorName) || selectedConsultDoctor || primaryDoctor;
+                  handleStartConsultation(tokenDoc);
+                }}
                 style={{
                   background: '#ffffff',
                   color: '#0369a1',
@@ -2468,7 +2604,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={handleStartConsultation}
+                  onClick={() => {
+                    const tokenDoc = allDoctors.find(d => d.name === token?.doctorName) || selectedConsultDoctor || primaryDoctor;
+                    handleStartConsultation(tokenDoc);
+                  }}
                   style={{ padding: '12px 24px', fontSize: '15px', fontWeight: 800, borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
                   <Video size={18} /> {getTranslation(lang, 'joinConsultation')}
@@ -2549,7 +2688,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   <option value="Bhawanipatna">DHH Bhawanipatna</option>
                   <option value="Mother & Child">Mother & Child Wing</option>
                   <option value="Junagarh">Junagarh CHC</option>
-                  <option value="Dharmagarh">Dharmagarh SDH</option>
+                  <option value="Dharamgarh">Dharamgarh SDH</option>
+                  <option value="Kesinga">Kesinga CHC</option>
                 </select>
               </div>
             </div>
@@ -2611,9 +2751,22 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                         boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)'
                       }}
                     >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <img
+                          src={doc.avatarUrl || (doc.gender === 'male' ? '/images/male-doctor-avatar.jpg' : '/images/doctor-feed.jpg')}
+                          alt={doc.name}
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #0284c7',
+                            flexShrink: 0
+                          }}
+                        />
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
                           <span style={{
                             background: isOnLeave ? '#fef2f2' : doc.available ? '#f0fdf4' : '#fffbeb',
                             color: isOnLeave ? '#991b1b' : doc.available ? '#166534' : '#92400e',
@@ -2642,8 +2795,28 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                           </div>
                         )}
                       </div>
+                    </div>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setViewingDoctorProfile(doc)}
+                          className="btn btn-secondary"
+                          style={{
+                            padding: '9px 14px',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#ffffff',
+                            borderColor: '#cbd5e1'
+                          }}
+                        >
+                          <Eye size={15} />
+                          <span>View Profile</span>
+                        </button>
                         {isOnLeave ? (
                           <button
                             type="button"
@@ -3431,7 +3604,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
       <VideoConsultationRoom
         isOpen={isVideoCallOpen}
         onClose={() => setIsVideoCallOpen(false)}
-        doctor={primaryDoctor}
+        doctor={selectedConsultDoctor || primaryDoctor}
         patient={user}
         networkQuality={networkQuality}
         onNetworkChange={onNetworkChange}
@@ -3508,6 +3681,102 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
         onNavigateToQueue={() => setActiveTab('doctor')}
         lang={lang}
       />
+
+      {/* Doctor Profile Modal (Prompt Section 7 & 14) */}
+      {viewingDoctorProfile && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" style={{ zIndex: 1100 }}>
+          <div className="modal-dialog" style={{ maxWidth: '520px', background: '#ffffff', padding: '24px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <img
+                  src={viewingDoctorProfile.avatarUrl || (viewingDoctorProfile.gender === 'male' ? '/images/male-doctor-avatar.jpg' : '/images/doctor-feed.jpg')}
+                  alt={viewingDoctorProfile.name}
+                  style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #0284c7' }}
+                />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a', fontWeight: 900 }}>{viewingDoctorProfile.name}</h3>
+                    <span title="Verified Clinician" style={{ color: '#0284c7', fontSize: '18px' }}>✓</span>
+                  </div>
+                  <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 700 }}>
+                    {viewingDoctorProfile.specialty}
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '12px' }}>
+                    {viewingDoctorProfile.hospital || viewingDoctorProfile.facility}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingDoctorProfile(null)}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Clinician Badges & Details */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Experience & Degrees</span>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>{viewingDoctorProfile.experience || '8+ yrs exp • MBBS, MD'}</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>OPD Consultation Fee</span>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#16a34a' }}>{viewingDoctorProfile.fees || 'Free (Govt Telehealth Initiative)'}</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Languages Spoken</span>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>{viewingDoctorProfile.languages.join(', ')}</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Current OPD Status</span>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: viewingDoctorProfile.available ? '#16a34a' : '#92400e' }}>
+                  {viewingDoctorProfile.available ? '🟢 Available Now' : '🟠 Next Slot Scheduled'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', marginBottom: '18px' }}>
+              <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700, marginBottom: '2px' }}>
+                Clinical Focus & Teleconsultation Guidelines
+              </div>
+              <p style={{ margin: 0, fontSize: '12px', color: '#1e3a8a', lineHeight: 1.5 }}>
+                Authorized tele-specialist at District Headquarters Hospital (DHH) Bhawanipatna. Evaluates non-emergency chronic conditions, reviews diagnostic reports, issues digital e-prescriptions, and advises rural CHCs.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const doc = viewingDoctorProfile;
+                  setViewingDoctorProfile(null);
+                  handleInitiateBooking(doc);
+                }}
+                className="btn btn-secondary"
+                style={{ padding: '10px 18px', fontSize: '13px', fontWeight: 700, borderRadius: '10px' }}
+              >
+                Book Appointment Slot
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const doc = viewingDoctorProfile;
+                  setViewingDoctorProfile(null);
+                  handleStartConsultation(doc);
+                }}
+                className="btn btn-primary"
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Video size={16} />
+                <span>Start Consultation Call</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3-Step Appointment Booking Modal (Prompt Section 13 & 24) */}
       {isBookingModalOpen && bookingDoctor && (

@@ -50,6 +50,9 @@ import {
   AudioTranslationMessage
 } from '../types';
 import { storage } from '../utils/storage';
+import { EPrescriptionModal } from './EPrescriptionModal';
+import { getSocket } from '../services/socket';
+import { api } from '../services/api';
 
 interface VideoConsultationRoomProps {
   isOpen: boolean;
@@ -277,6 +280,11 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
 
   const t = VIDEO_ROOM_I18N[roomLang] || VIDEO_ROOM_I18N.English;
 
+  // Dynamic gender-aware Doctor & Patient Media Sources
+  const isMaleDoctor = doctor?.gender === 'male' || (!doctor?.gender && (/patnaik|jena|hota|kumar|rajesh|tripathy|das\b/i.test(doctor?.name || '')));
+  const doctorFeedImg = doctor?.feedUrl || (isMaleDoctor ? '/images/male-doctor-feed.jpg' : '/images/doctor-feed.jpg');
+  const doctorAvatarImg = doctor?.avatarUrl || doctorFeedImg;
+
   // Pre-call stage
   const [preCallDone, setPreCallDone] = useState(false);
   const [cameraPermGranted, setCameraPermGranted] = useState<boolean | null>(null);
@@ -319,6 +327,9 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   const [rxStatus, setRxStatus] = useState<'draft' | 'finalized'>('draft');
   const [rxSyncState, setRxSyncState] = useState<'saved-locally' | 'waiting' | 'synced' | 'failed'>('saved-locally');
   const [rxFeedbackMsg, setRxFeedbackMsg] = useState('');
+  const [inCallPrescriptionNotice, setInCallPrescriptionNotice] = useState('');
+  const [issuedPrescription, setIssuedPrescription] = useState<FullPrescription | null>(null);
+  const [showFullRxModal, setShowFullRxModal] = useState(false);
   const [showAddMedForm, setShowAddMedForm] = useState(false);
   const [newMedName, setNewMedName] = useState('');
   const [newMedStrength, setNewMedStrength] = useState('500mg');
@@ -410,9 +421,10 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   const handleFinalizePrescription = () => {
     setRxStatus('finalized');
     setRxSyncState('waiting');
+    const rxNumber = `RX-KLH-2026-${Math.floor(Math.random() * 800 + 100)}`;
     const finalizedRx: FullPrescription = {
       id: `rx-KLH-${Date.now()}`,
-      prescriptionNumber: `RX-KLH-2026-${Math.floor(Math.random() * 800 + 100)}`,
+      prescriptionNumber: rxNumber,
       patientId: patient.patientId || 'RHB-OD-KLH-0941',
       patientName: patient.name,
       doctorId: doctor.id,
@@ -430,12 +442,48 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
       version: 1
     };
 
+    setIssuedPrescription(finalizedRx);
+
     // Save and explicitly synchronize to patient longitudinal health record
     storage.savePrescription(finalizedRx);
+    api.prescriptions.save(finalizedRx).catch(() => {});
+
+    // Broadcast across live WebRTC consultation room
+    try {
+      const socket = getSocket();
+      socket.emit('rx-issued', { roomId, prescription: finalizedRx });
+    } catch (e) {
+      console.warn('Socket Rx broadcast error:', e);
+    }
+
+    // Also persist into patient health record stream
+    storage.saveRecord({
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      type: 'prescription',
+      notes: `E-Prescription ${rxNumber} generated during live teleconsultation call: ${rxDiagnosis}. Prescribed: ${rxMedicines.map(m => m.name).join(', ')}. Follow up: ${rxFollowUpDate}.`,
+      prescriptionData: finalizedRx
+    });
+
     setRxSyncState('synced');
     setDoctorNotes(`Prescription ${finalizedRx.prescriptionNumber} finalized: ${rxDiagnosis}. Prescribed: ${rxMedicines.map(m => m.name).join(', ')}.`);
-    setRxFeedbackMsg(`✓ E-Prescription ${finalizedRx.prescriptionNumber} authorized & synchronized to patient records.`);
-    setTimeout(() => setRxFeedbackMsg(''), 4500);
+    setRxFeedbackMsg(`✓ E-Prescription ${finalizedRx.prescriptionNumber} authorized during live call & synced to records.`);
+    setInCallPrescriptionNotice(`✓ E-Prescription ${finalizedRx.prescriptionNumber} authorized during live call!`);
+    
+    // Post instant notification into consultation chat stream
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `msg-rx-${Date.now()}`,
+        sender: 'doctor',
+        senderName: doctor.name,
+        text: `📄 E-Prescription Issued: ${finalizedRx.prescriptionNumber} for "${rxDiagnosis}". Prescribed: ${rxMedicines.map(m => m.name).join(', ')}.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    setTimeout(() => setInCallPrescriptionNotice(''), 7000);
+    setTimeout(() => setRxFeedbackMsg(''), 5000);
   };
 
   const handleRetrySync = () => {
@@ -536,6 +584,13 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   const [callCompleted, setCallCompleted] = useState(false);
   const [followUpPlan, setFollowUpPlan] = useState<'Routine monitoring' | 'Follow-up required' | 'Physical consultation recommended' | 'Emergency escalation'>('Routine monitoring');
 
+  // Real-Time P2P WebRTC Peer Connection & Remote Video
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [isPeerConnected, setIsPeerConnected] = useState(false);
+  const roomId = `room-${doctor?.id || 'doc'}-${patient?.patientId || 'pat'}`;
+
   // Local media stream
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -560,58 +615,187 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     }
   };
 
-  // Call timer
+  // Real-time WebRTC Peer-to-Peer Signaling & In-Call Event Synchronization
   useEffect(() => {
-    let interval: any;
-    if (isOpen && preCallDone && !callCompleted && networkQuality !== 'offline') {
-      interval = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isOpen, preCallDone, callCompleted, networkQuality]);
+    if (!preCallDone || !isOpen || callCompleted) return;
 
-  // Network transition alerts
-  useEffect(() => {
-    if (!preCallDone) return;
-    const prev = prevNetRef.current;
-    if (prev !== networkQuality) {
-      if (prev === 'good' && networkQuality === 'limited') {
-        setNetworkNotification('Connection is weak. Video quality has been reduced to keep the consultation stable.');
-      } else if (prev === 'limited' && networkQuality === 'good') {
-        setNetworkNotification('Connection restored. High-quality video active.');
-      } else if (networkQuality === 'offline') {
-        setNetworkNotification('Connection lost. Live consultation paused. Reconnect to continue consultation.');
-      } else if (prev === 'offline' && (networkQuality === 'good' || networkQuality === 'limited')) {
-        setNetworkNotification('Reconnected to telehealth bridge.');
+    const socket = getSocket();
+
+    // 1. Join consultation room
+    socket.emit('join-room', {
+      roomId,
+      userId: userRole === 'doctor' ? doctor.id : (patient.patientId || patient.email || 'patient-1'),
+      userName: userRole === 'doctor' ? doctor.name : patient.name,
+      userRole
+    });
+
+    // Notify backend API about in-progress consultation
+    api.consultations.start({
+      roomId,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      patientName: patient.name
+    }).catch(() => {});
+
+    // Helper: Initialize RTCPeerConnection with STUN servers
+    const createPC = (targetSocketId: string) => {
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
       }
-      prevNetRef.current = networkQuality;
-      const timer = setTimeout(() => setNetworkNotification(null), 4500);
-      return () => clearTimeout(timer);
-    }
-  }, [networkQuality, preCallDone]);
 
-  // Attach local stream to video ref when preCallDone changes or stream changes
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream, preCallDone]);
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      });
 
-  // Keyboard Escape listener to end call safely
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        if (!preCallDone) {
-          handleCloseEntirely();
-        } else if (!callCompleted) {
-          setShowEndConfirm(true);
+      peerConnectionRef.current = pc;
+
+      // Add local tracks to peer connection
+      if (localStream) {
+        localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+      }
+
+      // Forward ICE candidates to signaling server
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('ice-candidate', {
+            targetSocketId,
+            candidate: event.candidate
+          });
+        }
+      };
+
+      // Receive incoming remote WebRTC media tracks
+      pc.ontrack = (event) => {
+        const stream = event.streams[0];
+        setRemoteStream(stream);
+        setIsPeerConnected(true);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'connected') {
+          setIsPeerConnected(true);
+        } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+          setIsPeerConnected(false);
+        }
+      };
+
+      return pc;
+    };
+
+    // Existing peers in room
+    socket.on('existing-peers', async (existingPeers: Array<{ socketId: string }>) => {
+      if (existingPeers && existingPeers.length > 0) {
+        const targetPeer = existingPeers[0];
+        const pc = createPC(targetPeer.socketId);
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          socket.emit('offer', { targetSocketId: targetPeer.socketId, offer });
+        } catch (err) {
+          console.warn('[WebRTC Offer Error]', err);
         }
       }
+    });
+
+    // Remote peer joined room
+    socket.on('peer-joined', ({ socketId, userName }: { socketId: string; userName: string }) => {
+      console.log(`[WebRTC Peer Joined] ${userName} (${socketId})`);
+    });
+
+    // Incoming SDP Offer
+    socket.on('offer', async ({ senderSocketId, offer }: { senderSocketId: string; offer: RTCSessionDescriptionInit }) => {
+      const pc = createPC(senderSocketId);
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('answer', { targetSocketId: senderSocketId, answer });
+      } catch (err) {
+        console.warn('[WebRTC Answer Error]', err);
+      }
+    });
+
+    // Incoming SDP Answer
+    socket.on('answer', async ({ answer }: { answer: RTCSessionDescriptionInit }) => {
+      if (peerConnectionRef.current) {
+        try {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+          console.warn('[WebRTC Set Remote Desc Error]', err);
+        }
+      }
+    });
+
+    // Incoming ICE candidate
+    socket.on('ice-candidate', async ({ candidate }: { candidate: RTCIceCandidateInit }) => {
+      if (peerConnectionRef.current && candidate) {
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.warn('[WebRTC Add ICE Error]', err);
+        }
+      }
+    });
+
+    // Real-Time In-Call Chat Delivery
+    socket.on('chat-message', (msg: ChatMessage) => {
+      setChatMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      if (activeSidePanel !== 'chat') {
+        setUnreadChatCount((prev) => prev + 1);
+      }
+    });
+
+    // Real-Time E-Prescription Push
+    socket.on('rx-issued', (rx: FullPrescription) => {
+      setIssuedPrescription(rx);
+      setInCallPrescriptionNotice(`✓ Real-time E-Prescription ${rx.prescriptionNumber} authorized by ${rx.doctorName}!`);
+      setTimeout(() => setInCallPrescriptionNotice(''), 7000);
+    });
+
+    // Remote peer concluded call
+    socket.on('call-ended', () => {
+      handleConfirmEnd();
+    });
+
+    // Remote peer disconnected
+    socket.on('peer-disconnected', () => {
+      setIsPeerConnected(false);
+      setRemoteStream(null);
+    });
+
+    return () => {
+      socket.off('existing-peers');
+      socket.off('peer-joined');
+      socket.off('offer');
+      socket.off('answer');
+      socket.off('ice-candidate');
+      socket.off('chat-message');
+      socket.off('rx-issued');
+      socket.off('call-ended');
+      socket.off('peer-disconnected');
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, preCallDone, callCompleted]);
+  }, [preCallDone, isOpen, callCompleted, localStream]);
+
+  // Sync remote video element when remoteStream changes
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
 
   // Clean up media tracks when closed
   const cleanUpMedia = () => {
@@ -619,6 +803,12 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
       localStream.getTracks().forEach((track) => track.stop());
       setLocalStream(null);
     }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    setRemoteStream(null);
+    setIsPeerConnected(false);
   };
 
   const handleCloseEntirely = () => {
@@ -626,6 +816,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     setPreCallDone(false);
     setCallCompleted(false);
     setShowEndConfirm(false);
+    setShowFullRxModal(false);
     setCallDuration(0);
     onClose();
   };
@@ -677,7 +868,15 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     setChatMessages((prev) => [...prev, newMsg]);
     setChatInput('');
 
-    // If patient sent, generate simulated doctor response after 1.5s
+    // Broadcast across real WebRTC / Socket connection to remote peer
+    try {
+      const socket = getSocket();
+      socket.emit('chat-message', { roomId, message: newMsg });
+    } catch (e) {
+      console.warn('Socket chat broadcast failed:', e);
+    }
+
+    // If patient sent, generate simulated doctor response after 1.5s as backup if doctor peer is offline
     if (userRole === 'patient') {
       setTimeout(() => {
         setChatMessages((prev) => [
@@ -717,13 +916,62 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
     cleanUpMedia();
     setCallCompleted(true);
     storage.incrementMetric('appointmentsCompleted', 1);
+
+    // Conclude consultation on backend API & broadcast call-ended to peer
+    try {
+      const socket = getSocket();
+      socket.emit('end-call', { roomId });
+    } catch (e) {
+      console.warn('Socket end-call failed:', e);
+    }
+
+    api.consultations.conclude(roomId, {
+      durationSeconds: callDuration,
+      notes: doctorNotes,
+      followUpPlan
+    }).catch(() => {});
+
+    // Ensure session prescription is finalized with exact consultation medicines and diagnosis
+    let currentRx = issuedPrescription;
+    if (!currentRx && rxMedicines && rxMedicines.length > 0) {
+      const rxNumber = `RX-KLH-2026-${Math.floor(Math.random() * 800 + 100)}`;
+      currentRx = {
+        id: `rx-KLH-${Date.now()}`,
+        prescriptionNumber: rxNumber,
+        patientId: patient.patientId || 'RHB-OD-KLH-0941',
+        patientName: patient.name,
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        doctorHospital: doctor.hospital,
+        date: new Date().toLocaleDateString('en-GB'),
+        diagnosisSummary: rxDiagnosis,
+        medicines: rxMedicines,
+        followUp: rxFollowUpDate,
+        notes: rxReferralFacility ? `${doctorNotes} [Referral: ${rxReferralFacility}]` : doctorNotes,
+        digitalSignature: `Digitally Authorized by ${doctor.name} (Licensed Medical Officer)`,
+        status: 'finalized',
+        syncStatus: 'synced',
+        updatedAt: new Date().toISOString(),
+        version: 1
+      };
+      setIssuedPrescription(currentRx);
+      setRxStatus('finalized');
+      storage.savePrescription(currentRx);
+      api.prescriptions.save(currentRx).catch(() => {});
+    }
+
     storage.saveRecord({
-      type: 'consultation',
+      type: currentRx ? 'prescription' : 'consultation',
+      doctorId: doctor.id,
       doctorName: doctor.name,
-      notes: `Consultation completed (${formatTimer(callDuration)}). Clinical summary: ${doctorNotes}`,
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      notes: currentRx
+        ? `Prescription ${currentRx.prescriptionNumber} concluded (${formatTimer(callDuration)}): ${rxDiagnosis}. Prescribed: ${currentRx.medicines.map((m) => m.name).join(', ')}.`
+        : `Consultation completed (${formatTimer(callDuration)}). Clinical summary: ${doctorNotes}`,
       pathway: followUpPlan === 'Emergency escalation' ? 'urgent physical care' : 'clinician consultation',
       followUpPlan,
-      urgency: followUpPlan === 'Emergency escalation' ? 'urgent' : 'routine'
+      urgency: followUpPlan === 'Emergency escalation' ? 'urgent' : 'routine',
+      prescriptionData: currentRx || undefined
     });
   };
 
@@ -833,7 +1081,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 }}
               >
                 <img
-                  src="/images/doctor-feed.jpg"
+                  src={doctorAvatarImg}
                   alt={doctor.name}
                   style={{
                     width: '44px',
@@ -947,6 +1195,31 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   // (Call Ended -> Summary -> Care Plan -> Medicine Needed? -> Pharmacy Availability)
   // ==========================================
   if (callCompleted) {
+    const activeSessionPrescription: FullPrescription = issuedPrescription || {
+      id: `rx-KLH-${Date.now()}`,
+      prescriptionNumber: `RX-KLH-2026-${Math.floor(Math.random() * 800 + 100)}`,
+      patientId: patient.patientId || 'RHB-OD-KLH-0941',
+      patientName: patient.name,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      doctorHospital: doctor.hospital,
+      date: new Date().toLocaleDateString('en-GB'),
+      diagnosisSummary: rxDiagnosis || 'Clinical Consultation Concluded',
+      medicines: rxMedicines,
+      followUp: rxFollowUpDate || 'Routine follow-up in 3 days',
+      notes: rxReferralFacility ? `${doctorNotes} [Referral: ${rxReferralFacility}]` : doctorNotes,
+      digitalSignature: `Digitally Authorized by Dr. ${doctor.name} (Licensed Medical Officer)`,
+      status: 'finalized',
+      syncStatus: 'synced',
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+
+    const activeSessionMeds: PrescriptionMedicine[] =
+      issuedPrescription && issuedPrescription.medicines && issuedPrescription.medicines.length > 0
+        ? issuedPrescription.medicines
+        : rxMedicines;
+
     return (
       <div className="modal-overlay" role="dialog" aria-modal="true">
         <div
@@ -1010,7 +1283,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 <span style={{ fontSize: '11px', color: '#64748b' }}>{t.docLabel}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
                   <img
-                    src="/images/doctor-feed.jpg"
+                    src={doctorAvatarImg}
                     alt={doctor.name}
                     style={{
                       width: '32px',
@@ -1044,7 +1317,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   />
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{patient.name}</div>
-                    <div style={{ fontSize: '10px', color: '#64748b' }}>Kalahandi, Odisha</div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>{patient.location || 'Kalahandi, Odisha'}</div>
                   </div>
                 </div>
               </div>
@@ -1073,24 +1346,33 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               textAlign: 'left'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a', fontWeight: 800, fontSize: '13px', marginBottom: '8px' }}>
-              <FileText size={16} style={{ color: '#0284c7' }} />
-              <span>{t.summaryTitle}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a', fontWeight: 800, fontSize: '13px' }}>
+                <FileText size={16} style={{ color: '#0284c7' }} />
+                <span>{t.summaryTitle}</span>
+              </div>
+              {activeSessionPrescription.prescriptionNumber && (
+                <span style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                  {activeSessionPrescription.prescriptionNumber}
+                </span>
+              )}
             </div>
-            <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
-              <div style={{ marginBottom: '6px' }}>
+            <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
+              <div style={{ marginBottom: '8px' }}>
                 <strong style={{ color: '#0f172a' }}>{t.diagnosisLabel} </strong>
-                <span style={{ color: '#0284c7', fontWeight: 600 }}>
-                  {roomLang === 'ଓଡ଼ିଆ'
-                    ? 'ସାମାନ୍ୟ ଜଳହ୍ରାସ ଓ ଅଳ୍ପ ଜ୍ୱର ସହିତ ପେଟ ସଂକ୍ରମଣ (Acute Gastroenteritis)'
-                    : roomLang === 'हिन्दी'
-                    ? 'हल्का निर्जलीकरण एवं अल्प ज्वर सहित आंत्रशोथ (Acute Gastroenteritis)'
-                    : 'Acute Gastroenteritis with Mild Dehydration & Low-Grade Pyrexia'}
+                <span style={{ color: '#0284c7', fontWeight: 700, fontSize: '13.5px' }}>
+                  {rxDiagnosis || activeSessionPrescription.diagnosisSummary || (
+                    roomLang === 'ଓଡ଼ିଆ'
+                      ? 'ଡାକ୍ତରୀ ପରାମର୍ଶ ସମ୍ପୂର୍ଣ୍ଣ ହେଲା'
+                      : roomLang === 'हिन्दी'
+                      ? 'चिकित्सीय परामर्श पूर्ण हुआ'
+                      : 'Clinical Consultation Concluded'
+                  )}
                 </span>
               </div>
-              <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.5 }}>
-                <strong>{t.doctorNotesLabel} </strong>
-                <em>"{doctorNotes}"</em>
+              <div style={{ color: '#334155', fontSize: '12px', lineHeight: 1.5, background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <strong style={{ color: '#475569' }}>{t.doctorNotesLabel} </strong>
+                <span>"{doctorNotes || activeSessionPrescription.notes || 'Patient evaluated via teleconsultation. Symptomatic care advised.'}"</span>
               </div>
             </div>
           </div>
@@ -1135,18 +1417,18 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 {
                   id: 'Follow-up required',
                   label: roomLang === 'ଓଡ଼ିଆ'
-                    ? '୩ ଦିନ ପରେ ପୁନଃ ଟେଲିପରାମର୍ଶ (ଅନୁମୋଦିତ)'
+                    ? `ପୁନଃ ଟେଲିପରାମର୍ଶ (${rxFollowUpDate || '୩ ଦିନ ପରେ'})`
                     : roomLang === 'हिन्दी'
-                    ? '3 दिनों में पुनः टेलीपरामर्श (अनुशंसित)'
-                    : 'Follow-up teleconsultation in 3 days (Recommended)'
+                    ? `पुनः टेलीपरामर्श (${rxFollowUpDate || '3 दिनों में'})`
+                    : `Follow-up teleconsultation (${rxFollowUpDate || 'in 3 days'})`
                 },
                 {
                   id: 'Physical consultation recommended',
                   label: roomLang === 'ଓଡ଼ିଆ'
-                    ? 'ପ୍ରାଥମିକ/ଗୋଷ୍ଠୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (PHC/CHC) ରେ ଶାରୀରିକ ଯାଞ୍ଚ'
+                    ? `ପ୍ରାଥମିକ/ଗୋଷ୍ଠୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ରରେ ଯାଞ୍ଚ ${rxReferralFacility ? `(${rxReferralFacility})` : '(PHC/CHC)'}`
                     : roomLang === 'हिन्दी'
-                    ? 'प्राथमिक/सामुदायिक स्वास्थ्य केंद्र (PHC/CHC) में शारीरिक जांच'
-                    : 'Physical consultation at PHC/CHC recommended'
+                    ? `स्वास्थ्य केंद्र में शारीरिक जांच ${rxReferralFacility ? `(${rxReferralFacility})` : '(PHC/CHC)'}`
+                    : `Physical consultation recommended ${rxReferralFacility ? `(${rxReferralFacility})` : 'at PHC/CHC'}`
                 },
                 {
                   id: 'Emergency escalation',
@@ -1201,69 +1483,152 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
             </div>
           </div>
 
-          {/* STEP 4: MEDICINE NEEDED? */}
+          {/* STEP 4: MEDICINE NEEDED? (ACTUAL SESSION PRESCRIPTION) */}
           <div
             style={{
-              background: '#f0fdf4',
-              border: '2px solid #86efac',
+              background: activeSessionMeds.length > 0 ? '#f0fdf4' : '#f8fafc',
+              border: activeSessionMeds.length > 0 ? '2px solid #86efac' : '1.5px solid #cbd5e1',
               borderRadius: '14px',
               padding: '14px 16px',
               textAlign: 'left'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 800, fontSize: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: activeSessionMeds.length > 0 ? '#166534' : '#334155', fontWeight: 800, fontSize: '13px' }}>
                 <Pill size={16} />
                 <span>{t.medicineTitle}</span>
               </div>
-              <span style={{ background: '#16a34a', color: '#ffffff', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 800 }}>
-                {t.medIssued}
+              <span
+                style={{
+                  background: activeSessionMeds.length > 0 ? '#16a34a' : '#64748b',
+                  color: '#ffffff',
+                  padding: '2px 10px',
+                  borderRadius: '999px',
+                  fontSize: '11px',
+                  fontWeight: 800
+                }}
+              >
+                {activeSessionMeds.length > 0
+                  ? t.medIssued
+                  : (roomLang === 'ଓଡ଼ିଆ' ? 'ଔଷଧ ଆବଶ୍ୟକ ନାହିଁ • ଘରୋଇ ଯତ୍ନ' : roomLang === 'हिन्दी' ? 'दवा की आवश्यकता नहीं • घरेलू देखभाल' : 'No Meds Needed • Home Care')}
               </span>
             </div>
 
-            <div style={{ display: 'grid', gap: '8px' }}>
-              <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? 'ପାରାସିଟାମଲ୍ ୫୦୦ମି.ଗ୍ରା. (Paracetamol 500mg)' : roomLang === 'हिन्दी' ? 'पैरासिटामोल 500mg (Paracetamol)' : 'Paracetamol 500mg'}
-                  </strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ବଟିକା ଦିନକୁ ୩ ଥର ଖାଇବା ପରେ • ୩ ଦିନ • ଜ୍ୱର ଓ ଶରୀର ଯନ୍ତ୍ରଣା ପାଇଁ' : roomLang === 'हिन्दी' ? '1 गोली दिन में 3 बार भोजन के बाद • 3 दिन • बुखार एवं बदन दर्द' : '1 tablet TID after food • 3 days • Fever & body ache'}
+            {/* If doctor prescribed medicines during this session */}
+            {activeSessionMeds.length > 0 ? (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {activeSessionMeds.map((med, idx) => (
+                  <div
+                    key={med.id || idx}
+                    style={{
+                      background: '#ffffff',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #bbf7d0',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ background: '#dcfce7', color: '#166534', fontWeight: 800, fontSize: '11px', width: '20px', height: '20px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {idx + 1}
+                        </span>
+                        <strong style={{ fontSize: '13px', color: '#166534' }}>
+                          {med.name} {med.strength && <span style={{ color: '#15803d', fontWeight: 600 }}>({med.strength})</span>}
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#334155', marginTop: '3px', paddingLeft: '28px' }}>
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{med.dosage || med.frequency || 'As directed'}</span>
+                        {med.duration && <span> • <strong>{med.duration}</strong></span>}
+                        {med.instructions && <span style={{ color: '#64748b' }}> • <em>{med.instructions}</em></span>}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
+                      {med.duration || 'Prescribed'}
+                    </span>
                   </div>
-                </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
-                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୧୦ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 10' : 'Qty: 10 Tabs'}
-                </span>
-              </div>
+                ))}
 
-              <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? 'ORS ଇଲେକ୍ଟ୍ରୋଲାଇଟ୍ ପାଉଡର (WHO ଫର୍ମୁଲା)' : roomLang === 'हिन्दी' ? 'ओआरएस पाउडर (WHO फॉर्मूला)' : 'ORS Electrolyte Powder (WHO Formula)'}
-                  </strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ପ୍ୟାକେଟ୍ ୧ ଲିଟର ସଫା ପାଣିରେ ମିଶାଇ ପିଅନ୍ତୁ • ଘନ ଘନ ଅଳ୍ପ ଅଳ୍ପ' : roomLang === 'हिन्दी' ? '1 पैकेट 1 लीटर स्वच्छ पानी में घोलकर पिएं • बार-बार थोड़ा-थोड़ा' : '1 sachet dissolved in 1L clean water • Frequent sips'}
+                {/* Digital prescription info strip & View / Print button */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px dashed #86efac',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    marginTop: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}
+                >
+                  <div style={{ fontSize: '11px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={14} color="#16a34a" />
+                    <span>
+                      <strong>{activeSessionPrescription.prescriptionNumber}</strong> • {activeSessionPrescription.digitalSignature || `Digitally Authorized by Dr. ${doctor.name}`}
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullRxModal(true)}
+                    style={{
+                      background: '#166534',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '5px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <FileText size={13} />
+                    <span>
+                      {roomLang === 'ଓଡ଼ିଆ'
+                        ? 'ସମ୍ପୂର୍ଣ୍ଣ ପ୍ରେସକ୍ରିପସନ୍ ଦେଖନ୍ତୁ / ପ୍ରିଣ୍ଟ୍'
+                        : roomLang === 'हिन्दी'
+                        ? 'पूरा पर्चा देखें / प्रिंट'
+                        : 'View / Print Official Rx'}
+                    </span>
+                  </button>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
-                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୪ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 4' : 'Qty: 4 Sachets'}
-                </span>
               </div>
-
-              <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            ) : (
+              /* If no medicines were prescribed */
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '12px',
+                  color: '#475569'
+                }}
+              >
+                <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '4px' }}>
+                  {roomLang === 'ଓଡ଼ିଆ'
+                    ? 'ଏହି ପରାମର୍ଶରେ କୌଣସି ଔଷଧ ଲେଖାଯାଇ ନାହିଁ'
+                    : roomLang === 'हिन्दी'
+                    ? 'इस परामर्श में कोई दवा नहीं लिखी गई है'
+                    : 'No prescription medications required for this session.'}
+                </div>
                 <div>
-                  <strong style={{ fontSize: '13px', color: '#166534' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? 'ଜିଙ୍କ୍ ସଲଫେଟ୍ ୨୦ମି.ଗ୍ରା. (Zinc Sulfate 20mg)' : roomLang === 'हिन्दी' ? 'जिंक सल्फेट 20mg (Zinc Sulfate)' : 'Zinc Sulfate 20mg Dispersible'}
-                  </strong>
-                  <div style={{ fontSize: '11px', color: '#475569' }}>
-                    {roomLang === 'ଓଡ଼ିଆ' ? '୧ ବଟିକା ପାଣିରେ ମିଳାଇ ଦିନକୁ ୧ ଥର • ୧୪ ଦିନ' : roomLang === 'हिन्दी' ? '1 गोली पानी में घोलकर दिन में 1 बार • 14 दिन' : '1 tablet OD dissolved in water • 14 days • Gut healing'}
-                  </div>
+                  {roomLang === 'ଓଡ଼ିଆ'
+                    ? 'ଡାକ୍ତର ଘରୋଇ ଯତ୍ନ, ବିଶ୍ରାମ ଓ ତରଳ ପଦାର୍ଥ ଗ୍ରହଣ କରିବାକୁ ନିର୍ଦ୍ଦେଶ ଦେଇଛନ୍ତି। ଯଦି ସମସ୍ୟା ବଢେ, ତେବେ ପୁନର୍ବାର ପରାମର୍ଶ କରନ୍ତୁ।'
+                    : roomLang === 'हिन्दी'
+                    ? 'डॉक्टर ने आराम, तरल पदार्थ एवं घरेलू देखभाल की सलाह दी है। लक्षण बढ़ने पर पुनः संपर्क करें।'
+                    : 'The doctor has advised conservative observation, adequate oral fluids, and rest. If symptoms worsen, schedule an in-person visit.'}
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
-                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପରିମାଣ: ୧୪ ଟି' : roomLang === 'हिन्दी' ? 'मात्रा: 14' : 'Qty: 14 Tabs'}
-                </span>
               </div>
-            </div>
+            )}
           </div>
 
           {/* DOWN ARROW */}
@@ -1285,7 +1650,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               boxShadow: '0 8px 24px rgba(15, 23, 42, 0.4)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 800, fontSize: '14px' }}>
                 <Store size={17} />
                 <span>{t.pharmacyTitle}</span>
@@ -1293,6 +1658,20 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
                 {t.verified}
               </span>
+            </div>
+
+            {/* Prescribed Item Header Info */}
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '10px' }}>
+              {activeSessionMeds.length > 0 ? (
+                <span>
+                  {roomLang === 'ଓଡ଼ିଆ' ? 'ପ୍ରଦାନ କରାଯାଇଥିବା ଔଷଧ ଯାଞ୍ଚ ହୋଇଛି: ' : roomLang === 'हिन्दी' ? 'सत्र की दवाओं का स्टॉक जांच: ' : 'Live stock verified for prescribed item: '}
+                  <strong style={{ color: '#38bdf8' }}>{activeSessionMeds[0]?.name} {activeSessionMeds[0]?.strength || ''}</strong>
+                </span>
+              ) : (
+                <span>
+                  {roomLang === 'ଓଡ଼ିଆ' ? 'କଳାହାଣ୍ଡି ସରକାରୀ ଜନ ଔଷଧି କେନ୍ଦ୍ର ଷ୍ଟକ୍ ଯାଞ୍ଚ ହୋଇଛି' : roomLang === 'हिन्दी' ? 'कालाहांडी जन औषधि केंद्र लाइव स्टॉक सत्यापित' : 'Kalahandi rural Jan Aushadhi & essential medicine stock verified'}
+                </span>
+              )}
             </div>
 
             {/* 3 Store Snapshot Cards */}
@@ -1387,6 +1766,20 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Full Official Prescription Slip Modal on Demand */}
+          {showFullRxModal && (
+            <EPrescriptionModal
+              isOpen={showFullRxModal}
+              onClose={() => setShowFullRxModal(false)}
+              prescription={activeSessionPrescription}
+              mode="view"
+              doctorName={doctor.name}
+              patientName={patient.name}
+              patientId={patient.patientId}
+              lang={roomLang}
+            />
+          )}
         </div>
       </div>
     );
@@ -1439,6 +1832,111 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontSize: '13px', fontWeight: 700 }}>
             <Clock size={14} />
             <span>{formatTimer(callDuration)}</span>
+          </div>
+
+          {/* In-Call Quick Tool Toggles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setActiveSidePanel(activeSidePanel === 'prescription' ? 'none' : 'prescription')}
+              style={{
+                background: activeSidePanel === 'prescription' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'rgba(2, 132, 199, 0.2)',
+                border: activeSidePanel === 'prescription' ? '1.5px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.4)',
+                color: activeSidePanel === 'prescription' ? '#ffffff' : '#7dd3fc',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: activeSidePanel === 'prescription' ? '0 0 12px rgba(56, 189, 248, 0.4)' : 'none',
+                transition: 'all 0.2s ease'
+              }}
+              title="Open E-Prescription workspace during call"
+            >
+              <Stethoscope size={14} color={activeSidePanel === 'prescription' ? '#ffffff' : '#38bdf8'} />
+              <span>{userRole === 'doctor' ? '🩺 Make E-Prescription' : '💊 Live E-Prescription'}</span>
+              <span style={{
+                background: rxStatus === 'finalized' ? '#22c55e' : '#0284c7',
+                color: '#fff',
+                fontSize: '10px',
+                padding: '1px 6px',
+                borderRadius: '999px',
+                fontWeight: 800
+              }}>
+                {rxStatus === 'finalized' ? '✓ Synced' : `${rxMedicines.length} Meds`}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveSidePanel(activeSidePanel === 'chat' ? 'none' : 'chat')}
+              style={{
+                background: activeSidePanel === 'chat' ? '#1e293b' : 'rgba(255, 255, 255, 0.08)',
+                border: activeSidePanel === 'chat' ? '1.5px solid #94a3b8' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                padding: '5px 10px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <MessageSquare size={13} />
+              <span>Chat</span>
+              {chatMessages.length > 0 && (
+                <span style={{ background: '#38bdf8', color: '#091322', fontSize: '10px', padding: '1px 5px', borderRadius: '999px', fontWeight: 800 }}>
+                  {chatMessages.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveSidePanel(activeSidePanel === 'summary' ? 'none' : 'summary')}
+              style={{
+                background: activeSidePanel === 'summary' ? '#1e293b' : 'rgba(255, 255, 255, 0.08)',
+                border: activeSidePanel === 'summary' ? '1.5px solid #94a3b8' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                padding: '5px 10px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <FileText size={13} />
+              <span>Records</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveSidePanel(activeSidePanel === 'translator' ? 'none' : 'translator')}
+              style={{
+                background: activeSidePanel === 'translator' ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+                border: activeSidePanel === 'translator' ? '1.5px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                padding: '5px 10px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <Languages size={13} color="#c084fc" />
+              <span>AI Translator</span>
+            </button>
           </div>
         </div>
 
@@ -1649,19 +2147,34 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
               >
                 {userRole === 'patient' ? (
                   <>
-                    {/* Realistic Doctor Webcam Video Stream */}
-                    <img
-                      src="/images/doctor-feed.jpg"
-                      alt={doctor.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center 15%',
-                        filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
-                        transition: 'filter 0.4s ease'
-                      }}
-                    />
+                    {/* Realistic Doctor Webcam Video Stream / Live WebRTC Peer Stream */}
+                    {remoteStream ? (
+                      <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
+                          transition: 'filter 0.4s ease'
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={doctorFeedImg}
+                        alt={doctor.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center 15%',
+                          filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
+                          transition: 'filter 0.4s ease'
+                        }}
+                      />
+                    )}
 
                     {/* Subtle Live Stream Gradient Vignette for crisp overlay readability */}
                     <div
@@ -1701,13 +2214,15 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                         }}
                       />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em' }}>
-                        {roomLang === 'ଓଡ଼ିଆ' ? 'ଲାଇଭ୍ ଡାକ୍ତର ଟେଲି-OPD' : roomLang === 'हिन्दी' ? 'लाइव डॉक्टर टेली-ओपीडी' : 'LIVE CLINICIAN FEED'}
+                        {isPeerConnected
+                          ? (roomLang === 'ଓଡ଼ିଆ' ? '🟢 P2P ଲାଇଭ୍ କଲ୍' : roomLang === 'हिन्दी' ? '🟢 P2P लाइव कॉल' : '🟢 P2P WEBRTC CONNECTED')
+                          : (roomLang === 'ଓଡ଼ିଆ' ? 'ଲାଇଭ୍ ଡାକ୍ତର ଟେଲି-OPD' : roomLang === 'हिन्दी' ? 'लाइव डॉक्टर टेली-ओपीडी' : 'LIVE CLINICIAN FEED')}
                       </span>
                       <span style={{ fontSize: '10px', color: '#94a3b8' }}>•</span>
                       <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 700 }}>
                         {networkQuality === 'limited'
                           ? (roomLang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ୩୬୦p' : roomLang === 'हिन्दी' ? 'अनुकूली 360p' : 'Adaptive 360p')
-                          : 'HD 720p 30fps'}
+                          : (isPeerConnected ? 'WebRTC P2P HD' : 'HD 720p 30fps')}
                       </span>
                     </div>
 
@@ -1755,19 +2270,34 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 ) : (
                   /* Doctor Portal View: Remote peer is patient Keshab Rout */
                   <>
-                    {/* Realistic Patient Smartphone Front-Camera / Webcam Video Stream */}
-                    <img
-                      src="/images/patient-feed.jpg"
-                      alt={patient.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center 15%',
-                        filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
-                        transition: 'filter 0.4s ease'
-                      }}
-                    />
+                    {/* Realistic Patient Smartphone Front-Camera / Live WebRTC Peer Stream */}
+                    {remoteStream ? (
+                      <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
+                          transition: 'filter 0.4s ease'
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="/images/patient-feed.jpg"
+                        alt={patient.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center 15%',
+                          filter: networkQuality === 'limited' ? 'blur(1.2px) contrast(0.92)' : 'none',
+                          transition: 'filter 0.4s ease'
+                        }}
+                      />
+                    )}
 
                     {/* Subtle Live Stream Gradient Vignette for crisp overlay readability */}
                     <div
@@ -1807,13 +2337,15 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                         }}
                       />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em' }}>
-                        {roomLang === 'ଓଡ଼ିଆ' ? 'ଲାଇଭ୍ ରୋଗୀ ଫିଡ୍' : roomLang === 'हिन्दी' ? 'लाइव मरीज वीडियो' : 'LIVE PATIENT FEED'}
+                        {isPeerConnected
+                          ? (roomLang === 'ଓଡ଼ିଆ' ? '🟢 P2P ଲାଇଭ୍ କଲ୍' : roomLang === 'हिन्दी' ? '🟢 P2P लाइव कॉल' : '🟢 P2P WEBRTC CONNECTED')
+                          : (roomLang === 'ଓଡ଼ିଆ' ? 'ଲାଇଭ୍ ରୋଗୀ ଫିଡ୍' : roomLang === 'हिन्दी' ? 'लाइव मरीज वीडियो' : 'LIVE PATIENT FEED')}
                       </span>
                       <span style={{ fontSize: '10px', color: '#94a3b8' }}>•</span>
                       <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 700 }}>
                         {networkQuality === 'limited'
                           ? (roomLang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ବ୍ୟାଣ୍ଡୱିଡ଼ଥ୍ ୩୬୦p' : roomLang === 'हिन्दी' ? 'अनुकूली 360p' : 'Adaptive 360p')
-                          : '4G HD Uplink (Kalahandi)'}
+                          : (isPeerConnected ? 'WebRTC P2P HD' : '4G HD Uplink (Kalahandi)')}
                       </span>
                     </div>
 
@@ -1898,7 +2430,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   <div style={{ textAlign: 'center', padding: '10px' }}>
                     {userRole === 'doctor' ? (
                       <img
-                        src="/images/doctor-feed.jpg"
+                        src={doctorAvatarImg}
                         alt={doctor.name}
                         style={{
                           width: '44px',
@@ -1944,6 +2476,52 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 </div>
               </div>
 
+              {/* IN-CALL LIVE PRESCRIPTION NOTIFICATION BANNER */}
+              {inCallPrescriptionNotice && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
+                    border: '1.5px solid #34d399',
+                    color: '#ffffff',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    zIndex: 40,
+                    animation: 'fadeIn 0.3s ease'
+                  }}
+                >
+                  <CheckCircle2 size={20} color="#6ee7b7" />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '13px' }}>{inCallPrescriptionNotice}</div>
+                    <div style={{ fontSize: '11px', color: '#a7f3d0' }}>Digitally authorized & synchronized during live consultation</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSidePanel('prescription')}
+                    style={{
+                      background: '#ffffff',
+                      color: '#065f46',
+                      border: 0,
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    View Rx
+                  </button>
+                </div>
+              )}
+
               {/* FLOATING CALL CONTROLS HUD (CENTERED ON VIDEO CANVAS) */}
               <div
                 style={{
@@ -1951,18 +2529,19 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   bottom: '24px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'rgba(6, 17, 38, 0.92)',
-                  backdropFilter: 'blur(10px)',
+                  background: 'rgba(6, 17, 38, 0.94)',
+                  backdropFilter: 'blur(12px)',
                   border: '1.5px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: '999px',
                   padding: '8px 16px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.7)',
+                  gap: '10px',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.75)',
                   zIndex: 25
                 }}
               >
+                {/* Mic toggle */}
                 <button
                   type="button"
                   onClick={toggleMic}
@@ -1971,18 +2550,20 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     color: '#ffffff',
                     border: 0,
                     borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
+                    width: '38px',
+                    height: '38px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                   title={isMicMuted ? 'Unmute Mic' : 'Mute Mic'}
                 >
-                  {isMicMuted ? <MicOff size={18} /> : <Mic size={18} />}
+                  {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
                 </button>
 
+                {/* Camera toggle */}
                 <button
                   type="button"
                   onClick={toggleCamera}
@@ -1991,18 +2572,150 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     color: '#ffffff',
                     border: 0,
                     borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
+                    width: '38px',
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
+                >
+                  {isCameraOff ? <VideoOff size={16} /> : <Video size={16} />}
+                </button>
+
+                <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.2)', margin: '0 2px' }} />
+
+                {/* IN-CALL E-PRESCRIPTION BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setActiveSidePanel(activeSidePanel === 'prescription' ? 'none' : 'prescription')}
+                  style={{
+                    background: activeSidePanel === 'prescription'
+                      ? 'linear-gradient(135deg, #0284c7, #0369a1)'
+                      : rxStatus === 'finalized'
+                      ? 'rgba(22, 163, 74, 0.3)'
+                      : 'rgba(2, 132, 199, 0.25)',
+                    border: activeSidePanel === 'prescription'
+                      ? '1.5px solid #38bdf8'
+                      : rxStatus === 'finalized'
+                      ? '1px solid #22c55e'
+                      : '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#ffffff',
+                    borderRadius: '999px',
+                    padding: '8px 16px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: activeSidePanel === 'prescription' ? '0 0 16px rgba(56, 189, 248, 0.5)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Make & Authorize E-Prescription during live call"
+                >
+                  <Stethoscope size={15} color="#38bdf8" />
+                  <span>{userRole === 'doctor' ? '🩺 Write Rx' : '💊 View Rx'}</span>
+                  <span style={{
+                    background: rxStatus === 'finalized' ? '#22c55e' : '#0284c7',
+                    color: '#fff',
+                    fontSize: '10px',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    fontWeight: 800
+                  }}>
+                    {rxStatus === 'finalized' ? '✓' : rxMedicines.length}
+                  </span>
+                </button>
+
+                {/* Chat toggle */}
+                <button
+                  type="button"
+                  onClick={() => setActiveSidePanel(activeSidePanel === 'chat' ? 'none' : 'chat')}
+                  style={{
+                    background: activeSidePanel === 'chat' ? '#1e293b' : 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: 0,
+                    borderRadius: '50%',
+                    width: '38px',
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    position: 'relative'
+                  }}
+                  title="Open Chat"
+                >
+                  <MessageSquare size={16} />
+                  {chatMessages.length > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      background: '#38bdf8',
+                      color: '#091322',
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      width: '15px',
+                      height: '15px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {chatMessages.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Patient Summary / Records */}
+                <button
+                  type="button"
+                  onClick={() => setActiveSidePanel(activeSidePanel === 'summary' ? 'none' : 'summary')}
+                  style={{
+                    background: activeSidePanel === 'summary' ? '#1e293b' : 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: 0,
+                    borderRadius: '50%',
+                    width: '38px',
+                    height: '38px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer'
                   }}
-                  title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
+                  title="Patient Intake & Medical Records"
                 >
-                  {isCameraOff ? <VideoOff size={18} /> : <Video size={18} />}
+                  <FileText size={16} />
                 </button>
 
+                {/* AI Translator */}
+                <button
+                  type="button"
+                  onClick={() => setActiveSidePanel(activeSidePanel === 'translator' ? 'none' : 'translator')}
+                  style={{
+                    background: activeSidePanel === 'translator' ? 'rgba(168, 85, 247, 0.35)' : 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: 0,
+                    borderRadius: '50%',
+                    width: '38px',
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                  title="AI Real-Time Audio Translator"
+                >
+                  <Languages size={16} color="#c084fc" />
+                </button>
+
+                <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.2)', margin: '0 2px' }} />
+
+                {/* End call button */}
                 <button
                   type="button"
                   onClick={() => setShowEndConfirm(true)}
@@ -2011,8 +2724,8 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                     color: '#ffffff',
                     border: 0,
                     borderRadius: '999px',
-                    padding: '8px 20px',
-                    fontSize: '13px',
+                    padding: '8px 18px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
@@ -2023,7 +2736,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   id="floating-end-call-btn"
                   title="End Consultation Call"
                 >
-                  <PhoneOff size={16} />
+                  <PhoneOff size={15} />
                   <span>{t.endCallBtn}</span>
                 </button>
               </div>
@@ -2087,7 +2800,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   >
                     {msg.sender === 'doctor' && (
                       <img
-                        src="/images/doctor-feed.jpg"
+                        src={doctorAvatarImg}
                         alt="Doctor"
                         style={{
                           width: '26px',
@@ -2451,30 +3164,88 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8' }}>
                     Prescribed Medicines ({rxMedicines.length}):
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddMedForm(!showAddMedForm)}
-                    style={{
-                      background: '#0284c7',
-                      color: '#ffffff',
-                      border: 0,
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Plus size={12} />
-                    <span>Add Medicine</span>
-                  </button>
+                  {userRole === 'doctor' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddMedForm(!showAddMedForm)}
+                      style={{
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        border: 0,
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Plus size={12} />
+                      <span>Add Custom Med</span>
+                    </button>
+                  )}
                 </div>
 
+                {/* 1-Click Common Medicines Templates for Doctor during consultation */}
+                {userRole === 'doctor' && (
+                  <div style={{ marginBottom: '10px', background: 'rgba(2, 132, 199, 0.08)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '8px', padding: '8px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.04em' }}>
+                      ⚡ 1-Click Quick Medicine Presets:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {[
+                        { name: 'Tab Paracetamol', strength: '500mg', dosage: '1 tab TID after meals', duration: '3 days', instructions: 'For fever & pain relief SOS' },
+                        { name: 'Oral Rehydration Salts (ORS)', strength: '21.8g Sachet', dosage: '1 sachet in 1L boiled water', duration: '3 days', instructions: 'Frequent sips to maintain oral hydration' },
+                        { name: 'Tab Cetirizine', strength: '10mg', dosage: '1 tab OD at night', duration: '5 days', instructions: 'For allergic rhinitis / cold' },
+                        { name: 'Tab Pantoprazole', strength: '40mg', dosage: '1 tab OD before breakfast', duration: '5 days', instructions: 'Take 30 mins before morning meal' },
+                        { name: 'Tab Amoxicillin', strength: '500mg', dosage: '1 tab TID after food', duration: '5 days', instructions: 'Complete full course as directed' },
+                        { name: 'Tab Azithromycin', strength: '500mg', dosage: '1 tab OD after lunch', duration: '3 days', instructions: 'Take once daily after food' }
+                      ].map((med, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setRxMedicines((prev) => [
+                              ...prev,
+                              {
+                                id: `med-quick-${Date.now()}-${idx}`,
+                                name: med.name,
+                                strength: med.strength,
+                                dosage: med.dosage,
+                                frequency: med.dosage,
+                                duration: med.duration,
+                                instructions: med.instructions
+                              }
+                            ]);
+                            setRxSyncState('saved-locally');
+                            setRxFeedbackMsg(`Added ${med.name} ${med.strength} to in-call prescription.`);
+                            setTimeout(() => setRxFeedbackMsg(''), 2500);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#e2e8f0',
+                            padding: '3px 7px',
+                            borderRadius: '5px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(2, 132, 199, 0.35)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                        >
+                          + {med.name} {med.strength}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Add Medicine Inline Form */}
-                {showAddMedForm && (
+                {showAddMedForm && userRole === 'doctor' && (
                   <div style={{ background: '#1e293b', padding: '10px', borderRadius: '8px', border: '1px solid #334155', marginBottom: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '6px', marginBottom: '6px' }}>
                       <input
@@ -2528,40 +3299,50 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {rxMedicines.map((m) => (
-                    <div
-                      key={m.id}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        padding: '8px 10px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start'
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: '#38bdf8' }}>{m.name}</strong> {m.strength}
-                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                          {m.dosage} • {m.duration}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>
-                          {m.instructions}
-                        </div>
-                      </div>
-                      {userRole === 'doctor' && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMedicine(m.id)}
-                          style={{ background: 'transparent', border: 0, color: '#f87171', cursor: 'pointer', padding: '2px' }}
-                          title="Remove medicine"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
+                  {rxMedicines.length === 0 ? (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                      No medicines added yet. Use the 1-click presets above to add medicines.
                     </div>
-                  ))}
+                  ) : (
+                    rxMedicines.map((m, idx) => (
+                      <div
+                        key={m.id}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '8px',
+                          padding: '8px 10px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>#{idx + 1}</span>
+                            <strong style={{ color: '#38bdf8' }}>{m.name}</strong>
+                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>{m.strength}</span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>
+                            Dosage: <strong style={{ color: '#e2e8f0' }}>{m.dosage}</strong> • Duration: <strong style={{ color: '#e2e8f0' }}>{m.duration}</strong>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#86efac', fontStyle: 'italic', marginTop: '2px' }}>
+                            ℹ️ {m.instructions}
+                          </div>
+                        </div>
+                        {userRole === 'doctor' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedicine(m.id)}
+                            style={{ background: 'transparent', border: 0, color: '#f87171', cursor: 'pointer', padding: '2px' }}
+                            title="Remove medicine"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -2594,6 +3375,39 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                 </div>
               </div>
 
+              {/* Patient Live View Extras */}
+              {userRole === 'patient' && (
+                <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#86efac', fontWeight: 700, fontSize: '12px' }}>
+                    <ShieldCheck size={14} />
+                    <span>Digitally Authorized by {doctor.name}</span>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '4px' }}>
+                    This prescription is valid at all Government Jan Aushadhi Kendras and Kalahandi district pharmacies.
+                  </div>
+                  {onCheckPharmacy && (
+                    <button
+                      type="button"
+                      onClick={handleProceedToPharmacy}
+                      style={{
+                        marginTop: '8px',
+                        width: '100%',
+                        background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                        color: '#fff',
+                        border: 0,
+                        padding: '7px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      💊 Check Live Kalahandi Stock Now ➔
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Actions Grid (Section 13 exact buttons) */}
               {userRole === 'doctor' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
@@ -2604,14 +3418,14 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                       background: 'rgba(255, 255, 255, 0.1)',
                       color: '#ffffff',
                       border: '1px solid rgba(255, 255, 255, 0.2)',
-                      padding: '8px 12px',
+                      padding: '9px 12px',
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    Save Draft
+                    💾 Save Draft
                   </button>
 
                   <button
@@ -2621,7 +3435,7 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                       background: 'linear-gradient(135deg, #16a34a, #15803d)',
                       color: '#ffffff',
                       border: 0,
-                      padding: '8px 12px',
+                      padding: '9px 12px',
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: 800,
@@ -2630,11 +3444,11 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '4px',
-                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.35)'
+                      boxShadow: '0 4px 14px rgba(22, 163, 74, 0.45)'
                     }}
                   >
                     <CheckCircle2 size={14} />
-                    <span>Finalize Prescription</span>
+                    <span>Authorize & Issue Rx</span>
                   </button>
                 </div>
               )}

@@ -916,7 +916,11 @@ export const storage = {
         localStorage.setItem(KEYS.DOCTORS, JSON.stringify(INITIAL_DOCTORS));
         return INITIAL_DOCTORS;
       }
-      return JSON.parse(data);
+      const parsed: DoctorItem[] = JSON.parse(data);
+      return parsed.map(d => {
+        const init = INITIAL_DOCTORS.find(item => item.id === d.id);
+        return init ? { ...init, ...d, feedUrl: d.feedUrl || init.feedUrl, avatarUrl: d.avatarUrl || init.avatarUrl, gender: d.gender || init.gender } : d;
+      });
     } catch {
       return INITIAL_DOCTORS;
     }

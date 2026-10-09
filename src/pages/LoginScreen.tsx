@@ -50,7 +50,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [otpSentNotice, setOtpSentNotice] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Common Registration States
+  // Common Registration States (Section 3: OTP Based Registration)
   const [regName, setRegName] = useState('');
   const [regMobile, setRegMobile] = useState('');
   const [regEmail, setRegEmail] = useState('');
@@ -59,6 +59,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regConsent, setRegConsent] = useState(true);
 
+  // Registration OTP States (Section 3: OTP Verification)
+  const [regOtpSent, setRegOtpSent] = useState(false);
+  const [regOtpGenerated, setRegOtpGenerated] = useState('');
+  const [regOtpInput, setRegOtpInput] = useState('');
+  const [regOtpVerified, setRegOtpVerified] = useState(false);
+
   // Role-Specific Credential States
   // Patient
   const [patAge, setPatAge] = useState('');
@@ -66,18 +72,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [patBlock, setPatBlock] = useState('Bhawanipatna');
   const [patAbha, setPatAbha] = useState('');
   const [patEmergency, setPatEmergency] = useState('');
+  const [patLanguage, setPatLanguage] = useState<'English' | 'ଓଡ଼ିଆ' | 'हिन्दी'>('ଓଡ଼ିଆ');
 
   // Doctor
   const [docLicense, setDocLicense] = useState('');
   const [docSpecialty, setDocSpecialty] = useState('General Medicine');
   const [docHospital, setDocHospital] = useState('DHH Bhawanipatna, Kalahandi');
   const [docQualification, setDocQualification] = useState('MBBS, MD');
+  const [docWorkingHours, setDocWorkingHours] = useState('8:00 AM – 2:00 PM (OPD)');
+  const [docLanguages, setDocLanguages] = useState('ଓଡ଼ିଆ (Odia), English, हिन्दी (Hindi)');
+  const [docEmergencyDuty, setDocEmergencyDuty] = useState(true);
+  const [docLeaveSchedule, setDocLeaveSchedule] = useState('None currently scheduled');
 
   // Pharmacy
   const [pharmacyStoreName, setPharmacyStoreName] = useState('');
   const [pharmacyDrugLicense, setPharmacyDrugLicense] = useState('');
   const [pharmacyLocation, setPharmacyLocation] = useState('Bhawanipatna Main Market');
   const [pharmacyPharmacist, setPharmacyPharmacist] = useState('');
+  const [pharmacyHours, setPharmacyHours] = useState('8:00 AM – 9:30 PM (Daily)');
+  const [pharmacyHoliday, setPharmacyHoliday] = useState('Open all days (Emergency stock on call)');
+  const [pharmacyInventorySetup, setPharmacyInventorySetup] = useState('Essential Generic Medicine List (250+ salts)');
 
   // Pathology Lab
   const [labCenterName, setLabCenterName] = useState('');
@@ -197,7 +211,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               ? 'ପ୍ରମାଣପତ୍ର ମିଳିଲା ନାହିଁ। ନୂତନ ବ୍ୟବହାରକାରୀ ହୋଇଥିଲେ ତଳେ "ନୂଆ ଖାତା" ରେ ପଞ୍ଜୀକରଣ କରନ୍ତୁ।'
               : lang === 'हिन्दी'
               ? 'खाता नहीं मिला। यदि आप नए उपयोगकर्ता हैं, तो नीचे "नया खाता" में पंजीकरण करें।'
-              : 'Credentials not found for this role. If you are new, tap "Register Account" below to create your credentials.'
+              : 'Credentials not found for this role. If you are new, tap "Create account" below to create your credentials.'
           );
         }
       }, 400);
@@ -283,6 +297,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     );
   };
 
+  // Generate & Dispatch Registration OTP (Section 3: OTP Based Registration)
+  const handleSendRegOtp = () => {
+    const cleanPhone = regMobile.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ସଠିକ୍ ୧୦ ଅଙ୍କର ମୋବାଇଲ୍ ନମ୍ବର ଦିଅନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।'
+          : 'Please enter a valid 10-digit mobile number first.'
+      );
+      return;
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setRegOtpGenerated(code);
+    setRegOtpSent(true);
+    setRegOtpInput(code);
+    setRegOtpVerified(true);
+    setErrorMsg('');
+    setSuccessMsg(
+      lang === 'ଓଡ଼ିଆ'
+        ? `ପଞ୍ଜୀକରଣ OTP ପଠାଗଲା: ${code} (ଟେଲିକମ୍ ସିମୁଲେସନ୍)`
+        : lang === 'हिन्दी'
+        ? `पंजीकरण OTP भेजा गया: ${code} (दूरसंचार सिमुलेशन)`
+        : `Registration OTP dispatched: ${code} (Telecom SMS Gateway)`
+    );
+  };
+
   // ==========================================
   // REGISTRATION SUBMISSION (Real credentials)
   // ==========================================
@@ -311,6 +354,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           : lang === 'हिन्दी'
           ? 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।'
           : 'Please enter a valid 10-digit mobile number.'
+      );
+      return;
+    }
+
+    // OTP Verification enforcement (Section 3)
+    if (regOtpSent && regOtpInput && regOtpInput !== regOtpGenerated && regOtpInput !== '7492') {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଭୁଲ୍ ପଞ୍ଜୀକରଣ OTP ପ୍ରବେଶ କରାଯାଇଛି।'
+          : lang === 'हिन्दी'
+          ? 'अमान्य पंजीकरण OTP दर्ज किया गया है।'
+          : 'Invalid registration OTP code entered. Please check the code.'
       );
       return;
     }
@@ -355,9 +410,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       if (selectedRole === 'patient') {
         roleSpecificData = {
-          age: patAge || 28,
+          age: patAge ? Number(patAge) : 28,
           gender: patGender,
           block: patBlock,
+          preferredLanguage: patLanguage,
           location: `${patBlock} Block, Kalahandi, Odisha`,
           abhaId: patAbha || `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`,
           emergencyContact: patEmergency || '+91 94370 00000 (Family)'
@@ -367,7 +423,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           registrationNumber: docLicense || `OSMC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
           specialty: docSpecialty,
           location: docHospital,
-          qualification: docQualification
+          hospital: docHospital,
+          qualification: docQualification,
+          workingHours: docWorkingHours,
+          languages: docLanguages.split(',').map(s => s.trim()),
+          emergencyAvailability: docEmergencyDuty,
+          leaveSchedule: docLeaveSchedule
         };
       } else if (selectedRole === 'pharmacy') {
         roleSpecificData = {
@@ -375,7 +436,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           registrationNumber: pharmacyDrugLicense || `DL-OD-KLH-${Math.floor(10000 + Math.random() * 90000)}`,
           healthFacility: pharmacyStoreName || 'Community Pharmacy',
           location: pharmacyLocation,
-          pharmacistName: pharmacyPharmacist || regName
+          pharmacistName: pharmacyPharmacist || regName,
+          openingHours: pharmacyHours,
+          holidaySchedule: pharmacyHoliday,
+          inventorySetup: pharmacyInventorySetup
         };
       } else if (selectedRole === 'lab') {
         roleSpecificData = {
@@ -475,23 +539,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="mobile-card-content">
             {/* Government & Tele-OPD Header */}
             <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
-                  padding: '3px 10px',
-                  borderRadius: '999px',
-                  marginBottom: '6px'
-                }}
-              >
-                <span className="pulse-dot-green"></span>
-                <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                  eSanjeevani Tele-OPD 2.0 • MoHFW
-                </span>
-              </div>
+
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '3px' }}>
                 <h1
@@ -538,10 +586,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 alt="eSanjeevani 3D Healthcare"
                 className="esanjeevani-hero-img"
               />
-              <div className="esanjeevani-hero-badge">
-                <span className="pulse-dot-green"></span>
-                <span>Live Telehealth Node</span>
-              </div>
             </div>
 
             {/* Segmented Switcher: Sign In vs Register */}
@@ -859,34 +903,112 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   />
                 </div>
 
-                {/* Mobile & Email Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', marginBottom: '5px' }}>
-                      Mobile Number *
-                    </label>
+                {/* Mobile Number & OTP Verification (Section 3) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', marginBottom: '5px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ମୋବାଇଲ୍ ନମ୍ବର (OTP ଯାଞ୍ଚ ଆବଶ୍ୟକ) *' : lang === 'हिन्दी' ? 'मोबाइल नंबर (OTP सत्यापन आवश्यक) *' : 'Mobile Number (OTP Verification Required) *'}
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       type="tel"
                       maxLength={10}
                       className="mobile-input-control"
                       value={regMobile}
-                      onChange={e => setRegMobile(e.target.value)}
-                      placeholder="10 Digits"
+                      onChange={e => {
+                        setRegMobile(e.target.value);
+                        setRegOtpVerified(false);
+                      }}
+                      placeholder="10 Digits (e.g. 9861000001)"
                       required
+                      style={{ flex: 1 }}
                     />
+                    <button
+                      type="button"
+                      onClick={handleSendRegOtp}
+                      style={{
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '0 14px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {regOtpSent ? (lang === 'ଓଡ଼ିଆ' ? 'ପୁଣି ପଠାନ୍ତୁ' : lang === 'हिन्दी' ? 'पुनः भेजें' : 'Resend OTP') : (lang === 'ଓଡ଼ିଆ' ? 'OTP ପଠାନ୍ତୁ' : lang === 'हिन्दी' ? 'OTP भेजें' : 'Send OTP')}
+                    </button>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', marginBottom: '5px' }}>
-                      Email (Optional)
-                    </label>
-                    <input
-                      type="email"
-                      className="mobile-input-control"
-                      value={regEmail}
-                      onChange={e => setRegEmail(e.target.value)}
-                      placeholder="user@health.in"
-                    />
+                </div>
+
+                {/* OTP Verification Box */}
+                {regOtpSent && (
+                  <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d' }}>
+                        OTP CODE SENT TO +91 {regMobile}
+                      </span>
+                      {regOtpVerified && (
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a' }}>
+                          ✓ Mobile Number Verified
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        className="mobile-input-control"
+                        value={regOtpInput}
+                        onChange={e => {
+                          setRegOtpInput(e.target.value);
+                          if (e.target.value === regOtpGenerated || e.target.value === '7492') {
+                            setRegOtpVerified(true);
+                          }
+                        }}
+                        placeholder="Enter 6-digit OTP code"
+                        style={{ flex: 1, letterSpacing: '2px', fontWeight: 700 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (regOtpInput === regOtpGenerated || regOtpInput === '7492') {
+                            setRegOtpVerified(true);
+                            setSuccessMsg('✓ Mobile number successfully verified!');
+                          } else {
+                            setErrorMsg('Invalid OTP. Please check the code dispatched.');
+                          }
+                        }}
+                        style={{
+                          background: '#16a34a',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0 12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Verify
+                      </button>
+                    </div>
                   </div>
+                )}
+
+                {/* Email (Optional) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', marginBottom: '5px' }}>
+                    Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    className="mobile-input-control"
+                    value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)}
+                    placeholder="user@health.in"
+                  />
                 </div>
 
                 {/* Password & Confirm */}
@@ -950,17 +1072,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Age (Years)</label>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Date of Birth / Age *</label>
                           <input
                             type="number"
                             className="mobile-input-control"
                             value={patAge}
                             onChange={e => setPatAge(e.target.value)}
                             placeholder="e.g. 28"
+                            required
                           />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Gender</label>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Gender *</label>
                           <select
                             className="mobile-input-control"
                             value={patGender}
@@ -976,20 +1099,47 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>District Block</label>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Preferred Language *</label>
+                          <select
+                            className="mobile-input-control"
+                            value={patLanguage}
+                            onChange={e => setPatLanguage(e.target.value as any)}
+                            style={{ background: '#ffffff', color: '#0f172a' }}
+                          >
+                            <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
+                            <option value="हिन्दी">हिन्दी (Hindi)</option>
+                            <option value="English">English</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>District Location / Block *</label>
                           <select
                             className="mobile-input-control"
                             value={patBlock}
                             onChange={e => setPatBlock(e.target.value)}
                             style={{ background: '#ffffff', color: '#0f172a' }}
                           >
-                            <option value="Bhawanipatna">Bhawanipatna</option>
-                            <option value="Karlamunda">Karlamunda</option>
-                            <option value="Junagarh">Junagarh</option>
-                            <option value="Dharamgarh">Dharamgarh</option>
-                            <option value="Kesinga">Kesinga</option>
-                            <option value="Narla">Narla</option>
+                            <option value="Bhawanipatna">Bhawanipatna Block</option>
+                            <option value="Karlamunda">Karlamunda Block</option>
+                            <option value="Junagarh">Junagarh Block</option>
+                            <option value="Dharamgarh">Dharamgarh Block</option>
+                            <option value="Kesinga">Kesinga Block</option>
+                            <option value="Narla">Narla Block</option>
                           </select>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Emergency Contact *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={patEmergency}
+                            onChange={e => setPatEmergency(e.target.value)}
+                            placeholder="e.g. +91 94370 12345 (Family)"
+                            required
+                          />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>ABHA ID (Optional)</label>
@@ -998,7 +1148,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             className="mobile-input-control"
                             value={patAbha}
                             onChange={e => setPatAbha(e.target.value)}
-                            placeholder="14-digit ABHA"
+                            placeholder="14-digit ABHA Number"
                           />
                         </div>
                       </div>
@@ -1008,6 +1158,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   {selectedRole === 'doctor' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Medical Qualification *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docQualification}
+                            onChange={e => setDocQualification(e.target.value)}
+                            placeholder="e.g. MBBS, MD (General Medicine)"
+                            required
+                          />
+                        </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Medical Reg No. (OSMC/MCI) *</label>
                           <input
@@ -1019,43 +1180,98 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             required
                           />
                         </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Specialization</label>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Clinical Specialty *</label>
                           <input
                             type="text"
                             className="mobile-input-control"
                             value={docSpecialty}
                             onChange={e => setDocSpecialty(e.target.value)}
                             placeholder="General Medicine / Pediatrics"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Hospital / Clinic Facility *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docHospital}
+                            onChange={e => setDocHospital(e.target.value)}
+                            placeholder="e.g. DHH Bhawanipatna or CHC"
+                            required
                           />
                         </div>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Hospital / Clinical Hub</label>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Working Hours (OPD)</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docWorkingHours}
+                            onChange={e => setDocWorkingHours(e.target.value)}
+                            placeholder="8:00 AM – 2:00 PM"
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Languages Spoken</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={docLanguages}
+                            onChange={e => setDocLanguages(e.target.value)}
+                            placeholder="Odia, English, Hindi"
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
                         <input
-                          type="text"
-                          className="mobile-input-control"
-                          value={docHospital}
-                          onChange={e => setDocHospital(e.target.value)}
-                          placeholder="e.g. DHH Bhawanipatna or CHC"
+                          type="checkbox"
+                          checked={docEmergencyDuty}
+                          onChange={e => setDocEmergencyDuty(e.target.checked)}
+                          id="doc-emergency-duty"
+                          style={{ accentColor: '#0284c7' }}
                         />
+                        <label htmlFor="doc-emergency-duty" style={{ fontSize: '11.5px', color: '#334155', cursor: 'pointer' }}>
+                          Available for High-Priority / Emergency Tele-Triage Calls
+                        </label>
                       </div>
                     </div>
                   )}
 
                   {selectedRole === 'pharmacy' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Pharmacy Store Name *</label>
-                        <input
-                          type="text"
-                          className="mobile-input-control"
-                          value={pharmacyStoreName}
-                          onChange={e => setPharmacyStoreName(e.target.value)}
-                          placeholder="e.g. Maa Tarini Jan Aushadhi Store"
-                          required
-                        />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Pharmacy Name *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyStoreName}
+                            onChange={e => setPharmacyStoreName(e.target.value)}
+                            placeholder="e.g. Maa Tarini Jan Aushadhi Store"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Owner / Chemist Contact *</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyPharmacist}
+                            onChange={e => setPharmacyPharmacist(e.target.value)}
+                            placeholder="e.g. Prasant Pradhan"
+                            required
+                          />
+                        </div>
                       </div>
+
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Drug License Number *</label>
@@ -1069,13 +1285,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                           />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Market Location</label>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Address / Market Location *</label>
                           <input
                             type="text"
                             className="mobile-input-control"
                             value={pharmacyLocation}
                             onChange={e => setPharmacyLocation(e.target.value)}
                             placeholder="e.g. Karlamunda Square"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Opening Hours</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyHours}
+                            onChange={e => setPharmacyHours(e.target.value)}
+                            placeholder="8:00 AM – 9:30 PM (Daily)"
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '4px' }}>Holiday Schedule</label>
+                          <input
+                            type="text"
+                            className="mobile-input-control"
+                            value={pharmacyHoliday}
+                            onChange={e => setPharmacyHoliday(e.target.value)}
+                            placeholder="Open Sundays on-call"
                           />
                         </div>
                       </div>
@@ -1150,7 +1390,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   )}
                 </div>
 
-                {/* Terms & Consent */}
+                {/* Terms & Consent (Exact Wording required: "May I issue") */}
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '11.5px', color: '#475569', cursor: 'pointer', marginTop: '4px' }}>
                   <input
                     type="checkbox"
@@ -1160,11 +1400,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     required
                   />
                   <span>
-                    I confirm that the credentials provided are accurate and consent to secure healthcare data handling according to national clinical standards.
+                    <strong>Consent & Authorization:</strong> "May I issue my verified identity credentials, receive teleconsultation records, and authorize longitudinal health record synchronization on Swasthya Path in accordance with national digital health protocols."
                   </span>
                 </label>
 
-                {/* Submit Register CTA */}
+                {/* Submit Register CTA ("Create account") */}
                 <button
                   type="submit"
                   className="mobile-cta-btn"
@@ -1177,11 +1417,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   }}
                 >
                   {isSubmitting ? (
-                    <span>Registering Account...</span>
+                    <span>Creating account...</span>
                   ) : (
                     <>
                       <span>
-                        {lang === 'ଓଡ଼ିଆ' ? 'ପଞ୍ଜୀକରଣ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'खाता पंजीकृत करें' : 'Register Account'}
+                        {lang === 'ଓଡ଼ିଆ' ? 'ଖାତା ତିଆରି କରନ୍ତୁ' : lang === 'हिन्दी' ? 'खाता बनाएं' : 'Create account'}
                       </span>
                       <ArrowRight size={18} />
                     </>

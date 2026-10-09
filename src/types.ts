@@ -334,6 +334,8 @@ export interface DoctorItem {
   experience: string;
   fees: string;
   avatarUrl?: string;
+  feedUrl?: string;
+  gender?: 'male' | 'female';
   estimatedWaitMin?: number;
 }
 

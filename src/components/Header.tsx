@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, LogOut, Globe, Activity, ZoomIn, ZoomOut, Layers, Signal, Bell, RefreshCw, CheckCircle2, Database, Compass, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Wifi, WifiOff, LogOut, Globe, Activity, ZoomIn, ZoomOut, Layers,
+  Signal, Bell, RefreshCw, Database, Compass, ArrowLeft, Settings,
+  ChevronDown
+} from 'lucide-react';
 import { DemoUser, Language, NetworkQuality, AppNotification } from '../types';
 import { getTranslation } from '../utils/translations';
 import { storage } from '../utils/storage';
@@ -21,6 +25,67 @@ interface HeaderProps {
   onGoBack?: () => void;
 }
 
+const DropSection: React.FC<{ label: string }> = ({ label }) => (
+  <div style={{ padding: '4px 18px 2px', fontSize: '10px', fontWeight: 700, color: '#9bacc8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+    {label}
+  </div>
+);
+
+const DropButton: React.FC<{ icon: React.ReactNode; label: string; badge?: string; onClick: () => void }> = ({ icon, label, badge, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    style={{ width: '100%', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '13px', fontWeight: 500, color: '#374151', transition: 'background 0.15s' }}
+    onMouseEnter={e => (e.currentTarget.style.background = '#f0f6ff')}
+    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+  >
+    <span style={{ color: '#6b7a99', flexShrink: 0 }}>{icon}</span>
+    <span style={{ flex: 1 }}>{label}</span>
+    {badge && (
+      <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c' }}>{badge}</span>
+    )}
+  </button>
+);
+
+const DropToggle: React.FC<{ icon: React.ReactNode; label: string; active: boolean; onClick: () => void }> = ({ icon, label, active, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    style={{ width: '100%', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '13px', fontWeight: 500, color: '#374151', transition: 'background 0.15s' }}
+    onMouseEnter={e => (e.currentTarget.style.background = '#f0f6ff')}
+    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+  >
+    <span style={{ color: '#6b7a99', flexShrink: 0 }}>{icon}</span>
+    <span style={{ flex: 1 }}>{label}</span>
+    <span
+      style={{
+        width: '34px',
+        height: '18px',
+        borderRadius: '9px',
+        background: active ? '#168cff' : '#d1d5db',
+        position: 'relative',
+        flexShrink: 0,
+        transition: 'background 0.2s',
+        display: 'inline-block'
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: active ? '18px' : '2px',
+          width: '14px',
+          height: '14px',
+          borderRadius: '50%',
+          background: '#ffffff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          transition: 'left 0.2s'
+        }}
+      />
+    </span>
+  </button>
+);
+
 export const Header: React.FC<HeaderProps> = ({
   networkQuality,
   onToggleNetwork,
@@ -38,356 +103,226 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const profileRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const refreshNotifs = () => {
-    setNotifications(storage.getNotifications());
-  };
-
+  const refreshNotifs = () => setNotifications(storage.getNotifications());
   useEffect(() => {
     refreshNotifs();
     const interval = setInterval(refreshNotifs, 4000);
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setIsProfileOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setIsNotifOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleManualSync = () => {
     if (networkQuality === 'offline') {
-      setSyncMessage('Offline: Cannot sync right now. Records are saved locally.');
+      setSyncMessage('Offline – records saved locally.');
       setTimeout(() => setSyncMessage(''), 3000);
       return;
     }
     setSyncing(true);
     setTimeout(() => {
       setSyncing(false);
-      setSyncMessage('✓ All local records successfully synced!');
-      storage.addAuditLog('Local health records synchronized', currentUser?.name || 'System');
+      setSyncMessage('All records synced!');
+      storage.addAuditLog('Records synchronized', currentUser?.name || 'System');
       setTimeout(() => setSyncMessage(''), 3000);
     }, 1000);
   };
+
+  const networkLabel = () => {
+    if (networkQuality === 'good') return lang === 'ଓଡ଼ିଆ' ? 'ଉତ୍ତମ ସଂଯୋଗ' : lang === 'हिन्दी' ? 'अच्छा नेटवर्क' : 'Good';
+    if (networkQuality === 'limited') return lowBandwidthMode ? (lang === 'ଓଡ଼ିଆ' ? '2G ଦୁର୍ବଳ' : lang === 'हिन्दी' ? 'बहुत कमजोर 2G' : 'Very Weak 2G') : (lang === 'ଓଡ଼ିଆ' ? '3G ଦୁର୍ବଳ' : lang === 'हिन्दी' ? 'कमजोर 3G' : 'Weak 3G');
+    return lang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍' : lang === 'हिन्दी' ? 'ऑफ़लाइन' : 'Offline';
+  };
+
+  const networkDot = networkQuality === 'good' ? '#22c55e' : networkQuality === 'limited' ? (lowBandwidthMode ? '#f97316' : '#eab308') : '#ef4444';
+  const netBg = networkQuality === 'good' ? '#ecfdf5' : networkQuality === 'limited' ? '#fffbeb' : '#fef2f2';
+  const netColor = networkQuality === 'good' ? '#059669' : networkQuality === 'limited' ? '#b45309' : '#dc2626';
+  const netBorder = networkQuality === 'good' ? '#a7f3d0' : networkQuality === 'limited' ? '#fde68a' : '#fecaca';
+
+  const roleLabel = () => {
+    if (!currentUser) return '';
+    const r = currentUser.role;
+    const mapping: Record<string, [string, string, string]> = {
+      patient: ['Patient', 'मरीज़', 'ରୋଗୀ'],
+      doctor: ['Doctor', 'डॉक्टर', 'ଡାକ୍ତର'],
+      pharmacy: ['Pharmacy', 'फार्मेसी', 'ଫାର୍ମାସୀ'],
+      lab: ['Pathology', 'पैथोलॉजी', 'ପ୍ୟାଥୋଲୋଜି'],
+      pathology: ['Pathology', 'पैथोलॉजी', 'ପ୍ୟାଥୋଲୋଜି']
+    };
+    const [en, hi, od] = mapping[r] || ['Admin', 'एडमिन', 'ଆଡ୍‍ମିନ'];
+    return lang === 'English' ? en : lang === 'हिन्दी' ? hi : od;
+  };
+
+  const t = (en: string, hi: string, od: string) => (lang === 'English' ? en : lang === 'हिन्दी' ? hi : od);
+
   return (
-    <header className="top-nav">
-      <div className="top-nav-inner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {currentUser && (
+    <header style={{ background: '#ffffff', borderBottom: '1.5px solid #e5eaf2', position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 2px 12px rgba(6,17,38,0.07)' }}>
+      <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        {/* LEFT: Back button (if any) + Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          {currentUser && onGoBack && (
             <button
               type="button"
-              onClick={onGoBack || onLogout}
-              className="btn btn-ghost-light"
-              title={lang === 'ଓଡ଼ିଆ' ? 'ପୂର୍ବ ପୃଷ୍ଠାକୁ ଫେରନ୍ତୁ / ଭୂମିକା ବଦଳାନ୍ତୁ' : lang === 'हिन्दी' ? 'पिछले पृष्ठ पर जाएं / भूमिका बदलें' : 'Back to Previous Page / Switch Role'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                background: 'rgba(25, 211, 255, 0.15)',
-                border: '1.5px solid rgba(25, 211, 255, 0.4)',
-                borderRadius: '8px',
-                color: '#e0f2fe',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
+              onClick={onGoBack}
+              aria-label="Go back"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: '#f0f4ff', border: '1px solid #c7d7f7', borderRadius: '8px', color: '#1e40af', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              <ArrowLeft size={15} />
-              <span>{lang === 'ଓଡ଼ିଆ' ? '← ପୂର୍ବ ପୃଷ୍ଠା' : lang === 'हिन्दी' ? '← पिछला पृष्ठ' : '← Back'}</span>
+              <ArrowLeft size={14} />
+              <span>{t('Back', 'वापस', 'ପଛ')}</span>
             </button>
           )}
-
-          <div className="brand-wrap">
-            <div className="brand-icon-box" title="Swasthya Path Care Bridge">
-              <Activity size={24} />
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, #168cff 0%, #19d3ff 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(22,140,255,0.35)' }}>
+              <Activity size={20} color="#ffffff" />
             </div>
             <div>
-              <div className="brand-title">
-                SWASTHYA <span>PATH</span>
+              <div style={{ fontFamily: "'Outfit','Inter',sans-serif", fontSize: 'clamp(15px,2vw,19px)', fontWeight: 800, letterSpacing: '0.05em', color: '#0e1a2f', lineHeight: 1.1 }}>
+                SWASTHYA <span style={{ color: '#168cff' }}>PATH</span>
               </div>
-              <div className="brand-sub">
-                {getTranslation(lang, 'subTagline')}
-              </div>
+              <div style={{ fontSize: '10px', color: '#6b7a99', fontWeight: 400, marginTop: '1px' }}>{getTranslation(lang, 'subTagline')}</div>
             </div>
           </div>
         </div>
 
-        <div className="top-controls">
-          {/* 4-State Network Status Pill */}
-          <span
-            className={`status-pill ${
-              networkQuality === 'good'
-                ? 'online'
-                : networkQuality === 'limited'
-                ? 'limited'
-                : 'offline'
-            }`}
-            style={{
-              background:
-                networkQuality === 'good'
-                  ? 'rgba(34, 197, 94, 0.2)'
-                  : networkQuality === 'limited'
-                  ? lowBandwidthMode ? 'rgba(234, 88, 12, 0.25)' : 'rgba(245, 158, 11, 0.25)'
-                  : 'rgba(239, 68, 68, 0.25)',
-              color:
-                networkQuality === 'good'
-                  ? '#86efac'
-                  : networkQuality === 'limited'
-                  ? lowBandwidthMode ? '#fed7aa' : '#fde047'
-                  : '#fca5a5',
-              borderColor:
-                networkQuality === 'good'
-                  ? 'rgba(34, 197, 94, 0.4)'
-                  : networkQuality === 'limited'
-                  ? lowBandwidthMode ? 'rgba(234, 88, 12, 0.4)' : 'rgba(245, 158, 11, 0.4)'
-                  : 'rgba(239, 68, 68, 0.4)',
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.5px'
-            }}
-            title={
-              networkQuality === 'good'
-                ? 'Good 4G/WiFi Connection (~25ms)'
-                : networkQuality === 'limited'
-                ? lowBandwidthMode ? 'Very Weak 2G Network (Text/Audio and SMS Fallback)' : 'Weak 3G Network (Audio Priority)'
-                : 'Offline / No Cellular Connectivity'
-            }
-            aria-live="polite"
-          >
-            <span
-              className="status-dot"
-              style={{
-                background:
-                  networkQuality === 'good'
-                    ? '#22c55e'
-                    : networkQuality === 'limited'
-                    ? lowBandwidthMode ? '#f97316' : '#eab308'
-                    : '#ef4444'
-              }}
-            ></span>
-            {networkQuality === 'good' ? (
-              <>
-                <Wifi size={13} />
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଉତ୍ତମ ନେଟୱର୍କ' : lang === 'हिन्दी' ? 'अच्छा नेटवर्क' : 'GOOD CONNECTION'}</span>
-              </>
-            ) : networkQuality === 'limited' ? (
-              lowBandwidthMode ? (
-                <>
-                  <Signal size={13} />
-                  <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅତ୍ୟନ୍ତ ଦୁର୍ବଳ (2G)' : lang === 'हिन्दी' ? 'अत्यंत कमजोर (2G)' : 'VERY WEAK CONNECTION'}</span>
-                </>
-              ) : (
-                <>
-                  <Signal size={13} />
-                  <span>{lang === 'ଓଡ଼ିଆ' ? 'ଦୁର୍ବଳ ନେଟୱର୍କ (3G)' : lang === 'हिन्दी' ? 'कमजोर नेटवर्क (3G)' : 'WEAK CONNECTION'}</span>
-                </>
-              )
-            ) : (
-              <>
-                <WifiOff size={13} />
-                <span>{lang === 'ଓଡ଼ିଆ' ? 'ଅଫଲାଇନ୍' : lang === 'हिन्दी' ? 'ऑफ़लाइन' : 'OFFLINE'}</span>
-              </>
-            )}
+        {/* RIGHT: Network pill, Bell, Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          {/* Network status pill */}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: netBg, color: netColor, border: `1px solid ${netBorder}`, letterSpacing: '0.3px' }} title={`Network: ${networkLabel()}`}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: networkDot, flexShrink: 0 }} />
+            {networkQuality === 'good' ? <Wifi size={11} /> : networkQuality === 'limited' ? <Signal size={11} /> : <WifiOff size={11} />}
+            <span>{networkLabel()}</span>
           </span>
 
-          {/* Sync Status & Manual Sync Button */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderRadius: '6px',
-                background: networkQuality === 'offline' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(25, 211, 255, 0.15)',
-                color: networkQuality === 'offline' ? '#fca5a5' : '#7dd3fc',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title={networkQuality === 'offline' ? 'Saved locally on this device' : 'All records synchronized'}
-            >
-              <Database size={12} />
-              {networkQuality === 'offline'
-                ? (lang === 'ଓଡ଼ିଆ' ? 'କେବଳ ସ୍ଥାନୀୟ' : lang === 'हिन्दी' ? 'केवल स्थानीय' : 'Local Only')
-                : networkQuality === 'limited'
-                ? (lang === 'ଓଡ଼ିଆ' ? '୧ ଟି ବାକି ଅଛି' : lang === 'हिन्दी' ? '1 लंबित' : '1 Pending')
-                : (lang === 'ଓଡ଼ିଆ' ? 'ସବୁ ସିଙ୍କ୍ ହୋଇଛି' : lang === 'हिन्दी' ? 'सभी सिंक हैं' : 'All Synced')}
-            </span>
-
-            {networkQuality !== 'offline' && (
-              <button
-                type="button"
-                className="btn btn-ghost-light"
-                onClick={handleManualSync}
-                disabled={syncing}
-                title="Synchronize local offline records with central health server"
-                style={{ padding: '4px 8px', fontSize: '11px' }}
-              >
-                <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-                <span>{syncing ? (lang === 'ଓଡ଼ିଆ' ? 'ସିଙ୍କ୍ ହେଉଛି...' : lang === 'हिन्दी' ? 'सिंकिंग...' : 'Syncing...') : (lang === 'ଓଡ଼ିଆ' ? 'ବର୍ତ୍ତମାନ ସିଙ୍କ୍' : lang === 'हिन्दी' ? 'अभी सिंक करें' : 'Sync Now')}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Network Toggle Button (cycles Good -> Limited -> Offline -> Good) */}
-          <button
-            className="btn btn-ghost-light"
-            onClick={onToggleNetwork}
-            title="Cycle network state for testing"
-            style={{ padding: '6px 12px' }}
-          >
-            <span>{lang === 'ଓଡ଼ିଆ' ? 'ନେଟ୍ ବଦଳାନ୍ତୁ' : lang === 'हिन्दी' ? 'नेटवर्क बदलें' : 'Cycle Network'}</span>
-          </button>
-
-          {/* Low Bandwidth Mode Toggle */}
-          <button
-            className="btn btn-ghost-light"
-            onClick={onToggleLowBandwidth}
-            style={{
-              padding: '6px 10px',
-              background: lowBandwidthMode ? 'rgba(25, 211, 255, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-              borderColor: lowBandwidthMode ? '#19d3ff' : 'rgba(255, 255, 255, 0.2)'
-            }}
-            title="Toggle low-bandwidth optimization mode"
-          >
-            <span style={{ fontSize: '12px' }}>
-              {lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱଳ୍ପ ଡାଟା ମୋଡ୍:' : lang === 'हिन्दी' ? 'कम डेटा मोड:' : 'Low-Bandwidth Mode:'} <strong>{lowBandwidthMode ? (lang === 'ଓଡ଼ିଆ' ? 'ଅନ୍' : lang === 'हिन्दी' ? 'चालू' : 'ON') : (lang === 'ଓଡ଼ିଆ' ? 'ଅଫ୍' : lang === 'हिन्दी' ? 'बंद' : 'OFF')}</strong>
-            </span>
-          </button>
-
-          {/* In-App Notification Bell */}
-          <div style={{ position: 'relative' }}>
+          {/* Notification bell */}
+          <div ref={notifRef} style={{ position: 'relative' }}>
             <button
               type="button"
-              className="btn btn-ghost-light"
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              title="In-app notifications and SMS simulation"
-              style={{ padding: '6px 10px', position: 'relative' }}
-              aria-label="View notifications"
+              onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
+              aria-label="Notifications"
+              style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1.5px solid #e2e8f4', background: '#f8faff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', color: '#374151' }}
             >
               <Bell size={16} />
               {unreadCount > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    background: '#ef4444',
-                    color: '#ffffff',
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                  }}
-                >
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#ef4444', color: '#fff', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {unreadCount}
                 </span>
               )}
             </button>
-
-            {/* Notification Dropdown */}
-            <NotificationDropdown
-              isOpen={isNotifOpen}
-              onClose={() => setIsNotifOpen(false)}
-              notifications={notifications}
-              onRefresh={refreshNotifs}
-            />
+            <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} notifications={notifications} onRefresh={refreshNotifs} />
           </div>
 
-          {/* Language Selector */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Globe size={15} style={{ color: '#19d3ff' }} />
-            <select
-              value={lang}
-              onChange={(e) => onSelectLang(e.target.value as Language)}
-              style={{
-                background: 'rgba(7, 28, 66, 0.9)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '13px',
-                width: 'auto'
-              }}
-              aria-label="Select Language"
-            >
-              <option value="English">English</option>
-              <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
-              <option value="हिन्दी">हिन्दी (Hindi)</option>
-            </select>
-          </div>
-
-          {/* Accessibility Font Size Toggle */}
-          <button
-            className="btn btn-ghost-light"
-            onClick={onToggleFontScale}
-            title="Adjust text size for easier reading"
-            style={{ padding: '6px 10px' }}
-            aria-label="Toggle text zoom"
-          >
-            {fontScale > 1 ? <ZoomOut size={16} /> : <ZoomIn size={16} />}
-            <span>{fontScale > 1 ? 'A-' : 'A+'}</span>
-          </button>
-
-            {/* Care Navigation Flow Diagram (User Request) */}
-          {onOpenCareFlow && (
-            <button
-              className="btn btn-ghost-light"
-              onClick={onOpenCareFlow}
-              title={lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ପଥ ଚିକିତ୍ସା ପ୍ରବାହ ଚିତ୍ର ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'स्वास्थ्य पथ केयर नेविगेशन फ्लो डायग्राम देखें' : 'View end-to-end Swasthya Path Care Navigation Flow Diagram'}
-              style={{
-                padding: '6px 12px',
-                background: 'rgba(2, 132, 199, 0.25)',
-                borderColor: '#38bdf8',
-                color: '#ffffff'
-              }}
-            >
-              <Compass size={15} style={{ color: '#38bdf8' }} />
-              <span>{lang === 'ଓଡ଼ିଆ' ? 'ଚିକିତ୍ସା ପ୍ରବାହ' : lang === 'हिन्दी' ? 'केयर फ्लो' : 'Care Flow'}</span>
-            </button>
-          )}
-
-          {/* Architecture / Replicability Specs */}
-          <button
-            className="btn btn-ghost-light"
-            onClick={onOpenArchitecture}
-            title={lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମୀଣ ସ୍ୱାସ୍ଥ୍ୟ ବ୍ୟବସ୍ଥା ଢାଞ୍ଚା ଓ ମଡେଲ୍ ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'ग्रामीण स्वास्थ्य सिस्टम आर्किटेक्चर एवं मॉडल देखें' : 'View system architecture, scalability and rural deployment model'}
-            style={{ padding: '6px 12px' }}
-          >
-            <Layers size={15} />
-            <span>{lang === 'ଓଡ଼ିଆ' ? 'ସିଷ୍ଟମ୍ ଢାଞ୍ଚା' : lang === 'हिन्दी' ? 'आर्किटेक्चर' : 'Architecture'}</span>
-          </button>
-
-          {/* Logged in User Bar & Logout */}
+          {/* Profile dropdown */}
           {currentUser && (
-            <button
-              className="btn btn-ghost-light"
-              onClick={onLogout}
-              title={`Logged in as ${currentUser.name}. Click to log out.`}
-            >
-              <LogOut size={15} />
-              <span>{getTranslation(lang, 'logout')}</span>
-            </button>
+            <div ref={profileRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
+                aria-label="Open profile menu"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px 5px 6px', border: '1.5px solid #e2e8f4', borderRadius: '10px', background: '#f8faff', cursor: 'pointer', color: '#0e1a2f' }}
+              >
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #168cff, #19d3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#0e1a2f', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser.name.split(' ')[0]}</div>
+                  <div style={{ fontSize: '10px', color: '#6b7a99' }}>{roleLabel()}</div>
+                </div>
+                <ChevronDown size={12} color="#6b7a99" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+              </button>
+
+              {isProfileOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '280px', background: '#ffffff', border: '1.5px solid #e2e8f4', borderRadius: '14px', boxShadow: '0 12px 40px rgba(6,17,38,0.14)', overflow: 'hidden', zIndex: 500, animation: 'dropdownFade 0.15s ease' }}>
+                  {/* Header user info */}
+                  <div style={{ padding: '16px 18px 12px', background: 'linear-gradient(135deg, #f0f6ff 0%, #e8f4ff 100%)', borderBottom: '1px solid #dce8f8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #168cff, #19d3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                        {currentUser.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: '#0e1a2f' }}>{currentUser.name}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7a99', marginTop: '1px' }}>{roleLabel()} • {currentUser.healthFacility || 'Swasthya Path'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ padding: '8px 0', maxHeight: '70vh', overflowY: 'auto' }}>
+                    {/* Connection Section */}
+                    <DropSection label={t('Connection', 'कनेक्शन', 'ସଂଯୋଗ')} />
+                    <div style={{ padding: '6px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {networkQuality === 'good' ? <Wifi size={14} color="#059669" /> : networkQuality === 'limited' ? <Signal size={14} color="#b45309" /> : <WifiOff size={14} color="#dc2626" />}
+                        {t('Network Status', 'नेटवर्क', 'ନେଟୱର୍କ')}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: netBg, color: netColor }}>{networkLabel()}</span>
+                    </div>
+                    <DropButton icon={<Database size={14} />} label={t('Cycle Network (Simulate)', 'नेटवर्क सिमुलेट करें', 'ନେଟୱର୍କ ସିମ୍ୟୁଲେଟ୍')} onClick={onToggleNetwork} />
+                    <DropToggle icon={<Signal size={14} />} label={t('Low-Bandwidth Mode', 'कम डेटा मोड', 'ସ୍ୱଳ୍ପ ଡାଟା ମୋଡ')} active={lowBandwidthMode} onClick={onToggleLowBandwidth} />
+                    <DropButton icon={<RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />} label={syncing ? t('Syncing...', 'सिंक हो रहा है...', 'ସିଙ୍କ ହେଉଛି...') : t('Sync Now', 'अभी सिंक करें', 'ବର୍ତ୍ତମାନ ସିଙ୍କ')} badge={networkQuality === 'offline' ? t('Offline', 'ऑफ़लाइन', 'ଅଫ') : undefined} onClick={handleManualSync} />
+                    {syncMessage && <div style={{ padding: '4px 18px', fontSize: '11px', color: '#059669', fontWeight: 600 }}>{syncMessage}</div>}
+                    <div style={{ height: '1px', background: '#f0f4fb', margin: '4px 0' }} />
+                    {/* Language & Accessibility */}
+                    <DropSection label={t('Language & Accessibility', 'भाषा और पहुँच', 'ଭାଷା ଓ ଆଭ୍ୟାସ')} />
+                    <div style={{ padding: '6px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={14} color="#168cff" />{t('Language', 'भाषा', 'ଭାଷା')}</span>
+                      <select
+                        value={lang}
+                        onChange={e => onSelectLang(e.target.value as Language)}
+                        style={{ border: '1px solid #dce8f8', borderRadius: '7px', padding: '4px 8px', fontSize: '12px', background: '#f8faff', color: '#0e1a2f', cursor: 'pointer', fontWeight: 600 }}
+                        aria-label="Select Language"
+                      >
+                        <option value="English">English</option>
+                        <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
+                        <option value="हिन्दी">हिन्दी (Hindi)</option>
+                      </select>
+                    </div>
+                    <DropButton icon={fontScale > 1 ? <ZoomOut size={14} /> : <ZoomIn size={14} />} label={fontScale > 1 ? t('Normal Text Size (A-)', 'सामान्य टेक्स्ट (A-)', 'ସ୍ୱାଭାବିକ ଆଖ (A-)') : t('Larger Text Size (A+)', 'बड़ा टेक्स्ट (A+)', 'ବଡ ଆଖ (A+)')} badge={fontScale > 1 ? 'LARGE' : undefined} onClick={onToggleFontScale} />
+                    <div style={{ height: '1px', background: '#f0f4fb', margin: '4px 0' }} />
+                    {/* Navigation Section */}
+                    <DropSection label={t('Navigation', 'नेविगेशन', 'ନ୍ୟାଭିଗେଶନ')} />
+                    {onOpenCareFlow && (
+                      <DropButton icon={<Compass size={14} color="#0284c7" />} label={t('View Care Flow Diagram', 'केयर फ्लो डायग्राम', 'ଚିକିତ୍ସା ପ୍ରବାହ ଡାୟାଗ୍ରାମ')} onClick={() => { onOpenCareFlow(); setIsProfileOpen(false); }} />
+                    )}
+                    <DropButton icon={<Layers size={14} color="#7c3aed" />} label={t('System Architecture', 'सिस्टम आर्किटेक्चर', 'ସିଷ୍ଟମ ଢାଞ୍ଚା')} onClick={() => { onOpenArchitecture(); setIsProfileOpen(false); }} />
+                    <div style={{ height: '1px', background: '#f0f4fb', margin: '4px 0' }} />
+                    {/* Account Section */}
+                    <DropSection label={t('Account', 'खाता', 'ଖାତା')} />
+                    <DropButton icon={<Settings size={14} />} label={t('Profile & Account Settings', 'प्रोफ़ाइल और सेटिंग', 'ପ୍ରୋଫ୍‌ଇଲ ଓ ସେଟିଂ')} onClick={() => {}} />
+                    <button
+                      type="button"
+                      onClick={() => { onLogout(); setIsProfileOpen(false); }}
+                      style={{ width: '100%', padding: '9px 18px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '13px', fontWeight: 600, color: '#dc2626' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <LogOut size={14} />{getTranslation(lang, 'logout')}
+                    </button>
+                    <div style={{ height: '8px' }} />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
-
+      {/* Sync toast */}
       {syncMessage && (
-        <div style={{
-          background: '#0284c7',
-          color: '#ffffff',
-          fontSize: '12px',
-          textAlign: 'center',
-          padding: '4px',
-          fontWeight: 600
-        }}>
-          {syncMessage}
-        </div>
+        <div style={{ background: '#0284c7', color: '#fff', fontSize: '12px', textAlign: 'center', padding: '4px', fontWeight: 600 }}>{syncMessage}</div>
       )}
+      <style>{`@keyframes dropdownFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     </header>
   );
 };

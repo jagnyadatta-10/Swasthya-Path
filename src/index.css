@@ -1065,3 +1065,31 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
+/* ========================================================
+   ANDROID & MOBILE APP ADAPTATIONS (Section 22 & Phase 7)
+   Safe areas, notch handling, and min touch target sizes
+======================================================== */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+button, [role="button"], a.btn, input[type="button"], input[type="submit"] {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.bottom-nav {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+

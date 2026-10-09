@@ -263,6 +263,8 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     experience: '9 yrs exp • MBBS, MD (General Medicine)',
     fees: 'Free (Govt Telehealth Service)',
     estimatedWaitMin: 6,
+    gender: 'female',
+    feedUrl: '/images/doctor-feed.jpg',
     avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80'
   },
   {
@@ -281,7 +283,9 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     experience: '11 yrs exp • MBBS, MD (Pediatrics)',
     fees: 'Free (Govt Telehealth Service)',
     estimatedWaitMin: 14,
-    avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80'
+    gender: 'male',
+    feedUrl: '/images/male-doctor-feed.jpg',
+    avatarUrl: '/images/male-doctor-avatar.jpg'
   },
   {
     id: 'doc-03',
@@ -299,6 +303,8 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     experience: '12 yrs exp • MBBS, MS (OBG)',
     fees: 'Free (Govt Telehealth Service)',
     estimatedWaitMin: 18,
+    gender: 'female',
+    feedUrl: '/images/doctor-feed.jpg',
     avatarUrl: 'https://images.unsplash.com/photo-1594824813620-4e38e5e8e89f?auto=format&fit=crop&w=200&q=80'
   },
   {
@@ -317,7 +323,9 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     experience: '8 yrs exp • MBBS, DVD (Dermatology)',
     fees: 'Free (Govt Telehealth Service)',
     estimatedWaitMin: 25,
-    avatarUrl: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=200&q=80'
+    gender: 'male',
+    feedUrl: '/images/male-doctor-feed.jpg',
+    avatarUrl: '/images/male-doctor-avatar.jpg'
   },
   {
     id: 'doc-05',
@@ -335,6 +343,8 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     experience: '7 yrs exp • MBBS, MD (Psychiatry)',
     fees: 'Free (Govt Telehealth Service)',
     estimatedWaitMin: 30,
+    gender: 'female',
+    feedUrl: '/images/doctor-feed.jpg',
     avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80'
   },
   {
@@ -352,7 +362,10 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     emergencyDuty: false,
     experience: '14 yrs exp • MBBS, MD (Medicine)',
     fees: 'Free (Govt Telehealth Service)',
-    estimatedWaitMin: 0
+    estimatedWaitMin: 0,
+    gender: 'male',
+    feedUrl: '/images/male-doctor-feed.jpg',
+    avatarUrl: '/images/male-doctor-avatar.jpg'
   }
 ];
 

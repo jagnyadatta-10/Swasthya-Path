@@ -1005,8 +1005,23 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
               <div className="data-list" style={{ marginTop: '10px' }}>
                 {prescriptions.map((rx) => (
                   <div key={rx.id} style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', fontSize: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                      <span>{rx.prescriptionNumber}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{rx.prescriptionNumber}</span>
+                        {rx.syncStatus === 'offline-cached' ? (
+                          <span style={{ fontSize: '10px', background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px' }}>
+                            💾 Saved locally
+                          </span>
+                        ) : rx.syncStatus === 'pending' ? (
+                          <span style={{ fontSize: '10px', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '4px' }}>
+                            ⏳ Waiting to sync
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '10px', background: '#dcfce7', color: '#166534', border: '1px solid #86efac', padding: '1px 6px', borderRadius: '4px' }}>
+                            ☁️ Synced successfully
+                          </span>
+                        )}
+                      </div>
                       <span style={{ color: '#64748b' }}>{rx.date}</span>
                     </div>
                     <div style={{ color: '#0369a1', marginTop: '2px' }}>
@@ -1191,9 +1206,22 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             {prescriptions.map((rx) => (
               <div key={rx.id} className="data-item">
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: '16px', color: '#071c42' }}>{rx.prescriptionNumber}</strong>
                     <span className="badge badge-green">Authorized</span>
+                    {rx.syncStatus === 'offline-cached' ? (
+                      <span className="badge" style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }}>
+                        💾 Saved locally
+                      </span>
+                    ) : rx.syncStatus === 'pending' ? (
+                      <span className="badge" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+                        ⏳ Waiting to sync
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #86efac' }}>
+                        ☁️ Synced successfully
+                      </span>
+                    )}
                     <span style={{ fontSize: '12px', color: '#64748b' }}>Date: {rx.date}</span>
                   </div>
 

@@ -341,29 +341,69 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
     allergies: 'No known drug allergies'
   };
 
+  const isFemaleDoc = user.gender === 'female' || (!user.gender && /ananya|meenakshi|subhashree|mishra|sahu|dash/i.test(user.name));
+  const docAvatar = (user.avatar && !user.avatar.includes('images.unsplash.com'))
+    ? user.avatar
+    : (isFemaleDoc ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg');
+
   return (
     <div style={{ paddingBottom: '70px' }}>
       {/* Clinician Profile Bar */}
       <div className="user-bar" style={{ borderRadius: '14px', marginBottom: '18px' }}>
         <div className="user-profile">
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '50%',
-              background: '#0284c7',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              fontWeight: 800
-            }}
-          >
-            {user.name.split(' ').map((n: string) => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'DR'}
+          <div style={{ position: 'relative' }}>
+            <img
+              src={docAvatar}
+              alt={user.name}
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2.5px solid #0284c7',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                display: 'block'
+              }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = isFemaleDoc ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg';
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                bottom: '-2px',
+                right: '-2px',
+                background: isFemaleDoc ? '#ec4899' : '#0284c7',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px',
+                border: '2px solid #ffffff'
+              }}
+              title={isFemaleDoc ? 'Female Clinician' : 'Male Clinician'}
+            >
+              {isFemaleDoc ? '♀' : '♂'}
+            </span>
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '16px' }}>{user.name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 700, fontSize: '16px' }}>{user.name}</div>
+              <span style={{
+                background: isFemaleDoc ? '#fdf2f8' : '#eff6ff',
+                color: isFemaleDoc ? '#be185d' : '#1d4ed8',
+                border: `1px solid ${isFemaleDoc ? '#fbcfe8' : '#bfdbfe'}`,
+                padding: '1px 8px',
+                borderRadius: '999px',
+                fontSize: '11px',
+                fontWeight: 700
+              }}>
+                {isFemaleDoc ? '👩‍⚕️ Female Medical Officer' : '👨‍⚕️ Male Medical Officer'}
+              </span>
+            </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
               {user.healthFacility || user.location || 'DHH Bhawanipatna'} (Telehealth Unit)
             </div>

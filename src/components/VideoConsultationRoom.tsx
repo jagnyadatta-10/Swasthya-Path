@@ -283,7 +283,9 @@ export const VideoConsultationRoom: React.FC<VideoConsultationRoomProps> = ({
   // Dynamic gender-aware Doctor & Patient Media Sources
   const isMaleDoctor = doctor?.gender === 'male' || (!doctor?.gender && (/patnaik|jena|hota|kumar|rajesh|tripathy|das\b/i.test(doctor?.name || '')));
   const doctorFeedImg = doctor?.feedUrl || (isMaleDoctor ? '/images/male-doctor-feed.jpg' : '/images/doctor-feed.jpg');
-  const doctorAvatarImg = doctor?.avatarUrl || doctorFeedImg;
+  const doctorAvatarImg = (doctor?.avatarUrl && !doctor.avatarUrl.includes('images.unsplash.com'))
+    ? doctor.avatarUrl
+    : (isMaleDoctor ? '/images/male-doctor-avatar.jpg' : '/images/female-doctor-avatar.jpg');
 
   // Pre-call stage
   const [preCallDone, setPreCallDone] = useState(false);

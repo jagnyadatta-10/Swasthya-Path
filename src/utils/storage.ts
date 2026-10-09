@@ -919,7 +919,9 @@ export const storage = {
       const parsed: DoctorItem[] = JSON.parse(data);
       return parsed.map(d => {
         const init = INITIAL_DOCTORS.find(item => item.id === d.id);
-        return init ? { ...init, ...d, feedUrl: d.feedUrl || init.feedUrl, avatarUrl: d.avatarUrl || init.avatarUrl, gender: d.gender || init.gender } : d;
+        if (!init) return d;
+        const avatarUrl = (d.avatarUrl && !d.avatarUrl.includes('images.unsplash.com')) ? d.avatarUrl : init.avatarUrl;
+        return { ...init, ...d, feedUrl: d.feedUrl || init.feedUrl, avatarUrl, gender: d.gender || init.gender };
       });
     } catch {
       return INITIAL_DOCTORS;

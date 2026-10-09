@@ -288,7 +288,10 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     available: true,
     experience: '9 yrs exp • MBBS, MD',
     fees: 'Free (Govt Telehealth Initiative)',
-    estimatedWaitMin: 10
+    estimatedWaitMin: 10,
+    gender: 'female',
+    feedUrl: '/images/doctor-feed.jpg',
+    avatarUrl: '/images/female-doctor-avatar.jpg'
   };
 
   // Refresh records and tokens when switching tabs
@@ -2752,33 +2755,70 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <img
-                          src={doc.avatarUrl || (doc.gender === 'male' ? '/images/male-doctor-avatar.jpg' : '/images/doctor-feed.jpg')}
-                          alt={doc.name}
-                          style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            border: '2px solid #0284c7',
-                            flexShrink: 0
-                          }}
-                        />
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
-                          <span style={{
-                            background: isOnLeave ? '#fef2f2' : doc.available ? '#f0fdf4' : '#fffbeb',
-                            color: isOnLeave ? '#991b1b' : doc.available ? '#166534' : '#92400e',
-                            border: isOnLeave ? '1px solid #fecaca' : doc.available ? '1px solid #bbf7d0' : '1px solid #fef08a',
-                            padding: '2px 8px',
-                            borderRadius: '999px',
-                            fontSize: '11px',
-                            fontWeight: 700
-                          }}>
-                            {isOnLeave ? '🏖️ On Scheduled Leave' : doc.available ? '🟢 Available' : '🟠 Next Slot Today'}
+                        <div style={{ position: 'relative' }}>
+                          <img
+                            src={(doc.avatarUrl && !doc.avatarUrl.includes('images.unsplash.com')) ? doc.avatarUrl : (doc.gender === 'female' ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg')}
+                            alt={doc.name}
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '2px solid #0284c7',
+                              flexShrink: 0,
+                              display: 'block'
+                            }}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = doc.gender === 'female' ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg';
+                            }}
+                          />
+                          <span
+                            style={{
+                              position: 'absolute',
+                              bottom: '-2px',
+                              right: '-2px',
+                              background: doc.gender === 'female' ? '#ec4899' : '#0284c7',
+                              color: '#ffffff',
+                              borderRadius: '50%',
+                              width: '18px',
+                              height: '18px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px',
+                              border: '2px solid #ffffff'
+                            }}
+                            title={doc.gender === 'female' ? 'Female Clinician' : 'Male Clinician'}
+                          >
+                            {doc.gender === 'female' ? '♀' : '♂'}
                           </span>
                         </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a' }}>{doc.name}</h3>
+                            <span style={{
+                              background: doc.gender === 'female' ? '#fdf2f8' : '#eff6ff',
+                              color: doc.gender === 'female' ? '#be185d' : '#1d4ed8',
+                              border: `1px solid ${doc.gender === 'female' ? '#fbcfe8' : '#bfdbfe'}`,
+                              padding: '1px 7px',
+                              borderRadius: '999px',
+                              fontSize: '11px',
+                              fontWeight: 700
+                            }}>
+                              {doc.gender === 'female' ? '👩‍⚕️ Female' : '👨‍⚕️ Male'}
+                            </span>
+                            <span style={{
+                              background: isOnLeave ? '#fef2f2' : doc.available ? '#f0fdf4' : '#fffbeb',
+                              color: isOnLeave ? '#991b1b' : doc.available ? '#166534' : '#92400e',
+                              border: isOnLeave ? '1px solid #fecaca' : doc.available ? '1px solid #bbf7d0' : '1px solid #fef08a',
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              fontSize: '11px',
+                              fontWeight: 700
+                            }}>
+                              {isOnLeave ? '🏖️ On Scheduled Leave' : doc.available ? '🟢 Available' : '🟠 Next Slot Today'}
+                            </span>
+                          </div>
 
                         <div style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
                           {doc.specialty} • {doc.hospital || doc.facility}
@@ -3688,15 +3728,53 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           <div className="modal-dialog" style={{ maxWidth: '520px', background: '#ffffff', padding: '24px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <img
-                  src={viewingDoctorProfile.avatarUrl || (viewingDoctorProfile.gender === 'male' ? '/images/male-doctor-avatar.jpg' : '/images/doctor-feed.jpg')}
-                  alt={viewingDoctorProfile.name}
-                  style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #0284c7' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={(viewingDoctorProfile.avatarUrl && !viewingDoctorProfile.avatarUrl.includes('images.unsplash.com')) ? viewingDoctorProfile.avatarUrl : (viewingDoctorProfile.gender === 'female' ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg')}
+                    alt={viewingDoctorProfile.name}
+                    style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #0284c7', display: 'block' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = viewingDoctorProfile.gender === 'female' ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg';
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      background: viewingDoctorProfile.gender === 'female' ? '#ec4899' : '#0284c7',
+                      color: '#ffffff',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      border: '2px solid #ffffff'
+                    }}
+                    title={viewingDoctorProfile.gender === 'female' ? 'Female Clinician' : 'Male Clinician'}
+                  >
+                    {viewingDoctorProfile.gender === 'female' ? '♀' : '♂'}
+                  </span>
+                </div>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a', fontWeight: 900 }}>{viewingDoctorProfile.name}</h3>
                     <span title="Verified Clinician" style={{ color: '#0284c7', fontSize: '18px' }}>✓</span>
+                    <span
+                      style={{
+                        background: viewingDoctorProfile.gender === 'female' ? '#fdf2f8' : '#eff6ff',
+                        color: viewingDoctorProfile.gender === 'female' ? '#be185d' : '#1d4ed8',
+                        border: `1px solid ${viewingDoctorProfile.gender === 'female' ? '#fbcfe8' : '#bfdbfe'}`,
+                        padding: '1px 8px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: 700
+                      }}
+                    >
+                      {viewingDoctorProfile.gender === 'female' ? '👩‍⚕️ Female Clinician' : '👨‍⚕️ Male Clinician'}
+                    </span>
                   </div>
                   <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 700 }}>
                     {viewingDoctorProfile.specialty}

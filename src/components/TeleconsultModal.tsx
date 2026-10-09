@@ -35,6 +35,11 @@ export const TeleconsultModal: React.FC<TeleconsultModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isFemaleDoc = doctor.gender === 'female' || (!doctor.gender && /ananya|meenakshi|subhashree|mishra|sahu|dash/i.test(doctor.name));
+  const doctorAvatar = (doctor.avatarUrl && !doctor.avatarUrl.includes('images.unsplash.com'))
+    ? doctor.avatarUrl
+    : (isFemaleDoc ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg');
+
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainder = secs % 60;
@@ -100,9 +105,12 @@ export const TeleconsultModal: React.FC<TeleconsultModalProps> = ({
               {isLowBandwidth ? (
                 <div style={{ textAlign: 'center', padding: '20px' }}>
                   <img
-                    src={doctor.avatarUrl}
+                    src={doctorAvatar}
                     alt={doctor.name}
-                    style={{ width: '70px', height: '70px', borderRadius: '50%', border: '2px solid #19d3ff', margin: '0 auto 10px' }}
+                    style={{ width: '70px', height: '70px', borderRadius: '50%', border: '2px solid #19d3ff', margin: '0 auto 10px', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = isFemaleDoc ? '/images/female-doctor-avatar.jpg' : '/images/male-doctor-avatar.jpg';
+                    }}
                   />
                   <div style={{ fontWeight: 700, color: '#ffffff' }}>{doctor.name}</div>
                   <div style={{ fontSize: '12px', color: '#38bdf8' }}>Audio Stream Active (Saved 92% bandwidth)</div>
@@ -115,9 +123,15 @@ export const TeleconsultModal: React.FC<TeleconsultModalProps> = ({
                 </div>
               ) : (
                 <>
-                  <img src={doctor.avatarUrl} alt={doctor.name} />
+                  <img
+                    src={doctor.feedUrl || (isFemaleDoc ? '/images/doctor-feed.jpg' : '/images/male-doctor-feed.jpg')}
+                    alt={doctor.name}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = isFemaleDoc ? '/images/doctor-feed.jpg' : '/images/male-doctor-feed.jpg';
+                    }}
+                  />
                   <div className="video-label">
-                    👨‍⚕️ {doctor.name} (District Telehealth Hub)
+                    {isFemaleDoc ? '👩‍⚕️' : '👨‍⚕️'} {doctor.name} (District Telehealth Hub)
                   </div>
                 </>
               )}

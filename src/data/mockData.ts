@@ -58,7 +58,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     role: 'doctor',
     portalTitle: 'Clinician Workspace',
     badge: 'Medical Officer • District Telehealth Hub',
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=150&q=80',
+    avatar: '/images/female-doctor-avatar.jpg',
+    gender: 'female',
     location: 'District Headquarters Hospital (DHH) Bhawanipatna, Kalahandi'
   },
   pharmacy: {
@@ -265,7 +266,7 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     estimatedWaitMin: 6,
     gender: 'female',
     feedUrl: '/images/doctor-feed.jpg',
-    avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80'
+    avatarUrl: '/images/female-doctor-avatar.jpg'
   },
   {
     id: 'doc-02',
@@ -305,7 +306,7 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     estimatedWaitMin: 18,
     gender: 'female',
     feedUrl: '/images/doctor-feed.jpg',
-    avatarUrl: 'https://images.unsplash.com/photo-1594824813620-4e38e5e8e89f?auto=format&fit=crop&w=200&q=80'
+    avatarUrl: '/images/female-doctor-avatar.jpg'
   },
   {
     id: 'doc-04',
@@ -345,7 +346,7 @@ export const INITIAL_DOCTORS: DoctorItem[] = [
     estimatedWaitMin: 30,
     gender: 'female',
     feedUrl: '/images/doctor-feed.jpg',
-    avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80'
+    avatarUrl: '/images/female-doctor-avatar.jpg'
   },
   {
     id: 'doc-06',

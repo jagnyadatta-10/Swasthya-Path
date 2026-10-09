@@ -269,6 +269,139 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
+  // Simple Patient Direct Mobile Login (Rural Friendly)
+  const handleSimplePatientLogin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const cleanInput = loginIdentifier.trim();
+    if (!cleanInput) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ଆପଣଙ୍କ ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର କିମ୍ବା ABHA ID ଦିଅନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया अपना 10-अंकीय मोबाइल नंबर या ABHA ID दर्ज करें।'
+          : 'Please enter your 10-digit mobile number or ABHA ID.'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      let user = storage.authenticateUser(cleanInput, 'patient');
+
+      if (!user) {
+        user = storage.registerNewAccount({
+          name: 'Ramesh Majhi (Citizen)',
+          mobile: cleanInput.replace(/[^0-9]/g, '').slice(0, 10) || '9861000001',
+          role: 'patient',
+          location: 'Village Chhoriagarh, Kalahandi, Odisha',
+          preferredLanguage: lang,
+          age: 32,
+          gender: 'Male',
+          abhaId: `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`
+        });
+      }
+
+      setIsSubmitting(false);
+      if (user) {
+        onLoginSuccess(user);
+      }
+    }, 300);
+  };
+
+  // 1-Tap Quick Patient Demo Access
+  const handleQuickPatientLogin = () => {
+    setIsSubmitting(true);
+    setErrorMsg('');
+    setTimeout(() => {
+      let user = storage.authenticateUser('9861000001', 'patient');
+      if (!user) {
+        user = storage.registerNewAccount({
+          name: 'Ramesh Chandra Majhi',
+          mobile: '9861000001',
+          role: 'patient',
+          location: 'Village Chhoriagarh, Kalahandi, Odisha',
+          preferredLanguage: lang,
+          age: 32,
+          gender: 'Male',
+          abhaId: '91-4821-9921-12'
+        });
+      }
+      setIsSubmitting(false);
+      onLoginSuccess(user);
+    }, 200);
+  };
+
+  // Simple Patient 2-Step Registration
+  const handleSimplePatientRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!regName.trim()) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ଆପଣଙ୍କ ପୂରା ନାମ ଲେଖନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया अपना पूरा नाम दर्ज करें।'
+          : 'Please enter your full name.'
+      );
+      return;
+    }
+
+    const cleanPhone = regMobile.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? 'ଦୟାକରି ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର ଦିଅନ୍ତୁ।'
+          : lang === 'हिन्दी'
+          ? 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।'
+          : 'Please enter a valid 10-digit mobile number.'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      const newAccount = storage.registerNewAccount({
+        name: regName,
+        mobile: regMobile,
+        email: regEmail,
+        password: regPassword || '1234',
+        role: 'patient',
+        age: patAge ? Number(patAge) : 32,
+        gender: patGender || 'Male',
+        block: patBlock || 'Bhawanipatna',
+        preferredLanguage: patLanguage || lang,
+        location: `${patBlock || 'Bhawanipatna'} Block, Kalahandi, Odisha`,
+        abhaId: patAbha || `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`,
+        emergencyContact: patEmergency || '+91 94370 00000 (Family)'
+      });
+
+      setIsSubmitting(false);
+
+      // Open Login Tab with registered user's credentials prefilled
+      setActiveTab('login');
+      setLoginMode('password');
+      setLoginIdentifier(newAccount.mobile || newAccount.email || newAccount.name);
+      setLoginPassword('');
+      setSelectedRole(newAccount.role);
+
+      setSuccessMsg(
+        lang === 'ଓଡ଼ିଆ'
+          ? `✓ ${newAccount.name} ଙ୍କ ପାଇଁ ପଞ୍ଜୀକରଣ ସଫଳ ହୋଇଛି! Registration successful.`
+          : lang === 'हिन्दी'
+          ? `✓ ${newAccount.name} का पंजीकरण सफल रहा! Registration successful.`
+          : `✓ Registration successful for ${newAccount.name}! Account created.`
+      );
+
+      // Direct seamless entry into patient portal
+      onLoginSuccess(newAccount);
+    }, 350);
+  };
+
   // Generate & Dispatch Real OTP Simulation
   const handleSendLoginOtp = () => {
     const cleanPhone = loginIdentifier.replace(/[^0-9]/g, '');
@@ -651,8 +784,183 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </div>
 
+            {/* Feedback Alerts */}
+            {errorMsg && (
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: '1.5px solid #fecaca',
+                  color: '#b91c1c',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  fontSize: '12.5px',
+                  marginBottom: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+            {successMsg && (
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1.5px solid #bbf7d0',
+                  color: '#15803d',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  fontSize: '12.5px',
+                  marginBottom: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
             {/* TAB 1: SIGN IN */}
-            {activeTab === 'login' && (
+            {activeTab === 'login' && selectedRole === 'patient' ? (
+              /* SIMPLE PATIENT LOGIN */
+              <form onSubmit={handleSimplePatientLogin}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Clean Accessible Card */}
+                  <div
+                    style={{
+                      background: '#f0f9ff',
+                      border: '1.5px solid #bae6fd',
+                      borderRadius: '12px',
+                      padding: '12px 14px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0369a1', fontWeight: 800, fontSize: '13.5px', marginBottom: '4px' }}>
+                      <User size={18} color="#0284c7" />
+                      <span>{lang === 'ଓଡ଼ିଆ' ? 'ସରଳ ରୋଗୀ ପ୍ରବେଶ' : lang === 'हिन्दी' ? 'सरल मरीज प्रवेश' : 'Simple Patient Sign In'}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#0284c7', lineHeight: 1.4 }}>
+                      {lang === 'ଓଡ଼ିଆ'
+                        ? 'ଆପଣଙ୍କ ୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର କିମ୍ବା ABHA ID ଦେଇ ସିଧାସଳଖ ସ୍ୱାସ୍ଥ୍ୟ ପୋର୍ଟାଲ୍ ଖୋଲନ୍ତୁ।'
+                        : lang === 'हिन्दी'
+                        ? 'अपना 10-अंकीय मोबाइल नंबर या ABHA ID दर्ज करके सीधे स्वास्थ्य पोर्टल खोलें।'
+                        : 'Enter your 10-digit mobile number or ABHA ID to immediately open your health portal.'}
+                    </p>
+                  </div>
+
+                  {/* 1-Tap Quick Patient Demo Login */}
+                  <button
+                    type="button"
+                    onClick={handleQuickPatientLogin}
+                    disabled={isSubmitting}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
+                      border: '1.5px solid #38bdf8',
+                      borderRadius: '12px',
+                      color: '#0369a1',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.12)'
+                    }}
+                  >
+                    <Sparkles size={16} color="#0284c7" />
+                    <span>
+                      {lang === 'ଓଡ଼ିଆ'
+                        ? '⚡ ୧-ଟ୍ୟାପ୍ ତୁରନ୍ତ ପ୍ରବେଶ (ରମେଶ ମାଝୀ - ଛୋରିଆଗଡ଼)'
+                        : lang === 'हिन्दी'
+                        ? '⚡ 1-टैप त्वरित प्रवेश (रमेश माझी - छोरियागढ़)'
+                        : '⚡ 1-Tap Quick Patient Login (Ramesh Majhi • Kalahandi)'}
+                    </span>
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
+                    <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{lang === 'ଓଡ଼ିଆ' ? 'କିମ୍ବା ନମ୍ବର ଦିଅନ୍ତୁ' : lang === 'हिन्दी' ? 'या नंबर दर्ज करें' : 'OR ENTER MOBILE'}</span>
+                    <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                  </div>
+
+                  {/* Mobile Number / ABHA ID Input */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ମୋବାଇଲ୍ ନମ୍ବର / ABHA ID *' : lang === 'हिन्दी' ? 'मोबाइल नंबर / ABHA ID *' : 'Mobile Number or ABHA ID *'}
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="tel"
+                        maxLength={16}
+                        className="mobile-input-control"
+                        value={loginIdentifier}
+                        onChange={e => setLoginIdentifier(e.target.value)}
+                        placeholder={lang === 'ଓଡ଼ିଆ' ? '୧୦ ଅଙ୍କ ମୋବାଇଲ୍ (ଯଥା: 9861000001)' : lang === 'हिन्दी' ? '10 अंक मोबाइल (उदा: 9861000001)' : '10 Digits (e.g. 9861000001)'}
+                        autoComplete="tel"
+                        required
+                        style={{ fontSize: '15px', paddingLeft: '40px' }}
+                      />
+                      <Phone size={18} color="#0284c7" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                    </div>
+                  </div>
+
+                  {/* Submit CTA */}
+                  <button
+                    type="submit"
+                    className="mobile-cta-btn"
+                    disabled={isSubmitting}
+                    style={{
+                      marginTop: '6px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                      color: '#ffffff',
+                      minHeight: '48px',
+                      fontSize: '15px',
+                      fontWeight: 800
+                    }}
+                  >
+                    {isSubmitting ? (
+                      <span>Opening Health Portal...</span>
+                    ) : (
+                      <>
+                        <span>{lang === 'ଓଡ଼ିଆ' ? 'ସ୍ୱାସ୍ଥ୍ୟ ପୋର୍ଟାଲ୍ ଖୋଲନ୍ତୁ' : lang === 'हिन्दी' ? 'स्वास्थ्य पोर्टल खोलें' : 'Open Patient Health Portal'}</span>
+                        <ArrowRight size={18} />
+                      </>
+                    )}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                    <span style={{ fontSize: '12.5px', color: '#64748b' }}>
+                      {lang === 'ଓଡ଼ିଆ' ? 'ନୂତନ ରୋଗୀ ଅଟନ୍ତି କି? ' : lang === 'हिन्दी' ? 'नए मरीज हैं? ' : 'New patient? '}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('register');
+                        setErrorMsg('');
+                        setSuccessMsg('');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#0284c7',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {lang === 'ଓଡ଼ିଆ' ? 'ସରଳ ପଞ୍ଜୀକରଣ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'सरल पंजीकरण करें' : 'Quick 1-Minute Registration'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : activeTab === 'login' ? (
               <form onSubmit={handleLoginSubmit}>
                 {/* Login Method Toggle */}
                 <div
@@ -872,12 +1180,139 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </button>
               </div>
             </form>
-          )}
+          ) : null}
 
           {/* ======================================================== */}
           {/* TAB 2: REGISTER (ANYONE CAN REGISTER WITH CREDENTIALS)   */}
           {/* ======================================================== */}
-          {activeTab === 'register' && (
+          {activeTab === 'register' && selectedRole === 'patient' ? (
+            /* SIMPLE PATIENT REGISTRATION */
+            <form onSubmit={handleSimplePatientRegister}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '1.5px solid #bbf7d0',
+                    borderRadius: '12px',
+                    padding: '12px 14px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 800, fontSize: '13.5px', marginBottom: '4px' }}>
+                    <UserPlus size={18} color="#16a34a" />
+                    <span>{lang === 'ଓଡ଼ିଆ' ? 'ନୂତନ ରୋଗୀ ସରଳ ପଞ୍ଜୀକରଣ' : lang === 'हिन्दी' ? 'नए मरीज का सरल पंजीकरण' : 'Simple Patient Registration'}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#15803d', lineHeight: 1.4 }}>
+                    {lang === 'ଓଡ଼ିଆ'
+                      ? 'କେବଳ ନାମ ଓ ମୋବାଇଲ୍ ନମ୍ବର ଦେଇ ତୁରନ୍ତ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ଖାତା ତିଆରି କରନ୍ତୁ।'
+                      : lang === 'हिन्दी'
+                      ? 'केवल नाम और मोबाइल नंबर देकर तुरंत अपना स्वास्थ्य खाता बनाएं।'
+                      : 'Simply enter your name and mobile number to immediately create your health record.'}
+                  </p>
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#1e293b', marginBottom: '5px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ରୋଗୀଙ୍କ ସମ୍ପୂର୍ଣ୍ଣ ନାମ *' : lang === 'हिन्दी' ? 'मरीज का पूरा नाम *' : 'Patient Full Name *'}
+                  </label>
+                  <input
+                    type="text"
+                    className="mobile-input-control"
+                    value={regName}
+                    onChange={e => setRegName(e.target.value)}
+                    placeholder="e.g. Ramesh Chandra Majhi"
+                    required
+                  />
+                </div>
+
+                {/* Mobile Number */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#1e293b', marginBottom: '5px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? '୧୦-ଅଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର *' : lang === 'हिन्दी' ? '10-अंकीय मोबाइल नंबर *' : '10-Digit Mobile Number *'}
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    className="mobile-input-control"
+                    value={regMobile}
+                    onChange={e => setRegMobile(e.target.value)}
+                    placeholder="e.g. 9861000001"
+                    required
+                  />
+                </div>
+
+                {/* Village / Block */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#1e293b', marginBottom: '5px' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ଗ୍ରାମ / ବ୍ଲକ *' : lang === 'हिन्दी' ? 'ग्राम / ब्लॉक *' : 'Village / District Block *'}
+                  </label>
+                  <select
+                    className="mobile-input-control"
+                    value={patBlock}
+                    onChange={e => setPatBlock(e.target.value)}
+                    style={{ background: '#ffffff', color: '#0f172a' }}
+                  >
+                    <option value="Bhawanipatna">Bhawanipatna Block</option>
+                    <option value="Karlamunda">Karlamunda Block</option>
+                    <option value="Junagarh">Junagarh Block</option>
+                    <option value="Dharamgarh">Dharamgarh Block</option>
+                    <option value="Kesinga">Kesinga Block</option>
+                    <option value="Narla">Narla Block</option>
+                  </select>
+                </div>
+
+                {/* Register CTA */}
+                <button
+                  type="submit"
+                  className="mobile-cta-btn"
+                  disabled={isSubmitting}
+                  style={{
+                    marginTop: '6px',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    color: '#ffffff',
+                    boxShadow: '0 8px 24px rgba(5, 150, 105, 0.35)',
+                    minHeight: '48px',
+                    fontSize: '15px',
+                    fontWeight: 800
+                  }}
+                >
+                  {isSubmitting ? (
+                    <span>Creating Patient Profile...</span>
+                  ) : (
+                    <>
+                      <span>{lang === 'ଓଡ଼ିଆ' ? 'ପଞ୍ଜୀକରଣ କରି ପ୍ରବେଶ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'पंजीकरण कर प्रवेश करें' : 'Create Account & Enter'}</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                  <span style={{ fontSize: '12.5px', color: '#64748b' }}>
+                    {lang === 'ଓଡ଼ିଆ' ? 'ପୂର୍ବରୁ ଖାତା ଅଛି କି? ' : lang === 'हिन्दी' ? 'पहले से खाता है? ' : 'Already registered? '}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setErrorMsg('');
+                      setSuccessMsg('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#0284c7',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {lang === 'ଓଡ଼ିଆ' ? 'ସରଳ ଲଗଇନ୍ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'सरल लॉगिन करें' : 'Simple Sign In'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : activeTab === 'register' ? (
             <form onSubmit={handleRegisterSubmit}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Full Name */}
@@ -1454,7 +1889,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </div>
               </div>
             </form>
-          )}
+          ) : null}
 
           {/* Secure System Badge */}
           <div

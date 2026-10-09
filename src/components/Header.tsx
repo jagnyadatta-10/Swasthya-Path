@@ -275,19 +275,23 @@ export const Header: React.FC<HeaderProps> = ({
                     {syncMessage && <div style={{ padding: '4px 18px', fontSize: '11px', color: '#059669', fontWeight: 600 }}>{syncMessage}</div>}
                     <div style={{ height: '1px', background: '#f0f4fb', margin: '4px 0' }} />
                     {/* Language & Accessibility */}
-                    <DropSection label={t('Language & Accessibility', 'भाषा और पहुँच', 'ଭାଷା ଓ ଆଭ୍ୟାସ')} />
+                    <DropSection label={currentUser?.role === 'doctor' ? 'Language & Accessibility' : t('Language & Accessibility', 'भाषा और पहुँच', 'ଭାଷା ଓ ଆଭ୍ୟାସ')} />
                     <div style={{ padding: '6px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={14} color="#168cff" />{t('Language', 'भाषा', 'ଭାଷା')}</span>
-                      <select
-                        value={lang}
-                        onChange={e => onSelectLang(e.target.value as Language)}
-                        style={{ border: '1px solid #dce8f8', borderRadius: '7px', padding: '4px 8px', fontSize: '12px', background: '#f8faff', color: '#0e1a2f', cursor: 'pointer', fontWeight: 600 }}
-                        aria-label="Select Language"
-                      >
-                        <option value="English">English</option>
-                        <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
-                        <option value="हिन्दी">हिन्दी (Hindi)</option>
-                      </select>
+                      <span style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={14} color="#168cff" />{currentUser?.role === 'doctor' ? 'Language' : t('Language', 'भाषा', 'ଭାଷା')}</span>
+                      {currentUser?.role === 'doctor' ? (
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>English (Clinical)</span>
+                      ) : (
+                        <select
+                          value={lang}
+                          onChange={e => onSelectLang(e.target.value as Language)}
+                          style={{ border: '1px solid #dce8f8', borderRadius: '7px', padding: '4px 8px', fontSize: '12px', background: '#f8faff', color: '#0e1a2f', cursor: 'pointer', fontWeight: 600 }}
+                          aria-label="Select Language"
+                        >
+                          <option value="English">English</option>
+                          <option value="ଓଡ଼ିଆ">ଓଡ଼ିଆ (Odia)</option>
+                          <option value="हिन्दी">हिन्दी (Hindi)</option>
+                        </select>
+                      )}
                     </div>
                     <DropButton icon={fontScale > 1 ? <ZoomOut size={14} /> : <ZoomIn size={14} />} label={fontScale > 1 ? t('Normal Text Size (A-)', 'सामान्य टेक्स्ट (A-)', 'ସ୍ୱାଭାବିକ ଆଖ (A-)') : t('Larger Text Size (A+)', 'बड़ा टेक्स्ट (A+)', 'ବଡ ଆଖ (A+)')} badge={fontScale > 1 ? 'LARGE' : undefined} onClick={onToggleFontScale} />
                     <div style={{ height: '1px', background: '#f0f4fb', margin: '4px 0' }} />

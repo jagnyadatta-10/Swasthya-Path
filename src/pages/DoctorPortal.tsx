@@ -140,7 +140,8 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   lang,
   onSelectLang
 }) => {
-  const t = DOCTOR_I18N[lang] || DOCTOR_I18N.English;
+  // Clinician workspace is strictly conducted in standard clinical English
+  const t = DOCTOR_I18N.English;
   const [activeTab, setActiveTab] = useState<'home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history' | 'leave'>('home');
   const [tabHistory, setTabHistory] = useState<('home' | 'queue' | 'evaluation' | 'schedule' | 'prescriptions' | 'specialist' | 'history' | 'leave')[]>(['home']);
 
@@ -187,13 +188,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       >
         <ArrowLeft size={16} />
         <span>
-          {customLabel || (
-            lang === 'ଓଡ଼ିଆ'
-              ? '← ପଛକୁ ଫେରନ୍ତୁ (ପୂର୍ବ ପୃଷ୍ଠା)'
-              : lang === 'हिन्दी'
-              ? '← वापस जाएं (पिछला पृष्ठ)'
-              : '← Back to Previous Page'
-          )}
+          {customLabel || '← Back to Previous Page'}
         </span>
       </button>
 
@@ -204,7 +199,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           className="btn btn-ghost-light"
           style={{ fontSize: '13px', color: '#0284c7' }}
         >
-          {lang === 'ଓଡ଼ିଆ' ? 'ଟ୍ରାଇଏଜ୍ କତାରକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'ट्राइएज कतार पर जाएं' : 'Return to Triage Queue'}
+          Return to Triage Queue
         </button>
       )}
 
@@ -221,7 +216,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             gap: '4px'
           }}
         >
-          <span>{lang === 'ଓଡ଼ିଆ' ? 'ଡ୍ୟାସବୋର୍ଡକୁ ଫେରନ୍ତୁ' : lang === 'हिन्दी' ? 'डैशबोर्ड पर जाएं' : 'Back to Dashboard'}</span>
+          <span>Back to Dashboard</span>
         </button>
       )}
     </div>
@@ -379,33 +374,13 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* In-Portal Language Selector */}
-          {onSelectLang && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', padding: '3px 8px', borderRadius: '999px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>
-                {lang === 'ଓଡ଼ିଆ' ? 'ଭାଷା:' : lang === 'हिन्दी' ? 'भाषा:' : 'Lang:'}
-              </span>
-              {(['English', 'ଓଡ଼ିଆ', 'हिन्दी'] as Language[]).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => onSelectLang(l)}
-                  style={{
-                    background: lang === l ? '#0284c7' : 'transparent',
-                    color: lang === l ? '#ffffff' : '#334155',
-                    border: 'none',
-                    borderRadius: '999px',
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    fontWeight: lang === l ? 700 : 500,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Clinical Workspace Language Standard */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '999px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#047857' }}>
+              English (Clinical Standard)
+            </span>
+          </div>
 
           <button
             type="button"
@@ -495,7 +470,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
           className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`}
           onClick={() => navigateToTab('leave')}
         >
-          {lang === 'ଓଡ଼ିଆ' ? `ଛୁଟି କାର୍ଯ୍ୟସୂଚୀ (${doctorLeaves.length})` : lang === 'हिन्दी' ? `छुट्टी अनुसूची (${doctorLeaves.length})` : `Scheduled Leave (${doctorLeaves.length})`}
+          {`Scheduled Leave (${doctorLeaves.length})`}
         </button>
       </nav>
 
@@ -1041,7 +1016,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                         }}
                         style={{ padding: '3px 8px', fontSize: '11px', color: '#0284c7' }}
                       >
-                        <Eye size={12} /> {lang === 'ଓଡ଼ିଆ' ? 'ଦେଖନ୍ତୁ' : lang === 'हिन्दी' ? 'देखें' : 'View'}
+                        <Eye size={12} /> View
                       </button>
 
                       <button
@@ -1054,7 +1029,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                         }}
                         style={{ padding: '3px 8px', fontSize: '11px', background: '#eff6ff', borderColor: '#93c5fd', color: '#1d4ed8', fontWeight: 600 }}
                       >
-                        <Edit3 size={12} /> {lang === 'ଓଡ଼ିଆ' ? 'ସଂଶୋଧନ' : lang === 'हिन्दी' ? 'संपादित करें' : 'Edit'}
+                        <Edit3 size={12} /> Edit
                       </button>
                     </div>
                   </div>
@@ -1253,7 +1228,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                     }}
                     style={{ fontSize: '12px', padding: '6px 12px', background: '#eff6ff', borderColor: '#93c5fd', color: '#1d4ed8', fontWeight: 700 }}
                   >
-                    <Edit3 size={13} /> {lang === 'ଓଡ଼ିଆ' ? 'ସଂଶୋଧନ କରନ୍ତୁ' : lang === 'हिन्दी' ? 'संपादित करें' : 'Edit Prescription'}
+                    <Edit3 size={13} /> Edit Prescription
                   </button>
 
                   <button
@@ -1266,7 +1241,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                     }}
                     style={{ fontSize: '12px', padding: '6px 14px' }}
                   >
-                    {lang === 'ଓଡ଼ିଆ' ? 'ବିବରଣୀ ଓ ଷ୍ଟକ୍' : lang === 'हिन्दी' ? 'विवरण एवं स्टॉक' : 'Open Details & Stock'}
+                    Open Details & Stock
                   </button>
                 </div>
               </div>
@@ -1390,18 +1365,10 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
               <div>
                 <h2>
-                  {lang === 'ଓଡ଼ିଆ'
-                    ? 'ଡାକ୍ତର ଛୁଟି ଏବଂ ବିକଳ୍ପ ସେବା ପରିଚାଳନା'
-                    : lang === 'हिन्दी'
-                    ? 'चिकित्सक अवकाश एवं वैकल्पिक सेवा प्रबंधन'
-                    : 'Clinician Leave & Patient Rerouting Management'}
+                  Clinician Leave & Patient Rerouting Management
                 </h2>
                 <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0 }}>
-                  {lang === 'ଓଡ଼ିଆ'
-                    ? 'ଛୁଟି ତାରିଖ ସେଟ୍ କରନ୍ତୁ ଯାହାଦ୍ୱାରା ରୋଗୀ ପୋର୍ଟାଲରେ ସ୍ୱୟଂଚାଳିତ ଭାବେ ଅନ୍ୟ ବିକଳ୍ପ ଡାକ୍ତର ଓ ଜରୁରୀକାଳୀନ କେନ୍ଦ୍ର ପ୍ରଦର୍ଶିତ ହେବ।'
-                    : lang === 'हिन्दी'
-                    ? 'छुट्टी की तारीख निर्धारित करें ताकि रोगी पोर्टल पर स्वचालित रूप से वैकल्पिक डॉक्टर और आपातकालीन केंद्र दिखाई दें।'
-                    : 'Record scheduled leaves so the Patient Portal immediately alerts patients, disables deadlocked bookings, and seamlessly reroutes to replacement clinicians or CHCs.'}
+                  Record scheduled leaves so the Patient Portal immediately alerts patients, disables deadlocked bookings, and seamlessly reroutes to replacement clinicians or CHCs.
                 </p>
               </div>
               <span className="badge badge-blue">
@@ -1443,11 +1410,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 <h3 style={{ fontSize: '16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Calendar size={18} color="#0284c7" />
                   <span>
-                    {lang === 'ଓଡ଼ିଆ'
-                      ? 'ନୂତନ ଛୁଟି ତାଲିକାଭୁକ୍ତ କରନ୍ତୁ'
-                      : lang === 'हिन्दी'
-                      ? 'नया अवकाश दर्ज करें'
-                      : 'Schedule New Leave Period'}
+                    Schedule New Leave Period
                   </span>
                 </h3>
 
@@ -1455,7 +1418,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                        {lang === 'ଓଡ଼ିଆ' ? 'ଆରମ୍ଭ ତାରିଖ' : lang === 'हिन्दी' ? 'प्रारंभ तिथि' : 'Start Date'}
+                        Start Date
                       </label>
                       <input
                         type="date"
@@ -1472,7 +1435,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                        {lang === 'ଓଡ଼ିଆ' ? 'ସମାପ୍ତ ତାରିଖ' : lang === 'हिन्दी' ? 'समाप्ति तिथि' : 'End Date'}
+                        End Date
                       </label>
                       <input
                         type="date"
@@ -1491,7 +1454,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
 
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      {lang === 'ଓଡ଼ିଆ' ? 'ଛୁଟିର କାରଣ' : lang === 'हिन्दी' ? 'अवकाश का कारण' : 'Clinical Duty / Reason for Leave'}
+                      Clinical Duty / Reason for Leave
                     </label>
                     <input
                       type="text"
@@ -1510,7 +1473,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
 
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      {lang === 'ଓଡ଼ିଆ' ? 'ବିକଳ୍ପ ଡାକ୍ତର / ଦାୟିତ୍ୱରେ ଥିବା ଚିକିତ୍ସକ' : lang === 'हिन्दी' ? 'वैकल्पिक चिकित्सक / कार्यवाहक डॉक्टर' : 'Handover / Replacement Doctor'}
+                      Handover / Replacement Doctor
                     </label>
                     <input
                       type="text"
@@ -1548,11 +1511,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                   >
                     <Save size={16} />
                     <span>
-                      {lang === 'ଓଡ଼ିଆ'
-                        ? 'ଛୁଟି ସଂରକ୍ଷଣ କରନ୍ତୁ ଏବଂ ରୋଗୀ ମାନଙ୍କୁ ସୂଚିତ କରନ୍ତୁ'
-                        : lang === 'हिन्दी'
-                        ? 'छुट्टी सहेजें एवं रोगियों को सूचित करें'
-                        : 'Save Scheduled Leave & Activate Rerouting'}
+                      Save Scheduled Leave & Activate Rerouting
                     </span>
                   </button>
                 </div>
@@ -1570,11 +1529,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
                 <h3 style={{ fontSize: '16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Clock size={18} color="#059669" />
                   <span>
-                    {lang === 'ଓଡ଼ିଆ'
-                      ? 'ପଞ୍ଜୀକୃତ ଛୁଟି ତାଲିକା'
-                      : lang === 'हिन्दी'
-                      ? 'पंजीकृत अवकाश सूची'
-                      : 'Active & Upcoming Leave Schedules'}
+                    Active & Upcoming Leave Schedules
                   </span>
                 </h3>
 
@@ -1639,7 +1594,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         networkQuality={networkQuality}
         onNetworkChange={onNetworkChange}
         userRole="doctor"
-        lang={lang}
+        lang="English"
       />
 
       {/* Diagnostic Document Viewer Modal */}
@@ -1647,7 +1602,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         isOpen={!!viewingDocument}
         onClose={() => setViewingDocument(null)}
         document={viewingDocument}
-        lang={lang}
+        lang="English"
       />
 
       {/* E-Prescription Modal */}
@@ -1659,17 +1614,11 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         doctorName={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
-        lang={lang}
+        lang="English"
         onPrescriptionSaved={(newRx) => {
           setPrescriptions(storage.getPrescriptions());
           setRecords(storage.getRecords());
-          alert(
-            lang === 'ଓଡ଼ିଆ'
-              ? `ଇ-ପ୍ରେସକ୍ରିପସନ୍ (${newRx.prescriptionNumber}) ସଫଳତାର ସହିତ ସଂରକ୍ଷଣ/ସଂଶୋଧନ କରାଗଲା ଏବଂ ରୋଗୀ ରେକର୍ଡ ସହିତ ସିଙ୍କ ହେଲା!`
-              : lang === 'हिन्दी'
-              ? `ई-प्रिस्क्रिप्शन (${newRx.prescriptionNumber}) सफलतापूर्वक सहेजा/संशोधित किया गया एवं रोगी रिकॉर्ड के साथ सिंक हुआ!`
-              : `E-Prescription (${newRx.prescriptionNumber}) successfully saved & updated in patient record!`
-          );
+          alert(`E-Prescription (${newRx.prescriptionNumber}) successfully saved & updated in patient record!`);
         }}
       />
 
@@ -1680,7 +1629,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         referringDoctor={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
-        lang={lang}
+        lang="English"
         onRequestSubmitted={(req) => {
           setSpecialistRequests(storage.getSpecialistRequests());
         }}
@@ -1693,7 +1642,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
         doctorName={user.name}
         patientName={selectedQueueItem ? selectedQueueItem.patientName : 'Keshab Rout'}
         patientId={selectedQueueItem?.patientId || 'RHB-OD-KLH-0941'}
-        lang={lang}
+        lang="English"
         onSaved={(plan) => {
           alert(`Care plan saved! Follow-up scheduled for ${plan.followUpDate} (${plan.followUpMode}).`);
         }}

@@ -98,7 +98,7 @@ export const App: React.FC = () => {
         style={{ flex: 1, ...(currentUser ? {} : { padding: 0, margin: 0, maxWidth: '100%' }) }}
       >
         {/* Universal Clinical Safety Banner (Only rendered inside clinical portals) */}
-        {currentUser && <SafetyBanner lang={lang} />}
+        {currentUser && <SafetyBanner lang={currentUser.role === 'doctor' ? 'English' : lang} />}
 
         {/* Dynamic Route: Clean Login Screen or Selected Role Portal */}
         {!currentUser ? (
@@ -118,8 +118,7 @@ export const App: React.FC = () => {
             user={currentUser}
             networkQuality={networkQuality}
             onNetworkChange={setNetworkQuality}
-            lang={lang}
-            onSelectLang={setLang}
+            lang="English"
           />
         ) : currentUser.role === 'pharmacy' ? (
           <PharmacyPortal
